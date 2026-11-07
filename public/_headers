@@ -11,11 +11,12 @@
 /js/*
   Cache-Control: public, max-age=604800, stale-while-revalidate=86400
 
+# 原图（灯箱点击时才加载）：固定文件名，只给 7 天 + 后台刷新
 /images/*
   Cache-Control: public, max-age=604800, stale-while-revalidate=86400
 
-# 变体文件名带源图内容哈希，URL 随内容变化，可以永久缓存
-/images/opt/*
+# 优化变体放在独立前缀，文件名带源图内容哈希，URL 随内容变化，可以永久缓存
+/opt-images/*
   Cache-Control: public, max-age=31536000, immutable
 
 /music/*

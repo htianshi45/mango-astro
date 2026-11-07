@@ -20,7 +20,11 @@ import sharp from 'sharp';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const IMAGES_DIR = path.join(ROOT, 'public/images');
-const OUT_DIR = path.join(IMAGES_DIR, 'opt');
+// 变体刻意放在 public/opt-images/ 而不是 public/images/opt/：
+// Cloudflare Pages 的 _headers 规则是「前缀匹配 + 追加同名字段」，
+// /images/* 会连同 /images/opt/* 一起命中并叠加出两个 Cache-Control 值。
+// 独立前缀才能让「原图 7 天」与「带哈希变体 immutable」两条规则互斥。
+const OUT_DIR = path.join(ROOT, 'public/opt-images');
 const MANIFEST = path.join(ROOT, 'src/data/image-manifest.json');
 const WIDTHS = [400, 800, 1200];
 const QUALITY = 78;
@@ -84,7 +88,7 @@ for (const file of sources) {
   for (const w of uniqueWidths) {
     const outName = `${stem}-${w}.${stamp}.webp`;
     const outFile = path.join(OUT_DIR, outName);
-    const outPublic = `/images/opt/${outName.split(path.sep).join('/')}`;
+    const outPublic = `/opt-images/${outName.split(path.sep).join('/')}`;
     expected.add(outFile);
 
     const stat = await fs.stat(file);

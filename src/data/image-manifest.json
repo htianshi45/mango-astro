@@ -2,126 +2,126 @@
   "/images/banner-1.jpg": {
     "width": 1450,
     "height": 930,
-    "default": "/images/opt/banner-1-1200.9991560a.webp",
+    "default": "/opt-images/banner-1-1200.9991560a.webp",
     "variants": {
-      "400": "/images/opt/banner-1-400.9991560a.webp",
-      "800": "/images/opt/banner-1-800.9991560a.webp",
-      "1200": "/images/opt/banner-1-1200.9991560a.webp"
+      "400": "/opt-images/banner-1-400.9991560a.webp",
+      "800": "/opt-images/banner-1-800.9991560a.webp",
+      "1200": "/opt-images/banner-1-1200.9991560a.webp"
     }
   },
   "/images/banner-2.jpg": {
     "width": 1200,
     "height": 673,
-    "default": "/images/opt/banner-2-800.3a71e1c3.webp",
+    "default": "/opt-images/banner-2-800.3a71e1c3.webp",
     "variants": {
-      "400": "/images/opt/banner-2-400.3a71e1c3.webp",
-      "800": "/images/opt/banner-2-800.3a71e1c3.webp"
+      "400": "/opt-images/banner-2-400.3a71e1c3.webp",
+      "800": "/opt-images/banner-2-800.3a71e1c3.webp"
     }
   },
   "/images/test-1.jpg": {
     "width": 400,
     "height": 400,
-    "default": "/images/opt/test-1-400.4cdebec9.webp",
+    "default": "/opt-images/test-1-400.4cdebec9.webp",
     "variants": {
-      "400": "/images/opt/test-1-400.4cdebec9.webp"
+      "400": "/opt-images/test-1-400.4cdebec9.webp"
     }
   },
   "/images/test-10.jpg": {
     "width": 400,
     "height": 400,
-    "default": "/images/opt/test-10-400.33df5bfa.webp",
+    "default": "/opt-images/test-10-400.33df5bfa.webp",
     "variants": {
-      "400": "/images/opt/test-10-400.33df5bfa.webp"
+      "400": "/opt-images/test-10-400.33df5bfa.webp"
     }
   },
   "/images/test-2.jpg": {
     "width": 400,
     "height": 400,
-    "default": "/images/opt/test-2-400.d105a1b3.webp",
+    "default": "/opt-images/test-2-400.d105a1b3.webp",
     "variants": {
-      "400": "/images/opt/test-2-400.d105a1b3.webp"
+      "400": "/opt-images/test-2-400.d105a1b3.webp"
     }
   },
   "/images/test-3.jpg": {
     "width": 400,
     "height": 400,
-    "default": "/images/opt/test-3-400.91973317.webp",
+    "default": "/opt-images/test-3-400.91973317.webp",
     "variants": {
-      "400": "/images/opt/test-3-400.91973317.webp"
+      "400": "/opt-images/test-3-400.91973317.webp"
     }
   },
   "/images/test-4.jpg": {
     "width": 400,
     "height": 400,
-    "default": "/images/opt/test-4-400.8a8f959b.webp",
+    "default": "/opt-images/test-4-400.8a8f959b.webp",
     "variants": {
-      "400": "/images/opt/test-4-400.8a8f959b.webp"
+      "400": "/opt-images/test-4-400.8a8f959b.webp"
     }
   },
   "/images/test-5.jpg": {
     "width": 400,
     "height": 400,
-    "default": "/images/opt/test-5-400.22120848.webp",
+    "default": "/opt-images/test-5-400.22120848.webp",
     "variants": {
-      "400": "/images/opt/test-5-400.22120848.webp"
+      "400": "/opt-images/test-5-400.22120848.webp"
     }
   },
   "/images/test-6.jpg": {
     "width": 400,
     "height": 400,
-    "default": "/images/opt/test-6-400.e1419e21.webp",
+    "default": "/opt-images/test-6-400.e1419e21.webp",
     "variants": {
-      "400": "/images/opt/test-6-400.e1419e21.webp"
+      "400": "/opt-images/test-6-400.e1419e21.webp"
     }
   },
   "/images/test-7.jpg": {
     "width": 400,
     "height": 400,
-    "default": "/images/opt/test-7-400.8081a1eb.webp",
+    "default": "/opt-images/test-7-400.8081a1eb.webp",
     "variants": {
-      "400": "/images/opt/test-7-400.8081a1eb.webp"
+      "400": "/opt-images/test-7-400.8081a1eb.webp"
     }
   },
   "/images/test-8.jpg": {
     "width": 400,
     "height": 400,
-    "default": "/images/opt/test-8-400.338624fe.webp",
+    "default": "/opt-images/test-8-400.338624fe.webp",
     "variants": {
-      "400": "/images/opt/test-8-400.338624fe.webp"
+      "400": "/opt-images/test-8-400.338624fe.webp"
     }
   },
   "/images/test-9.jpg": {
     "width": 400,
     "height": 400,
-    "default": "/images/opt/test-9-400.9b529f65.webp",
+    "default": "/opt-images/test-9-400.9b529f65.webp",
     "variants": {
-      "400": "/images/opt/test-9-400.9b529f65.webp"
+      "400": "/opt-images/test-9-400.9b529f65.webp"
     }
   },
   "/images/uploads/douban/douban-book-26953606.jpg": {
     "width": 554,
     "height": 800,
-    "default": "/images/opt/uploads/douban/douban-book-26953606-400.4700b51b.webp",
+    "default": "/opt-images/uploads/douban/douban-book-26953606-400.4700b51b.webp",
     "variants": {
-      "400": "/images/opt/uploads/douban/douban-book-26953606-400.4700b51b.webp"
+      "400": "/opt-images/uploads/douban/douban-book-26953606-400.4700b51b.webp"
     }
   },
   "/images/uploads/douban/douban-movie-36882191.jpg": {
     "width": 1080,
     "height": 1559,
-    "default": "/images/opt/uploads/douban/douban-movie-36882191-800.5965babb.webp",
+    "default": "/opt-images/uploads/douban/douban-movie-36882191-800.5965babb.webp",
     "variants": {
-      "400": "/images/opt/uploads/douban/douban-movie-36882191-400.5965babb.webp",
-      "800": "/images/opt/uploads/douban/douban-movie-36882191-800.5965babb.webp"
+      "400": "/opt-images/uploads/douban/douban-movie-36882191-400.5965babb.webp",
+      "800": "/opt-images/uploads/douban/douban-movie-36882191-800.5965babb.webp"
     }
   },
   "/images/uploads/douban/douban-movie-37457160.jpg": {
     "width": 1080,
     "height": 1609,
-    "default": "/images/opt/uploads/douban/douban-movie-37457160-800.dce226f7.webp",
+    "default": "/opt-images/uploads/douban/douban-movie-37457160-800.dce226f7.webp",
     "variants": {
-      "400": "/images/opt/uploads/douban/douban-movie-37457160-400.dce226f7.webp",
-      "800": "/images/opt/uploads/douban/douban-movie-37457160-800.dce226f7.webp"
+      "400": "/opt-images/uploads/douban/douban-movie-37457160-400.dce226f7.webp",
+      "800": "/opt-images/uploads/douban/douban-movie-37457160-800.dce226f7.webp"
     }
   }
 }
