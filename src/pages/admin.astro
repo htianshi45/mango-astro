@@ -11,8 +11,11 @@
     <meta name="robots" content="noindex, nofollow" />
     <title>内容管理 · Mango</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <!-- 自托管，避免 unpkg CDN 在国内不可达 -->
-    <script is:inline src="/admin/decap-cms.js"></script>
+    <!-- 自托管，避免 unpkg CDN 在国内不可达。
+         必须加 defer：Decap CMS 初始化时会直接 document.body.appendChild，
+         同步执行时 body 还没解析出来（null），会抛
+         "Cannot read properties of null (reading 'appendChild')" 导致整页白屏。 -->
+    <script is:inline defer src="/admin/decap-cms.js"></script>
   </head>
   <body></body>
 </html>

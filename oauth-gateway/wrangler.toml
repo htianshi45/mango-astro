@@ -8,14 +8,14 @@ compatibility_date = "2026-11-07"
 # 需要 zone_id 时填 840428.xyz 的 Zone ID；也可部署后在 Dashboard
 # → Workers & Pages → mango-cms-oauth → Settings → Domains & Routes 里添加
 #   auth.840428.xyz（Cloudflare 会自动创建 DNS 记录）。
-# routes = [
-#   { pattern = "auth.840428.xyz", custom_domain = true }
-# ]
+routes = [
+  { pattern = "auth.840428.xyz", custom_domain = true }
+]
 
 [vars]
 # CMS 页面所在 origin 白名单，逗号分隔。
 # 本地验证用 localhost，站点上线后把 https://mango.840428.xyz 加进去。
-ALLOWED_ORIGINS = "http://localhost:4321,http://localhost:4322,http://localhost:4323,https://mango.840428.xyz"
+ALLOWED_ORIGINS = "http://localhost:4321,http://localhost:4322,http://localhost:4323,http://127.0.0.1:4321,http://127.0.0.1:4322,http://127.0.0.1:4323,https://mango.840428.xyz"
 
 # ⚠️ 不要把 GitHub 凭据写在这里！用：
 #   wrangler secret put GITHUB_CLIENT_ID
