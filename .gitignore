@@ -48,3 +48,7 @@ oauth-gateway/.wrangler/
 # 临时文件
 *.bak
 .chrome-tmp/
+
+# 豆瓣导入的本地缓存与登录 Cookie（不要提交）
+.cache/
+.douban-cookie

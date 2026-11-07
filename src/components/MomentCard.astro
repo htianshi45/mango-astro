@@ -19,6 +19,8 @@ interface Props {
   showTypeBadge?: boolean;
   /** 说说归档页是否启用；关闭后不渲染指向 404 的「全部说说」入口 */
   showArchiveLink?: boolean;
+  /** 首页时间流里收窄到主栏 75%（仿微信朋友圈里自己发的那条），归档页仍是满宽 */
+  narrow?: boolean;
 }
 
 const {
@@ -33,6 +35,7 @@ const {
   text,
   showTypeBadge = true,
   showArchiveLink = true,
+  narrow = false,
 } = Astro.props;
 
 function formatDate(date: string | Date): string {
@@ -45,7 +48,7 @@ function formatDate(date: string | Date): string {
 const html = renderMomentText(text);
 ---
 
-<article class="post-loop moment-card">
+<article class:list={['post-loop moment-card', narrow && 'moment-narrow']}>
   <!-- 作者行 -->
   <div class="flex items-start mb-4">
     <img src={avatar} alt={author} class="w-10 h-10 rounded-full object-cover flex-shrink-0" />
@@ -84,6 +87,10 @@ const html = renderMomentText(text);
 
 <style>
   .moment-card { position: relative; }
+  /* 首页：收窄到主栏 75%，像朋友圈里自己发的那条；窄屏回归满宽 */
+  @media (min-width: 769px) {
+    .moment-card.moment-narrow { width: 75%; }
+  }
   .moment-card::before {
     content: '';
     position: absolute;

@@ -302,20 +302,23 @@ const navItems = visibleNavItems(siteConfig.navItems);
   :global(.dark) .navbar-brand { color: #e2e2e2; }
 
   .navbar-menu { display: flex; justify-content: center; min-width: 0; }
-  .navbar-menu-list { display: flex; align-items: center; gap: 2px; list-style: none; margin: 0; padding: 0; }
+  /* 栏目之间留出呼吸感：项间距 + 左右内边距一起放大，避免挤成一坨；
+     宽屏时间距再跟着长一点（clamp），窄桌面不会因此换行 */
+  .navbar-menu-list { display: flex; align-items: center; gap: clamp(8px, 1.5vw, 22px); list-style: none; margin: 0; padding: 0; }
   .nav-item { position: relative; }
 
   .nav-link {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 8px 12px;
+    gap: 7px;
+    padding: 9px 17px;
     border: 0;
     border-radius: 10px;
     background: transparent;
     color: #333;
-    font-size: 14px;
+    font-size: 14.5px;
     font-weight: 500;
+    letter-spacing: 0.2px;
     font-family: inherit;
     line-height: 1.4;
     text-decoration: none;

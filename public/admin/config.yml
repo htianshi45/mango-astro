@@ -165,6 +165,10 @@ collections:
     summary: "{{title}} · {{category}} · {{status}}"
     editor:
       preview: true
+    description: >-
+      💡 手写 frontmatter 太累？在本地跑 npm run fav:ui 打开「豆瓣导入」界面，
+      粘一条豆瓣链接就能自动提取标题 / 封面 / 作者 / 年份 / 评分 / 简介，
+      保存后这里就能看到，再微调即可。详见《豆瓣一键导入-使用说明.md》。
     fields:
       - label: "条目 ID（文件名，小写英文/数字/连字符）"
         name: "slug"

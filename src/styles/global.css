@@ -296,13 +296,21 @@
   color: #9a9a9a;
 }
 
-/* ---- 九宫格：全档位统一满宽 3 列栅格（原版 66% 宽、900 下过小） ---- */
+/* ---- 九宫格：按微信朋友圈的排布规则（2026-11-07 重写） ----
+   1 张 = 单图，宽 2/3、4:3；
+   2 张 = 两列，宽 2/3（每格与九宫格单格同尺寸）；
+   3 张 = 三列满宽；
+   4 张 = 2×2，宽 2/3；
+   5–9 张 = 三列自然流（5 张是 3+2，7 张是 3+3+1，与微信一致）。
+   关键点：所有小格都按「主栏的 1/3」定尺寸，所以 2 张 / 4 张要把容器缩到 66.67%，
+   单纯改成两列会让格子变成 1/2 宽、跟九宫格不成比例。 */
 .post-images {
-  width: 100%;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 5px;
-  margin: 6px 0 0;
+  width: 100%;
+  max-width: 100%;
+  margin: 8px 0 0;
   font-size: 0;
 }
 .post-images > a.post-img {
@@ -312,7 +320,7 @@
   margin: 0 !important;
   position: relative;
   z-index: 2;
-  border-radius: 8px;
+  border-radius: 6px;
   overflow: hidden;
   background: #f0f1f3;
   aspect-ratio: 1 / 1;
@@ -334,19 +342,32 @@
 .post-images .img-overlay {
   font-size: 22px;
 }
+
+/* 单图：不裁成小方块，占 2/3 宽、4:3 */
 .post-images.post-img-1 {
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
+  width: 66.67%;
 }
 .post-images.post-img-1 > a.post-img {
-  aspect-ratio: 16 / 9;
-  max-height: 400px;
+  aspect-ratio: 4 / 3;
+  border-radius: 8px;
 }
+
+/* 2 张 / 4 张：容器缩到 2/3，格子宽度与九宫格单格一致 */
 .post-images.post-img-2,
 .post-images.post-img-4 {
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 66.67%;
 }
-.post-images.post-img-2 > a.post-img {
-  aspect-ratio: 4 / 3;
+
+/* 3 张及以上：满宽三列（5 张自动排成 3+2，7 张 3+3+1） */
+.post-images.post-img-3,
+.post-images.post-img-5,
+.post-images.post-img-6,
+.post-images.post-img-7,
+.post-images.post-img-8,
+.post-images.post-img-9 {
+  width: 100%;
 }
 
 /* ---- 响应式：窄版紧凑、宽版放大 ---- */
@@ -359,10 +380,6 @@
   }
   .post-images {
     gap: 8px;
-  }
-  .post-images.post-img-1 > a.post-img {
-    aspect-ratio: 16 / 8;
-    max-height: 470px;
   }
 }
 @media (max-width: 768px) {

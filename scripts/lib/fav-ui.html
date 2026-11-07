@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>豆瓣书影音导入 · Mango</title>
+<style>
+  :root {
+    --bg: #f6f7fb;
+    --card: #ffffff;
+    --text: #2f3238;
+    --text-2: #6b7280;
+    --text-3: #9aa3af;
+    --line: #e7eaf0;
+    --field: #f6f7f9;
+    --accent: #4270f5;
+    --accent-soft: rgba(66, 112, 245, 0.1);
+    --ok: #16a34a;
+    --warn: #d97706;
+    --err: #dc2626;
+    --shadow: 0 10px 30px -18px rgba(15, 23, 42, 0.35);
+  }
+  html.dark {
+    --bg: #17181a;
+    --card: #212121;
+    --text: #e6e6e6;
+    --text-2: #a8b0ba;
+    --text-3: #7d858f;
+    --line: #333;
+    --field: #2a2a2c;
+    --accent: #8ab0ff;
+    --accent-soft: rgba(138, 176, 255, 0.14);
+    --ok: #4ade80;
+    --warn: #fbbf24;
+    --err: #f87171;
+    --shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.8);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 32px 20px 72px; }
+  header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 22px; }
+  h1 { font-size: 22px; margin: 0 0 4px; font-weight: 700; letter-spacing: 0.3px; }
+  .sub { margin: 0; color: var(--text-3); font-size: 12.5px; }
+  .spacer { flex: 1; }
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line);
+    background: var(--card); color: var(--text-2); font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;
+  }
+  .icon-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 20px; box-shadow: var(--shadow); margin-bottom: 18px;
+  }
+  textarea, input, select {
+    width: 100%; font-family: inherit; font-size: 14px; color: var(--text);
+    background: var(--field); border: 1px solid transparent; border-radius: 10px;
+    padding: 10px 12px; outline: none; transition: border-color 0.2s ease, background-color 0.2s ease;
+  }
+  textarea:focus, input:focus, select:focus { border-color: var(--accent); background: var(--card); }
+  textarea { resize: vertical; line-height: 1.7; }
+  #paste { min-height: 92px; }
+  .row { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+  .btn {
+    border: 0; border-radius: 10px; padding: 9px 18px; font-size: 13.5px; font-weight: 600;
+    font-family: inherit; cursor: pointer; transition: all 0.2s ease;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { filter: brightness(1.06); }
+  .btn-primary:disabled { opacity: 0.55; cursor: default; }
+  .btn-ghost { background: var(--field); color: var(--text-2); }
+  .btn-ghost:hover { color: var(--accent); }
+  .hint { color: var(--text-3); font-size: 12px; }
+  .kbd {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px;
+    background: var(--field); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px;
+  }
+  .msg { margin-top: 12px; padding: 10px 12px; border-radius: 9px; font-size: 13px; display: none; }
+  .msg.show { display: block; }
+  .msg.error { background: color-mix(in srgb, var(--err) 12%, transparent); color: var(--err); }
+  .msg.ok { background: color-mix(in srgb, var(--ok) 14%, transparent); color: var(--ok); }
+  .msg.info { background: var(--accent-soft); color: var(--accent); }
+
+  #preview { display: none; }
+  #preview.show { display: block; }
+  .preview-head { display: flex; gap: 16px; align-items: flex-start; }
+  .cover {
+    width: 108px; flex: 0 0 108px; aspect-ratio: 2 / 3; border-radius: 10px; overflow: hidden;
+    background: var(--field); display: flex; align-items: center; justify-content: center;
+    color: var(--text-3); font-size: 12px; text-align: center;
+  }
+  .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .preview-main { flex: 1; min-width: 0; }
+  .tag-line { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+  .chip {
+    font-size: 11.5px; padding: 2px 9px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent); font-weight: 600;
+  }
+  .chip.muted { background: var(--field); color: var(--text-3); font-weight: 500; }
+  .field { margin-top: 12px; }
+  .field label { display: block; font-size: 11.5px; color: var(--text-3); margin-bottom: 5px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .pills { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pill {
+    border: 1px solid var(--line); background: var(--card); color: var(--text-2);
+    border-radius: 999px; padding: 5px 14px; font-size: 12.5px; font-family: inherit;
+    cursor: pointer; transition: all 0.2s ease;
+  }
+  .pill:hover { border-color: var(--accent); color: var(--accent); }
+  .pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .divider { height: 1px; background: var(--line); margin: 18px 0 4px; }
+  .footer-note { color: var(--text-3); font-size: 12px; margin-top: 14px; }
+  .footer-note code { background: var(--field); padding: 1px 5px; border-radius: 4px; }
+  .loading { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: -2px; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (max-width: 620px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .preview-head { flex-direction: column; }
+    .cover { width: 100%; aspect-ratio: 3 / 2; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>豆瓣书影音导入</h1>
+      <p class="sub">粘贴豆瓣链接或整段分享文案 → 自动提取标题、封面、作者、年份、评分、简介 → 写进收藏</p>
+    </div>
+    <div class="spacer"></div>
+    <button class="icon-btn" id="theme" aria-label="切换日间 / 夜间">◐</button>
+  </header>
+
+  <div class="card">
+    <textarea id="paste" placeholder="把豆瓣的分享文案或链接粘到这里，例如：
+https://book.douban.com/subject/26953606/
+也可以直接粘：人类简史 https://book.douban.com/subject/26953606/ 来自豆瓣App"></textarea>
+    <div class="row">
+      <button class="btn btn-primary" id="parse">抓取条目</button>
+      <span class="hint">或按 <span class="kbd">⌘/Ctrl + Enter</span></span>
+      <div class="spacer"></div>
+      <button class="btn btn-ghost" id="clear">清空</button>
+    </div>
+    <div class="msg" id="parse-msg"></div>
+  </div>
+
+  <div class="card" id="preview">
+    <div class="preview-head">
+      <div class="cover" id="cover"><span>无封面</span></div>
+      <div class="preview-main">
+        <div class="tag-line">
+          <span class="chip" id="kind">图书</span>
+          <span class="chip muted" id="source">豆瓣</span>
+          <span class="chip muted" id="cached" style="display:none">本地缓存</span>
+        </div>
+        <div class="field">
+          <label>标题</label>
+          <input id="f-title" />
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label>作者 / 导演 / 歌手</label>
+            <input id="f-creator" />
+          </div>
+          <div class="field">
+            <label>年份</label>
+            <input id="f-year" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>简介</label>
+      <textarea id="f-desc" rows="3"></textarea>
+    </div>
+
+    <div class="grid-3">
+      <div class="field">
+        <label>评分（0–10，默认取豆瓣分）</label>
+        <input id="f-rating" type="number" min="0" max="10" step="0.1" />
+      </div>
+      <div class="field">
+        <label>标签（逗号分隔）</label>
+        <input id="f-tags" placeholder="历史, 社科" />
+      </div>
+      <div class="field">
+        <label>状态</label>
+        <div class="pills" id="pills"></div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>短评（可选，Markdown）</label>
+      <textarea id="f-note" rows="3" placeholder="读完 / 看完想说两句的话，会作为条目正文"></textarea>
+    </div>
+
+    <div class="divider"></div>
+    <div class="row">
+      <button class="btn btn-primary" id="save">保存到收藏</button>
+      <span class="hint" id="save-hint">会写入 src/content/favorites/ 并下载封面到 public/images/uploads/douban/</span>
+    </div>
+    <div class="msg" id="save-msg"></div>
+  </div>
+
+  <p class="footer-note">
+    抓取失败多半是豆瓣触发了频率限制：等 1–2 分钟重试，或把浏览器 Cookie 存到仓库根目录的
+    <code>.douban-cookie</code>（登录状态更稳）。命令行等价用法：<code>npm run fav -- "链接"</code>
+  </p>
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const root = document.documentElement;
+
+  // 主题：默认跟随系统，手动切换后记住
+  const savedTheme = localStorage.getItem('favui-theme');
+  if (savedTheme === 'dark' || (!savedTheme && matchMedia('(prefers-color-scheme: dark)').matches)) {
+    root.classList.add('dark');
+  }
+  $('theme').addEventListener('click', () => {
+    const dark = root.classList.toggle('dark');
+    localStorage.setItem('favui-theme', dark ? 'dark' : 'light');
+  });
+
+  const STATUS = {
+    books: [
+      ['wish', '想读'],
+      ['doing', '在读'],
+      ['done', '读过'],
+      ['favorite', '最爱'],
+    ],
+    movies: [
+      ['wish', '想看'],
+      ['doing', '在看'],
+      ['done', '看过'],
+      ['favorite', '最爱'],
+    ],
+    music: [
+      ['wish', '想听'],
+      ['doing', '在听'],
+      ['done', '听过'],
+      ['favorite', '最爱'],
+    ],
+    bookmarks: [
+      ['wish', '待读'],
+      ['doing', '在读'],
+      ['done', '已读'],
+      ['favorite', '精选'],
+    ],
+  };
+
+  let current = null;
+  let status = 'wish';
+
+  function showMsg(el, text, type) {
+    el.textContent = text;
+    el.className = `msg show ${type}`;
+  }
+  function hideMsg(el) {
+    el.className = 'msg';
+    el.textContent = '';
+  }
+
+  function renderPills(category, active) {
+    const box = $('pills');
+    box.innerHTML = '';
+    (STATUS[category] || STATUS.books).forEach(([key, label]) => {
+      const btn = document.createElement('button');
+      btn.className = `pill${key === active ? ' active' : ''}`;
+      btn.textContent = label;
+      btn.dataset.key = key;
+      btn.addEventListener('click', () => {
+        status = key;
+        box.querySelectorAll('.pill').forEach((p) => p.classList.toggle('active', p.dataset.key === key));
+      });
+      box.appendChild(btn);
+    });
+  }
+
+  async function parse() {
+    const text = $('paste').value.trim();
+    if (!text) {
+      showMsg($('parse-msg'), '先把豆瓣链接粘进来吧。', 'info');
+      return;
+    }
+    const btn = $('parse');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading"></span>抓取中…';
+    hideMsg($('parse-msg'));
+    try {
+      const res = await fetch('/api/parse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || '抓取失败');
+      current = data.item;
+      fill(data.item);
+      $('preview').classList.add('show');
+      showMsg($('parse-msg'), `已提取「${data.item.title}」，确认无误后点下面的保存。`, 'ok');
+      if (data.item.fromCache) showMsg($('parse-msg'), `已提取「${data.item.title}」（来自本地缓存）`, 'ok');
+      $('preview').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (error) {
+      showMsg($('parse-msg'), error.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '抓取条目';
+    }
+  }
+
+  function fill(item) {
+    $('kind').textContent = item.label;
+    $('source').textContent = '豆瓣 · ' + new URL(item.url).hostname.replace('www.', '');
+    $('cached').style.display = item.fromCache ? 'inline-block' : 'none';
+    $('f-title').value = item.title || '';
+    $('f-creator').value = item.creator || '';
+    $('f-year').value = item.year || '';
+    $('f-desc').value = item.description || '';
+    $('f-rating').value = item.rating || 0;
+    $('f-tags').value = '';
+    $('f-note').value = '';
+    status = 'wish';
+    renderPills(item.category, status);
+    const cover = $('cover');
+    if (item.cover) {
+      cover.innerHTML = `<img src="/api/cover?u=${encodeURIComponent(item.cover)}" alt="" />`;
+    } else {
+      cover.innerHTML = '<span>无封面</span>';
+    }
+    hideMsg($('save-msg'));
+    $('save').disabled = false;
+  }
+
+  async function save() {
+    if (!current) return;
+    const btn = $('save');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading"></span>保存中…';
+    hideMsg($('save-msg'));
+    const payload = {
+      item: {
+        ...current,
+        title: $('f-title').value.trim(),
+        creator: $('f-creator').value.trim(),
+        year: $('f-year').value.trim(),
+        description: $('f-desc').value.trim(),
+      },
+      rating: Number($('f-rating').value) || 0,
+      tags: $('f-tags')
+        .value.split(/[,，]/)
+        .map((t) => t.trim())
+        .filter(Boolean),
+      note: $('f-note').value.trim(),
+      status,
+    };
+    try {
+      const res = await fetch('/api/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || '保存失败');
+      showMsg(
+        $('save-msg'),
+        `已保存到 ${data.file}${data.cover ? '（封面已下载）' : '（没有封面，稍后可在后台补）'}。运行 npm run dev 就能在收藏页看到。`,
+        'ok'
+      );
+      $('save').innerHTML = '再导入一条';
+      $('save').onclick = () => {
+        $('paste').value = '';
+        $('preview').classList.remove('show');
+        hideMsg($('save-msg'));
+        hideMsg($('parse-msg'));
+        current = null;
+        $('save').innerHTML = '保存到收藏';
+        $('save').onclick = save;
+        $('paste').focus();
+      };
+    } catch (error) {
+      showMsg($('save-msg'), error.message, 'error');
+      btn.disabled = false;
+      btn.textContent = '保存到收藏';
+    }
+  }
+
+  $('parse').addEventListener('click', parse);
+  $('save').addEventListener('click', save);
+  $('clear').addEventListener('click', () => {
+    $('paste').value = '';
+    $('preview').classList.remove('show');
+    hideMsg($('parse-msg'));
+    $('paste').focus();
+  });
+  $('paste').addEventListener('keydown', (event) => {
+    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') parse();
+  });
+  // 粘贴后自动抓取，少点一次
+  $('paste').addEventListener('paste', () => setTimeout(() => { if (!$('paste').value.trim()) return; }, 0));
+  $('paste').focus();
+</script>
+</body>
+</html>

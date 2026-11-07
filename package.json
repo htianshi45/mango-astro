@@ -9,7 +9,9 @@
     "build": "npm run check:content && astro build",
     "check:content": "node scripts/check-content.mjs",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "fav": "node scripts/fav-add.mjs",
+    "fav:ui": "node scripts/fav-ui.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.0.0",
