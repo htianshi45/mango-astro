@@ -1,84 +1,33 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import PostCard from '@/components/PostCard.astro';
+import FeedList from '@/components/FeedList.astro';
 import Sidebar from '@/components/Sidebar.astro';
 import Pagination from '@/components/Pagination.astro';
 import { getCollection } from 'astro:content';
-import { extractImages } from '@/utils/post-images';
+import { getMixedFeed, paginateFeed, buildSidebarData } from '@/utils/feed';
 import { siteConfig } from '@/config/site';
 
 export async function getStaticPaths() {
-  const allPosts = await getCollection('posts', ({ data }) => data.draft !== true);
-  const POSTS_PER_PAGE = siteConfig.postsPerPage;
-  const totalPages = Math.ceil(allPosts.length / POSTS_PER_PAGE);
-  
-  // Only generate paths for pages 2+ if there are multiple pages
+  // 用混合流总数算页数，避免第一页 8 条混合、第二页还是纯文章的错位
+  const feed = await getMixedFeed();
+  const totalPages = Math.ceil(feed.length / siteConfig.postsPerPage);
   if (totalPages <= 1) return [];
-  
   return Array.from({ length: totalPages - 1 }, (_, i) => ({
     params: { page: String(i + 2) },
   }));
 }
 
 const { page } = Astro.params;
-const currentPage = parseInt(page);
+const { entries, currentPage, totalPages } = paginateFeed(await getMixedFeed(), parseInt(page));
 
-const allPosts = await getCollection('posts', ({ data }) => data.draft !== true);
-
-const sortedPosts = allPosts.sort((a, b) => {
-  if (a.data.sticky !== b.data.sticky) {
-    return b.data.sticky - a.data.sticky;
-  }
-  return new Date(b.data.pubDate).getTime() - new Date(a.data.pubDate).getTime();
-});
-
-const POSTS_PER_PAGE = siteConfig.postsPerPage;
-const totalPages = Math.ceil(sortedPosts.length / POSTS_PER_PAGE);
-const startIndex = (currentPage - 1) * POSTS_PER_PAGE;
-const paginatedPosts = sortedPosts.slice(startIndex, startIndex + POSTS_PER_PAGE);
-
-const tagCounts = new Map<string, number>();
-allPosts.forEach(post => {
-  post.data.tags.forEach(tag => {
-    tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
-  });
-});
-
-const tags = Array.from(tagCounts.entries()).map(([name, count]) => ({
-  name,
-  count,
-}));
-
-const postData = allPosts.map(post => ({
-  title: post.data.title,
-  slug: post.slug,
-  timestamp: post.data.pubDate,
-  views: post.data.views,
-  heroImage: post.data.heroImage ?? extractImages(post.body)[0],
-  excerpt: post.data.description,
-}));
+const posts = await getCollection('posts', ({ data }) => data.draft !== true);
+const { tags, postData } = buildSidebarData(posts);
 ---
 
-<BaseLayout title={`第 ${currentPage} 页 - Mango`}>
+<BaseLayout title={`第 ${currentPage} 页 - ${siteConfig.name}`}>
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
     <div class="lg:col-span-8">
-      <div class="space-y-5">
-        {paginatedPosts.map((post) => (
-          <PostCard
-            title={post.data.title}
-            slug={post.slug}
-            author={post.data.author}
-            avatar={post.data.avatar}
-            content={post.data.description || ''}
-            images={extractImages(post.body)}
-            timestamp={post.data.pubDate}
-            sticky={post.data.sticky > 0}
-            tags={post.data.tags}
-            likes={post.data.likes || 0}
-            views={post.data.views || 0}
-          />
-        ))}
-      </div>
+      <FeedList entries={entries} showTypeBadge={siteConfig.home.showTypeBadge} />
       <Pagination currentPage={currentPage} totalPages={totalPages} baseUrl="/page" />
     </div>
     <div class="lg:col-span-4">

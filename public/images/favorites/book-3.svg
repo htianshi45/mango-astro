@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600" viewBox="0 0 400 600" role="img" aria-label="设计中的设计">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4b5d6b"/><stop offset="100%" stop-color="#26323b"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.78" cy="0.18" r="0.7">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="400" height="600" fill="url(#g)"/>
+  <rect width="400" height="600" fill="url(#glow)"/>
+  <circle cx="328" cy="120" r="104" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2"/>
+  <circle cx="328" cy="120" r="68" fill="none" stroke="#ffffff" stroke-opacity="0.12" stroke-width="2"/>
+  <rect x="44" y="464" width="46" height="3" fill="#ffffff" fill-opacity="0.6"/>
+  <text x="44" y="264" font-size="54" font-weight="700" fill="#ffffff" letter-spacing="2">设计中的设计</text>
+  <text x="44" y="520" font-size="19" fill="#ffffff" fill-opacity="0.82">原研哉 · 2003</text>
+</svg>

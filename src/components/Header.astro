@@ -1,285 +1,463 @@
 ---
-import { siteConfig, visibleNavItems, isPageEnabled } from '@/config/site';
+/**
+ * 导航栏 — 参考 Firefly 的 Navbar.astro / NavMenuPanel.astro / DropdownMenu.astro
+ *
+ * 借鉴的是它的「玩法」而非样式：
+ *   1. 配置驱动的分组下拉（navItems 支持 children，页面开关递归过滤）；
+ *   2. 三段式布局 Logo | 居中菜单 | 右侧圆形工具按钮；
+ *   3. 毛玻璃胶囊卡片 + 滚动阴影；
+ *   4. 窄屏收进侧滑抽屉，二级菜单可折叠。
+ * 视觉仍用 Mango 的蓝色主题、900px 版心与 Bootstrap Icons。
+ */
+import { siteConfig, visibleNavItems, isPageEnabled, isNavActive } from '@/config/site';
 
 const currentPath = Astro.url.pathname;
 const navItems = visibleNavItems(siteConfig.navItems);
 ---
 
-<header class="site-header">
-  <div class="container mx-auto px-4 max-w-mango">
-    <div class="flex items-center justify-between">
-      <!-- Logo -->
-      <a href="/" class="flex items-center space-x-2">
-        <img src={siteConfig.logo} alt={siteConfig.name} class="h-[30px]" />
-        <b class="text-xl font-bold text-[#333] dark:text-[#ccc]" style="letter-spacing: 0.5px;">{siteConfig.name}</b>
+<header class="site-header" id="site-header">
+  <div class="navbar-shell">
+    <div class="navbar-card">
+      <!-- 左：Logo -->
+      <a href="/" class="navbar-brand" aria-label={`${siteConfig.name} 首页`}>
+        <img src={siteConfig.logo} alt="" class="navbar-logo" />
+        <b>{siteConfig.name}</b>
       </a>
 
-      <!-- Desktop Navigation -->
-      <nav class="hidden lg:flex items-center">
-        <ul class="flex items-center space-x-1">
-          {navItems.map((item) => (
-            <li class="relative group">
-              <a
-                href={item.href}
-                class:list={[
-                  'nav-link block',
-                  { 'nav-link-active': currentPath === item.href }
-                ]}
-              >
-                {item.icon && (
-                  <i class:list={[item.icon, 'mr-1']}></i>
+      <!-- 中：分组下拉菜单（桌面） -->
+      <nav class="navbar-menu" aria-label="主导航">
+        <ul class="navbar-menu-list">
+          {navItems.map((item) => {
+            const active = isNavActive(item, currentPath);
+            const hasChildren = !!item.children?.length;
+            return (
+              <li class:list={['nav-item', hasChildren && 'has-children', active && 'active']}>
+                {hasChildren ? (
+                  <>
+                    <button
+                      type="button"
+                      class="nav-link nav-parent"
+                      aria-haspopup="true"
+                      aria-expanded={active ? 'true' : 'false'}
+                    >
+                      {item.icon && <i class:list={[item.icon, 'navbar-icon']}></i>}
+                      <span>{item.name}</span>
+                      <i class="bi bi-chevron-down nav-caret"></i>
+                    </button>
+                    <ul class="nav-dropdown">
+                      {item.children!.map((child) => (
+                        <li>
+                          <a
+                            href={child.href}
+                            class:list={['nav-dropdown-link', currentPath.replace(/\/+$/, '') === child.href && 'current']}
+                            {...(child.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                          >
+                            {child.icon && <i class={child.icon}></i>}
+                            <span>{child.name}</span>
+                            {child.external && <i class="bi bi-box-arrow-up-right ext-mark"></i>}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                ) : (
+                  <a
+                    href={item.href}
+                    class="nav-link"
+                    {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                  >
+                    {item.icon && <i class:list={[item.icon, 'navbar-icon']}></i>}
+                    <span>{item.name}</span>
+                  </a>
                 )}
-                {item.name}
-                {item.children && item.children.length > 0 && (
-                  <i class="bi bi-chevron-down text-xs ml-1"></i>
-                )}
-              </a>
-              {item.children && item.children.length > 0 && (
-                <ul class="absolute top-full left-0 w-40 bg-white dark:bg-[#212121] rounded-[10px] shadow-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                  {item.children.map((child) => (
-                    <li>
-                      <a href={child.href} class="block px-4 py-2 text-sm text-[#333] dark:text-[#ccc] hover:bg-gray-100 dark:hover:bg-[#333] hover:text-mango transition-colors duration-200">
-                        {child.name}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
       </nav>
 
-      <!-- Right side: Search toggle + Theme toggle + Mobile menu -->
-      <div class="flex items-center space-x-3">
+      <!-- 右：工具按钮 -->
+      <div class="navbar-tools">
         {isPageEnabled('search') && (
-          <button id="search-toggle" class="header-icon-btn flex items-center justify-center" aria-label="搜索" aria-expanded="false">
+          <button id="search-toggle" class="tool-btn" aria-label="搜索" aria-expanded="false" aria-controls="c_sousuo">
             <i class="bi bi-search"></i>
           </button>
         )}
-
-        <button id="theme-toggle" class="header-icon-btn flex items-center justify-center" aria-label="切换主题">
+        {siteConfig.feed.rss && (
+          <a href="/rss.xml" class="tool-btn" aria-label="RSS 订阅" title="RSS 订阅">
+            <i class="bi bi-rss"></i>
+          </a>
+        )}
+        <button id="theme-toggle" class="tool-btn" aria-label="切换主题">
           <i class="bi bi-lightbulb-fill dark-icon"></i>
           <i class="bi bi-lightbulb light-icon"></i>
         </button>
-
-        <button id="mobile-menu-toggle" class="lg:hidden header-icon-btn flex items-center justify-center" aria-label="菜单">
+        <button id="mobile-menu-toggle" class="tool-btn menu-btn" aria-label="打开菜单" aria-expanded="false" aria-controls="nav-drawer">
           <i class="bi bi-list"></i>
         </button>
       </div>
     </div>
 
-    <!-- Expandable top search bar -->
+    <!-- 展开式搜索条 -->
     {isPageEnabled('search') && (
       <div id="c_sousuo">
         <div class="search_box">
           <form action="/search" method="get" class="ss_a">
             <input type="text" name="q" placeholder="输入关键词搜索..." autocomplete="off" />
-            <button type="submit" aria-label="搜索">
-              <i class="bi bi-search"></i>
-            </button>
+            <button type="submit" aria-label="提交搜索"><i class="bi bi-search"></i></button>
           </form>
         </div>
       </div>
     )}
 
-    <!-- Mobile Navigation -->
-    <ul id="mobile-menu" class="hidden lg:hidden mt-4 pb-4 space-y-2">
-      {navItems.map((item) => (
-        <li>
-          <a
-            href={item.href}
-            class:list={[
-              'block px-4 py-2 rounded-lg',
-              'nav-link',
-              { 'nav-link-active bg-gray-100 dark:bg-[#333]': currentPath === item.href }
-            ]}
-          >
-            {item.name}
-          </a>
-        </li>
-      ))}
-    </ul>
+    <!-- 移动端侧滑抽屉 -->
+    <div id="nav-overlay" class="nav-overlay"></div>
+    <aside id="nav-drawer" class="nav-drawer" aria-hidden="true" aria-label="移动端导航">
+      <div class="drawer-head">
+        <span><i class="bi bi-grid-3x3-gap"></i> 导航</span>
+        <button id="drawer-close" class="drawer-close" aria-label="关闭菜单"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <nav class="drawer-nav">
+        {navItems.map((item) => {
+          const active = isNavActive(item, currentPath);
+          const hasChildren = !!item.children?.length;
+          return hasChildren ? (
+            <details class:list={['drawer-group', active && 'active']} open={active}>
+              <summary>
+                {item.icon && <i class={item.icon}></i>}
+                <span>{item.name}</span>
+                <i class="bi bi-chevron-down drawer-caret"></i>
+              </summary>
+              <ul>
+                {item.children!.map((child) => (
+                  <li>
+                    <a
+                      href={child.href}
+                      class:list={[currentPath.replace(/\/+$/, '') === child.href && 'current']}
+                      {...(child.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                    >
+                      {child.icon && <i class={child.icon}></i>}
+                      {child.name}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ) : (
+            <a href={item.href} class:list={['drawer-link', active && 'current']}>
+              {item.icon && <i class={item.icon}></i>}
+              <span>{item.name}</span>
+            </a>
+          );
+        })}
+      </nav>
+      <div class="drawer-foot">{siteConfig.name} · {siteConfig.description}</div>
+    </aside>
   </div>
 </header>
 
 <script>
-  // Theme toggle
-  const themeToggle = document.getElementById('theme-toggle');
-  
-  const toggleTheme = () => {
+  // 主题切换：沿用 Halo 的 isDarkMode 状态键，兼容旧 theme 键
+  document.getElementById('theme-toggle')?.addEventListener('click', () => {
     const html = document.documentElement;
-    // Halo 优化：主状态键改用 isDarkMode（'1' 暗 / '0' 浅），
-    // 同时保留 theme 键兼容旧书签；未设置时由 ThemeScript 跟随系统。
     const isDark = html.classList.contains('dark');
-    if (isDark) {
-      html.classList.remove('dark');
-      localStorage.setItem('isDarkMode', '0');
-      localStorage.setItem('theme', 'light');
-    } else {
-      html.classList.add('dark');
-      localStorage.setItem('isDarkMode', '1');
-      localStorage.setItem('theme', 'dark');
-    }
-  };
-
-  themeToggle?.addEventListener('click', toggleTheme);
-
-  // Mobile menu toggle
-  const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
-  const mobileMenu = document.getElementById('mobile-menu');
-
-  mobileMenuToggle?.addEventListener('click', () => {
-    mobileMenu?.classList.toggle('hidden');
+    html.classList.toggle('dark', !isDark);
+    localStorage.setItem('isDarkMode', isDark ? '0' : '1');
+    localStorage.setItem('theme', isDark ? 'light' : 'dark');
   });
 
-  // Expandable top search bar
+  // 展开式搜索条
   const searchToggle = document.getElementById('search-toggle');
   const searchBar = document.getElementById('c_sousuo');
-
   searchToggle?.addEventListener('click', () => {
     const isOpen = searchBar?.classList.toggle('open');
     searchToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-    if (isOpen) {
-      setTimeout(() => searchBar?.querySelector('input')?.focus(), 360);
-    }
+    if (isOpen) setTimeout(() => searchBar?.querySelector('input')?.focus(), 360);
   });
 
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      searchBar?.classList.remove('open');
-      searchToggle?.setAttribute('aria-expanded', 'false');
-    }
+  // 桌面下拉：点击父级切换（hover / focus-within 由 CSS 处理）
+  document.querySelectorAll<HTMLElement>('.nav-parent').forEach((btn) => {
+    btn.addEventListener('click', (event) => {
+      event.preventDefault();
+      const item = btn.closest('.nav-item');
+      const willOpen = !item?.classList.contains('open');
+      document.querySelectorAll('.nav-item.open').forEach((el) => el.classList.remove('open'));
+      item?.classList.toggle('open', willOpen);
+      btn.setAttribute('aria-expanded', String(willOpen));
+    });
   });
+  document.addEventListener('click', (event) => {
+    if (!(event.target instanceof Element) || event.target.closest('.nav-item')) return;
+    document.querySelectorAll('.nav-item.open').forEach((el) => el.classList.remove('open'));
+  });
+
+  // 移动端抽屉
+  const drawer = document.getElementById('nav-drawer');
+  const overlay = document.getElementById('nav-overlay');
+  const menuBtn = document.getElementById('mobile-menu-toggle');
+  const closeBtn = document.getElementById('drawer-close');
+  const setDrawer = (open: boolean) => {
+    drawer?.classList.toggle('open', open);
+    overlay?.classList.toggle('open', open);
+    drawer?.setAttribute('aria-hidden', String(!open));
+    menuBtn?.setAttribute('aria-expanded', String(open));
+    menuBtn?.setAttribute('aria-label', open ? '关闭菜单' : '打开菜单');
+    document.body.classList.toggle('drawer-open', open);
+  };
+  menuBtn?.addEventListener('click', () => setDrawer(!drawer?.classList.contains('open')));
+  closeBtn?.addEventListener('click', () => setDrawer(false));
+  overlay?.addEventListener('click', () => setDrawer(false));
+  drawer?.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => setDrawer(false)));
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    searchBar?.classList.remove('open');
+    searchToggle?.setAttribute('aria-expanded', 'false');
+    setDrawer(false);
+  });
+
+  // 滚动时给胶囊卡片加投影（仿 Firefly navbar-sticky-shadow）
+  const header = document.getElementById('site-header');
+  const onScroll = () => header?.classList.toggle('scrolled', window.scrollY > 12);
+  onScroll();
+  window.addEventListener('scroll', onScroll, { passive: true });
 </script>
 
 <style>
-  .header-icon-btn {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    background: #e9e9e9;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-    transition: background 0.2s;
-    color: #333;
-  }
+  .navbar-shell { position: relative; }
 
-  .header-icon-btn:hover {
-    background: #ddd;
-  }
-
-  :global(.dark) .header-icon-btn {
-    background: #333;
-    color: #ccc;
-  }
-
-  :global(.dark) .header-icon-btn:hover {
-    background: #444;
-  }
-
-  .dark-icon {
-    display: none;
-    color: #ffc008;
-  }
-
-  .light-icon {
-    display: block;
-  }
-
-  :global(.dark) .dark-icon {
-    display: block;
-  }
-
-  :global(.dark) .light-icon {
-    display: none;
-  }
-
-  /* One-shot override for every lg:hidden header control */
-  @media (min-width: 1024px) {
-    #mobile-menu-toggle,
-    .header-icon-btn.lg\:hidden {
-      display: none !important;
-    }
-  }
-
-  /* Expandable top search bar */
-  #c_sousuo {
-    height: 0;
-    overflow: hidden;
-    transition: height 0.35s ease;
-  }
-
-  #c_sousuo.open {
-    height: 120px;
-  }
-
-  #c_sousuo .search_box {
-    margin: 30px 0;
-    text-align: center;
-  }
-
-  #c_sousuo .search_box .ss_a {
-    position: relative;
-    width: 100%;
-    border: 3px solid #ddd;
-    line-height: 40px;
-    padding: 0 15px;
-    background: #fff;
-    display: flex;
+  .navbar-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
+    gap: 12px;
+    min-height: 52px;
+    padding: 6px 12px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.82);
+    border: 1px solid rgba(8, 8, 8, 0.05);
+    box-shadow: 0 2px 12px rgba(8, 8, 8, 0.05);
+    backdrop-filter: blur(18px) saturate(1.4);
+    transition: box-shadow 0.3s ease, background-color 0.3s ease;
+  }
+  :global(.site-header.scrolled) .navbar-card {
+    box-shadow: 0 6px 22px rgba(8, 8, 8, 0.12);
+  }
+  :global(.dark) .navbar-card {
+    background: rgba(27, 27, 28, 0.82);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+  }
+  :global(.dark .site-header.scrolled) .navbar-card {
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.45);
   }
 
-  #c_sousuo .search_box .ss_a input {
-    width: 100%;
-    border: none;
-    font-size: 12px;
-    line-height: 34px;
-    height: 34px;
-    padding: 0;
-    outline: none;
+  .navbar-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: #333;
+    font-size: 19px;
+    letter-spacing: 0.5px;
+    padding: 4px 8px;
+    border-radius: 10px;
+    transition: transform 0.2s ease;
+  }
+  .navbar-brand:active { transform: scale(0.96); }
+  .navbar-logo { height: 28px; width: auto; }
+  :global(.dark) .navbar-brand { color: #e2e2e2; }
+
+  .navbar-menu { display: flex; justify-content: center; min-width: 0; }
+  .navbar-menu-list { display: flex; align-items: center; gap: 2px; list-style: none; margin: 0; padding: 0; }
+  .nav-item { position: relative; }
+
+  .nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: 0;
+    border-radius: 10px;
     background: transparent;
     color: #333;
-  }
-
-  #c_sousuo .search_box .ss_a input::placeholder {
-    color: #999;
-  }
-
-  #c_sousuo .search_box .ss_a button {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    color: #999;
-    font-size: 15px;
-    line-height: 1;
-    padding: 0;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: inherit;
+    line-height: 1.4;
+    text-decoration: none;
     cursor: pointer;
-    transition: color 0.2s;
+    white-space: nowrap;
+    transition: color 0.2s ease, background-color 0.2s ease;
   }
+  .nav-link:hover, .nav-item.active > .nav-link { color: #4270f5; background: rgba(66, 112, 245, 0.09); }
+  :global(.dark) .nav-link { color: #ccc; }
+  :global(.dark) .nav-link:hover,
+  :global(.dark) .nav-item.active > .nav-link { color: #8ab0ff; background: rgba(138, 176, 255, 0.12); }
+  .navbar-icon { font-size: 15px; }
+  .nav-caret { font-size: 10px; opacity: 0.65; transition: transform 0.2s ease; }
+  .nav-item.open .nav-caret { transform: rotate(180deg); }
 
-  #c_sousuo .search_box .ss_a button:hover {
-    color: #4270f5;
+  .nav-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 50%;
+    transform: translate(-50%, -6px);
+    min-width: 190px;
+    padding: 6px;
+    margin: 0;
+    list-style: none;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.97);
+    border: 1px solid rgba(8, 8, 8, 0.06);
+    box-shadow: 0 10px 30px rgba(8, 8, 8, 0.14);
+    backdrop-filter: blur(16px);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+    z-index: 60;
   }
-
-  :global(.dark) #c_sousuo {
-    background: #1a1a1a;
+  /* hover / 键盘聚焦 / 点击三种方式都能展开 */
+  .nav-item:hover > .nav-dropdown,
+  .nav-item:focus-within > .nav-dropdown,
+  .nav-item.open > .nav-dropdown {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translate(-50%, 0);
   }
-
-  :global(.dark) #c_sousuo .search_box .ss_a {
-    border: 3px solid #414141;
-    background: #1a1a1a;
+  :global(.dark) .nav-dropdown {
+    background: rgba(30, 30, 31, 0.97);
+    border-color: rgba(255, 255, 255, 0.09);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   }
-
-  :global(.dark) #c_sousuo .search_box .ss_a input {
-    color: #ccc;
+  .nav-dropdown-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    color: #444;
+    font-size: 13px;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color 0.18s ease, color 0.18s ease;
   }
+  .nav-dropdown-link i { font-size: 14px; color: #8c96a3; width: 16px; text-align: center; }
+  .nav-dropdown-link:hover, .nav-dropdown-link.current { background: rgba(66, 112, 245, 0.1); color: #4270f5; }
+  :global(.dark) .nav-dropdown-link { color: #ccc; }
+  :global(.dark) .nav-dropdown-link:hover,
+  :global(.dark) .nav-dropdown-link.current { background: rgba(138, 176, 255, 0.14); color: #8ab0ff; }
+  .ext-mark { font-size: 11px !important; margin-left: auto; }
 
-  :global(.dark) #c_sousuo .search_box .ss_a input::placeholder {
-    color: #666;
+  .navbar-tools { display: flex; align-items: center; gap: 6px; justify-self: end; }
+  .tool-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: #ececee;
+    color: #444;
+    font-size: 15px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  }
+  .tool-btn:hover { background: #4270f5; color: #fff; }
+  .tool-btn:active { transform: scale(0.92); }
+  :global(.dark) .tool-btn { background: #333; color: #ccc; }
+  :global(.dark) .tool-btn:hover { background: #4270f5; color: #fff; }
+  .dark-icon { display: none; color: #ffc008; }
+  .light-icon { display: block; }
+  :global(.dark) .dark-icon { display: block; }
+  :global(.dark) .light-icon { display: none; }
+  .menu-btn { display: none; }
+
+  /* 搜索条 */
+  #c_sousuo { height: 0; overflow: hidden; transition: height 0.35s ease; }
+  #c_sousuo.open { height: 120px; }
+  #c_sousuo .search_box { margin: 30px 0; text-align: center; }
+  #c_sousuo .ss_a {
+    position: relative; width: 100%; border: 3px solid #ddd; line-height: 40px;
+    padding: 0 15px; background: #fff; display: flex; align-items: center; border-radius: 6px;
+  }
+  #c_sousuo .ss_a input {
+    width: 100%; border: none; font-size: 12px; line-height: 34px; height: 34px;
+    padding: 0; outline: none; background: transparent; color: #333;
+  }
+  #c_sousuo .ss_a input::placeholder { color: #999; }
+  #c_sousuo .ss_a button {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: #999; font-size: 15px; padding: 0; cursor: pointer;
+  }
+  #c_sousuo .ss_a button:hover { color: #4270f5; }
+  :global(.dark) #c_sousuo .ss_a { border-color: #414141; background: #1a1a1a; }
+  :global(.dark) #c_sousuo .ss_a input { color: #ccc; }
+
+  /* 抽屉 */
+  .nav-overlay {
+    position: fixed; inset: 0; background: rgba(0, 0, 0, 0.42);
+    opacity: 0; visibility: hidden; transition: opacity 0.25s ease, visibility 0.25s; z-index: 70;
+  }
+  .nav-overlay.open { opacity: 1; visibility: visible; }
+  .nav-drawer {
+    position: fixed; top: 0; right: 0; height: 100%; width: min(320px, 86vw);
+    background: #fff; z-index: 80; display: flex; flex-direction: column;
+    transform: translateX(100%); transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: -8px 0 30px rgba(0, 0, 0, 0.16);
+  }
+  .nav-drawer.open { transform: translateX(0); }
+  :global(.dark) .nav-drawer { background: #1b1b1c; }
+  :global(body.drawer-open) { overflow: hidden; }
+  .drawer-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 20px; border-bottom: 1px solid #eee; font-weight: 700; color: #333;
+  }
+  .drawer-head i { margin-right: 8px; color: #4270f5; }
+  :global(.dark) .drawer-head { color: #ddd; border-color: #333; }
+  .drawer-close {
+    border: 0; background: transparent; color: #888; font-size: 16px; cursor: pointer; padding: 4px 8px;
+  }
+  .drawer-nav { flex: 1; overflow-y: auto; padding: 12px 14px; }
+  .drawer-link, .drawer-group > summary {
+    display: flex; align-items: center; gap: 10px; padding: 11px 12px;
+    border-radius: 9px; color: #333; text-decoration: none; font-size: 14px; cursor: pointer;
+  }
+  .drawer-link:hover, .drawer-group > summary:hover, .drawer-group.active > summary { background: rgba(66, 112, 245, 0.09); color: #4270f5; }
+  .drawer-link i, .drawer-group > summary i:first-child { width: 18px; text-align: center; }
+  :global(.dark) .drawer-link, :global(.dark) .drawer-group > summary { color: #ccc; }
+  .drawer-caret { margin-left: auto; font-size: 10px; transition: transform 0.2s; }
+  .drawer-group[open] .drawer-caret { transform: rotate(180deg); }
+  .drawer-group > summary { list-style: none; }
+  .drawer-group > summary::-webkit-details-marker { display: none; }
+  .drawer-group ul { list-style: none; margin: 2px 0 8px; padding: 0 0 0 18px; }
+  .drawer-group ul a {
+    display: flex; align-items: center; gap: 9px; padding: 8px 12px;
+    border-radius: 8px; color: #666; font-size: 13px; text-decoration: none;
+  }
+  .drawer-group ul a:hover, .drawer-group ul a.current { color: #4270f5; background: rgba(66, 112, 245, 0.08); }
+  :global(.dark) .drawer-group ul a { color: #aaa; }
+  .drawer-foot { padding: 14px 20px; border-top: 1px solid #eee; font-size: 11px; color: #999; }
+  :global(.dark) .drawer-foot { border-color: #333; }
+
+  @media (max-width: 1023px) {
+    .navbar-menu { display: none; }
+    .menu-btn { display: inline-flex; }
+    .navbar-card { grid-template-columns: auto 1fr auto; }
+    .navbar-tools { gap: 4px; }
+  }
+  /* 仿 Firefly：窄屏隐藏菜单图标，给文字腾空间 */
+  @media (max-width: 1100px) and (min-width: 1024px) {
+    .navbar-icon { display: none; }
+  }
+  @media (max-width: 420px) {
+    .navbar-brand b { font-size: 16px; }
+    .navbar-logo { height: 24px; }
+    .tool-btn { width: 30px; height: 30px; font-size: 14px; }
   }
 </style>

@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>参考 Firefly 的四项功能移植 · 实施报告</title>
+<style>
+:root {
+  --bg:#ffffff; --panel:#ffffff; --ink:#1f2328; --muted:#5f6b7a; --line:#e3e8ef;
+  --accent:#4270f5; --accent-soft:#e6efff; --code:#f6f8fa; --code-ink:#0c447c;
+  --quote:#2a3b4d; --zebra:#fbfcfe; --th-ink:#0c447c; --on-accent:#ffffff;
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --bg:#14161a; --panel:#1b1f25; --ink:#e6e9ee; --muted:#a2acba; --line:#303742;
+  --accent:#8ab0ff; --accent-soft:#1d2b45; --code:#1b2129; --code-ink:#a8c7ff;
+  --quote:#d3ddec; --zebra:#191d23; --th-ink:#bcd2ff; --on-accent:#10151d;
+  color-scheme: dark;
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:15px; line-height:1.75; transition:background-color .18s ease,color .18s ease; }
+.theme-switch { position:fixed; top:14px; right:18px; z-index:60; display:flex; gap:2px;
+  background:var(--panel); border:1px solid var(--line); border-radius:999px; padding:4px;
+  box-shadow:0 4px 18px rgba(0,0,0,.14); }
+.theme-switch button { border:0; background:transparent; color:var(--muted); font:inherit;
+  font-size:12px; line-height:1.4; padding:5px 12px; border-radius:999px; cursor:pointer; }
+.theme-switch button:hover { color:var(--accent); }
+.theme-switch button[aria-pressed="true"] { background:var(--accent); color:var(--on-accent); }
+.layout { max-width:1220px; margin:0 auto; padding:0 28px; display:grid; grid-template-columns:250px minmax(0,1fr); gap:44px; }
+aside { position:sticky; top:0; align-self:start; max-height:100vh; overflow:auto; padding:38px 0 30px; border-right:1px solid var(--line); }
+aside h2 { font-size:13px; font-weight:600; letter-spacing:.08em; color:var(--muted); margin:0 0 12px; }
+.toc ul { list-style:none; margin:0; padding:0; }
+.toc ul ul { padding-left:14px; }
+.toc li { margin:3px 0; }
+.toc a { color:var(--muted); text-decoration:none; font-size:13px; display:block; padding:2px 8px; border-radius:6px; }
+.toc a:hover { color:var(--accent); background:var(--accent-soft); }
+main { padding:56px 0 80px; min-width:0; }
+h1 { font-size:30px; line-height:1.3; margin:0 0 22px; padding-bottom:16px; border-bottom:2px solid var(--accent); }
+h2 { font-size:21px; margin:44px 0 14px; padding-top:10px; border-top:1px solid var(--line); }
+h3 { font-size:17px; margin:28px 0 10px; }
+p { margin:10px 0; }
+a { color:var(--accent); }
+img { max-width:100%; height:auto; }
+img.shot { background:#fff; border:1px solid var(--line); border-radius:8px; }
+blockquote { margin:16px 0; padding:10px 16px; background:var(--accent-soft); border-left:3px solid var(--accent); border-radius:0 8px 8px 0; color:var(--quote); }
+blockquote p { margin:4px 0; }
+ul, ol { padding-left:24px; }
+li { margin:4px 0; }
+code { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.9em;
+  background:var(--code); padding:2px 5px; border-radius:4px; color:var(--code-ink); }
+pre { background:var(--code); border:1px solid var(--line); border-radius:10px; padding:14px 16px;
+  overflow-x:auto; white-space:pre-wrap; word-break:break-word; margin:12px 0; }
+pre code { background:none; padding:0; color:var(--ink); font-size:13px; line-height:1.6; }
+.copy { float:right; position:relative; top:6px; z-index:1; border:1px solid var(--line); background:var(--panel);
+  color:var(--muted); font-size:12px; padding:3px 9px; border-radius:6px; cursor:pointer; }
+.copy:hover { color:var(--accent); border-color:var(--accent); }
+table { border-collapse:collapse; width:100%; margin:16px 0; font-size:14px; }
+th, td { border:1px solid var(--line); padding:8px 11px; text-align:left; vertical-align:top; }
+th { background:var(--accent-soft); color:var(--th-ink); font-weight:600; }
+tr:nth-child(even) td { background:var(--zebra); }
+hr { border:0; border-top:1px solid var(--line); margin:34px 0; }
+.footer { margin-top:56px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:13px; }
+@media (max-width:900px) { .layout { grid-template-columns:1fr; gap:0; } aside { position:static; max-height:none; border-right:0; border-bottom:1px solid var(--line); padding:24px 0 12px; } main { padding-top:52px; } }
+@media print {
+  :root, :root[data-theme="dark"] {
+    --bg:#ffffff; --panel:#ffffff; --ink:#1f2328; --muted:#5f6b7a; --line:#e3e8ef;
+    --accent:#4270f5; --accent-soft:#e6efff; --code:#f6f8fa; --code-ink:#0c447c;
+    --quote:#2a3b4d; --zebra:#fbfcfe; --th-ink:#0c447c; --on-accent:#ffffff;
+    color-scheme: light;
+  }
+  body { font-size:11pt; } .layout { display:block; max-width:none; padding:0; }
+  aside,.copy,.theme-switch { display:none; } main { padding:0; }
+  h2 { page-break-after:avoid; } pre,table,blockquote,img { page-break-inside:avoid; }
+  a { color:inherit; text-decoration:none; }
+}
+</style>
+<script>
+/* 防闪烁：在 body 渲染前确定主题。
+   优先级 = 手动选择(localStorage) > URL 参数 > 跟随系统。 */
+(function () {
+  var saved = null, q = null;
+  try { saved = localStorage.getItem('report-theme'); } catch (e) {}
+  try { q = new URLSearchParams(location.search).get('theme'); } catch (e) {}
+  var mode = (saved === 'light' || saved === 'dark' || saved === 'system') ? saved
+           : (q === 'light' || q === 'dark') ? q : 'system';
+  var dark = mode === 'dark' || (mode === 'system' && window.matchMedia &&
+             window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-mode', mode);
+})();
+</script>
+</head>
+<body>
+<div class="theme-switch" role="group" aria-label="报告配色模式">
+  <button type="button" data-mode="light" aria-pressed="false">日间</button>
+  <button type="button" data-mode="dark" aria-pressed="false">夜间</button>
+  <button type="button" data-mode="system" aria-pressed="true">系统</button>
+</div>
+<div class="layout">
+<aside><h2>目录</h2><div class="toc">
+<ul>
+<li><a href="#firefly">参考 Firefly 的四项功能移植 · 实施报告</a><ul>
+<li><a href="#1">1. 结论</a></li>
+<li><a href="#2-firefly">2. 参考了 Firefly 的哪些实现</a></li>
+<li><a href="#3">3. 导航栏改造</a></li>
+<li><a href="#4">4. 说说与首页混合时间流</a><ul>
+<li><a href="#41">4.1 数据</a></li>
+<li><a href="#42">4.2 混合流</a></li>
+<li><a href="#43">4.3 归档页与订阅</a></li>
+</ul>
+</li>
+<li><a href="#5">5. 书签导航</a></li>
+<li><a href="#6">6. 收藏夹 / 书架 / 片库 / 音乐库</a><ul>
+<li><a href="#61">6.1 架构</a></li>
+</ul>
+</li>
+<li><a href="#7">7. 配置驱动与页面开关验证</a></li>
+<li><a href="#8-cms">8. CMS 与内容体检</a></li>
+<li><a href="#9">9. 新增与修改文件</a></li>
+<li><a href="#10">10. 验收数据</a></li>
+<li><a href="#11">11. 未做项与后续建议</a></li>
+<li><a href="#12">12. 回滚方法</a></li>
+<li><a href="#13">13. 数据来源与自洽校验</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</aside>
+<main>
+<h1 id="firefly">参考 Firefly 的四项功能移植 · 实施报告</h1>
+<blockquote>
+<p>工程：<code>/Users/ming/mango-astro</code> · 线上：<code>https://mango-astro.pages.dev</code>
+实施日期：2026-11-07 · 版本：v1.0
+需求：① 参考 Firefly 改造导航栏 ② 说说与文章按发布时间交替显示 ③ 书签导航 ④ 收藏夹 / 书架 / 片库 / 音乐库（仿番剧）</p>
+</blockquote>
+<hr />
+<h2 id="1">1. 结论</h2>
+<p>四项全部落地并已上线。构建 <code>60 page(s) built in ~5s</code>（原 52 页 + 7 个新页面 + 1 个新增分页页），内容体检 <code>文章 16 · 说说 8 · 收藏 10</code> 全通过，浅色/暗色/窄屏/下拉展开态均已实拍验收。</p>
+<table>
+<thead>
+<tr>
+<th>需求</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① 导航栏</td>
+<td>Firefly 风格分组下拉 + 毛玻璃胶囊 + 右侧工具按钮 + 窄屏抽屉，8 项页面开关递归生效</td>
+</tr>
+<tr>
+<td>② 说说</td>
+<td>新增 <code>moments</code> collection + <code>/moments/</code> 归档页；首页与 <code>/page/N</code> 共用混合时间流，实测严格「文章—说说」按时间倒序交替</td>
+</tr>
+<tr>
+<td>③ 书签导航</td>
+<td><code>/bookmarks/</code> 分组卡片网格，14 个书签 / 4 组，搜索 + 锚点 + favicon 自动回退</td>
+</tr>
+<tr>
+<td>④ 收藏四库</td>
+<td>一个 <code>favorites</code> collection 驱动总览 + 4 个分类页，仿番剧的分类 Tab / 状态筛选 / 评分 / 进度 / 统计条</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="2-firefly">2. 参考了 Firefly 的哪些实现</h2>
+<p>先读 Firefly 源码，再决定「借玩法」而非「搬代码」——它是 Svelte + Tailwind 4 + astro-icon，本站是纯 Astro + Tailwind 3 + Bootstrap Icons，直接复制不可行。</p>
+<table>
+<thead>
+<tr>
+<th>功能</th>
+<th>Firefly 的实现</th>
+<th>本站借鉴的做法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>导航栏</td>
+<td><code>config/navBarConfig.ts</code>（<code>LinkPresets</code> 分组）+ <code>components/layout/Navbar.astro</code> / <code>NavMenuPanel.astro</code> / <code>DropdownMenu.astro</code> + <code>styles/navbar.css</code>（毛玻璃、滚动阴影、下拉面板）</td>
+<td><code>src/config/site.ts</code> 的分组 <code>navItems</code> + 重写 <code>Header.astro</code>；三段式胶囊、分组下拉、滚动阴影、窄屏抽屉</td>
+</tr>
+<tr>
+<td>说说</td>
+<td><code>content/dynamic/*.md</code> + <code>api/dynamic.json.ts</code>（构建期渲染 Markdown）+ <code>pages/dynamic/index.astro</code>（Svelte 客户端搜索/年份筛选/分页）</td>
+<td><code>content/moments/*.md</code> + 静态 <code>pages/moments/index.astro</code>，用原生 JS 做搜索/年份过滤，不引入 Svelte</td>
+</tr>
+<tr>
+<td>书签导航</td>
+<td><code>config/booknavConfig.ts</code>（分组 + weight + favicon 接口）+ <code>pages/booknav.astro</code>（页头、搜索、锚点 pills、卡片网格）</td>
+<td><code>src/config/bookmarks.ts</code> + <code>pages/bookmarks/index.astro</code>，同样的分组/权重/favicon 回退逻辑</td>
+</tr>
+<tr>
+<td>番剧</td>
+<td><code>pages/bangumi.astro</code> 构建时拉 Bangumi API，按 <code>subject_type</code> 分 Tab，<code>BangumiGrid.svelte</code> 做状态统计与封面网格</td>
+<td><code>src/config/favorites.ts</code>（分类元数据 + statuses + 封面比例）+ <code>content/favorites/*.md</code> + <code>pages/favorites/[category].astro</code>，本地数据不依赖第三方 API</td>
+</tr>
+</tbody>
+</table>
+<p><strong>为什么不直接接 Bangumi API</strong>：Firefly 的番剧页在构建时会循环请求 <code>api.bangumi.one</code>，网络不稳就会拖慢甚至打断构建；而且用户要的是四个自定义库（收藏夹/书架/片库/音乐库），不是 Bangumi 的 book/anime/music/game 分类。用本地 Markdown 更可控，还能在 Sveltia CMS 后台直接维护。</p>
+<hr />
+<h2 id="3">3. 导航栏改造</h2>
+<p><code>src/components/Header.astro</code> 重写，<code>src/config/site.ts</code> 的 <code>navItems</code> 从「一排平铺分类」改成 4 组：</p>
+<table>
+<thead>
+<tr>
+<th>分组</th>
+<th>子项</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>主页</td>
+<td>单项直达</td>
+</tr>
+<tr>
+<td>文章</td>
+<td>文章归档 / 标签云 / 说说 / 站内搜索</td>
+</tr>
+<tr>
+<td>发现</td>
+<td>书签导航 / 收藏总览 / 收藏夹 / 书架 / 片库 / 音乐库</td>
+</tr>
+<tr>
+<td>我的</td>
+<td>关于我 / 主题下载 / 旅游地图</td>
+</tr>
+</tbody>
+</table>
+<p>细节：</p>
+<ul>
+<li>三段式网格 <code>auto | 1fr | auto</code>，胶囊卡片 <code>rgba(...)</code> + <code>backdrop-filter: blur(18px)</code>，滚动 &gt;12px 加投影（对应 Firefly 的 <code>navbar-sticky-shadow</code>）</li>
+<li>下拉支持 <strong>hover / 键盘 focus-within / 点击</strong> 三种展开方式，<code>aria-expanded</code> 同步；父级 <code>href: '#'</code> 不跳转</li>
+<li>当前路径命中父级或任意子级都会高亮（<code>isNavActive()</code> 递归）</li>
+<li>右侧工具按钮：搜索、RSS、主题、移动端菜单；图标在 1024–1100px 区间隐藏（仿 Firefly 的 <code>.navbar-icon</code> 规则）</li>
+<li>窄屏（&lt;1024px）桌面菜单隐藏，改为右侧滑出抽屉，二级用原生 <code>&lt;details&gt;</code> 折叠，带遮罩 / ESC / body 滚动锁</li>
+<li><code>.site-header</code> 全局底色改为透明，视觉交给内部胶囊；暗色有独立配色</li>
+</ul>
+<hr />
+<h2 id="4">4. 说说与首页混合时间流</h2>
+<h3 id="41">4.1 数据</h3>
+<p>新增 <code>moments</code> collection（<code>src/content/config.ts</code>）：<code>published</code>、<code>pinned</code>、<code>location</code>、<code>tags</code>、<code>author</code>、<code>avatar</code>、<code>draft</code>、<code>updatedDate</code>。正文写 Markdown，图片自动抽出走九宫格 + 全站 FLIP 灯箱，文字由零依赖的 <code>src/utils/mini-markdown.ts</code> 渲染。</p>
+<p>8 条示例说说的日期<strong>特意穿插在现有文章之间</strong>，让首页第一打开就是交替效果。</p>
+<h3 id="42">4.2 混合流</h3>
+<p><code>src/utils/feed.ts</code> 把两类内容归一成 <code>FeedEntry</code>，<code>index.astro</code> 与 <code>page/[page].astro</code> 共用 <code>getMixedFeed()</code> + <code>paginateFeed()</code>，避免第一页与第二页顺序错位。<code>FeedList.astro</code> 按 <code>type</code> 分派 <code>PostCard</code> / <code>MomentCard</code>，两类卡片都带类型徽标。</p>
+<p><code>siteConfig.home</code> 提供三个开关：<code>mixMode</code>（<code>timeline</code> 严格时间 / <code>alternate</code> 强制一比一）、<code>stickyFirst</code>（默认 <code>false</code>）、<code>showTypeBadge</code>。</p>
+<blockquote>
+<p><strong>一处关键修正</strong>：原站有 3 篇置顶文章（sticky 15 / 10 / 5）。初版把置顶项提到最前，实测首页变成「文章、说说、文章、文章…」且时间跳回 1 月，破坏了「按发布时间交替」。改为 <code>stickyFirst: false</code>，置顶只保留徽标不插队。</p>
+</blockquote>
+<p>实测首页前 8 条（<code>dist/index.html</code> 解析）：</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>类型</th>
+<th>发布时间</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>文章</td>
+<td>2024-10-01 00:00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>说说</td>
+<td>2024-09-20 14:30</td>
+</tr>
+<tr>
+<td>3</td>
+<td>文章</td>
+<td>2024-09-01 00:00</td>
+</tr>
+<tr>
+<td>4</td>
+<td>说说</td>
+<td>2024-08-28 08:10</td>
+</tr>
+<tr>
+<td>5</td>
+<td>文章</td>
+<td>2024-08-15 00:00</td>
+</tr>
+<tr>
+<td>6</td>
+<td>说说</td>
+<td>2024-07-30 21:45</td>
+</tr>
+<tr>
+<td>7</td>
+<td>文章</td>
+<td>2024-07-20 00:00</td>
+</tr>
+<tr>
+<td>8</td>
+<td>说说</td>
+<td>2024-06-24 12:05</td>
+</tr>
+</tbody>
+</table>
+<p>时间严格递减、类型严格交替。第 2 页延续同一份排序，说说用完后尾部只剩文章（正常）。</p>
+<h3 id="43">4.3 归档页与订阅</h3>
+<p><code>/moments/</code> 仿 Firefly 的 <code>/dynamic/</code>：页头统计、关键词搜索、年份下拉、按年份分组时间线，纯前端过滤。RSS / Atom 也接了混合流，<code>feed.includeMoments</code> 默认 <code>false</code>（只订阅文章），开启后说说会以 <code>短内容 · 说说</code> 进订阅，链接指向 <code>#moment-&lt;id&gt;</code> 锚点（归档页已加对应 id）。</p>
+<hr />
+<h2 id="5">5. 书签导航</h2>
+<p><code>src/config/bookmarks.ts</code> 是唯一数据源（仿 Firefly 的 <code>booknavConfig.ts</code>）：4 组 14 条，字段 <code>id / name / icon / desc / weight / items[{ title, url, desc, icon, weight }]</code>。</p>
+<p><code>/bookmarks/</code> 页头统计 + 搜索 + 分类锚点 pills，下面按分组渲染卡片网格。图标三种来源：<code>bi-*</code> 图标名、本地/远程图片、自动 favicon（<code>https://a.favicon.im/{domain}</code>）；<strong>favicon 取不到时回退名称首字母</strong>，不会裂图。</p>
+<p>书签导航刻意<strong>不放进 CMS</strong>：它是 TS 配置文件，用 CMS 的 Markdown 编辑器打开会写坏文件。改配置 → 构建 → 部署即可。</p>
+<hr />
+<h2 id="6">6. 收藏夹 / 书架 / 片库 / 音乐库</h2>
+<h3 id="61">6.1 架构</h3>
+<ul>
+<li>数据：<code>content/favorites/*.md</code>（10 条示例），字段 <code>title / category / cover / description / status / rating / progress / url / creator / year / tags / addedAt / weight / draft</code>，正文写短评</li>
+<li>分类元数据：<code>src/config/favorites.ts</code>，定义名称、图标、强调色、封面比例、单位、状态标签、是否显示进度</li>
+<li>页面：<code>/favorites/</code> 总览 + <code>/favorites/[category].astro</code> 动态路由（由 <code>favoriteCategories</code> 生成 4 个静态页）</li>
+<li>卡片：<code>FavoriteCard.astro</code> 统一渲染封面、状态徽标、评分、进度条、标签、外链、可折叠短评</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>页面</th>
+<th>分类键</th>
+<th>封面比例</th>
+<th>状态</th>
+<th>示例数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/favorites/bookmarks</code> 收藏夹</td>
+<td><code>bookmarks</code></td>
+<td>1:1</td>
+<td>待读 / 在读 / 已读 / 精选</td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>/favorites/books</code> 书架</td>
+<td><code>books</code></td>
+<td>2:3</td>
+<td>想读 / 在读 / 读过 / 最爱</td>
+<td>3</td>
+</tr>
+<tr>
+<td><code>/favorites/movies</code> 片库</td>
+<td><code>movies</code></td>
+<td>2:3</td>
+<td>想看 / 在看 / 看过 / 最爱</td>
+<td>3</td>
+</tr>
+<tr>
+<td><code>/favorites/music</code> 音乐库</td>
+<td><code>music</code></td>
+<td>1:1</td>
+<td>想听 / 在听 / 听过 / 循环</td>
+<td>2</td>
+</tr>
+</tbody>
+</table>
+<p>分类页有 Tab 切换、状态筛选 pills（带计数）、关键词搜索、统计条（平均评分 / 已完成 / 进行中 / 已评分），对应 Firefly <code>BangumiGrid</code> 的分类 Tab + 统计 + 网格。</p>
+<p>10 张封面是本地生成的渐变 SVG（<code>public/images/favorites/</code>），含中文标题与副标题，零外链依赖。视觉验收时修了两处：封面自带的角标与状态徽标重叠 → 去掉角标；总览页混排 2:3 与 1:1 导致卡片高低不齐 → 总览统一 1:1。</p>
+<hr />
+<h2 id="7">7. 配置驱动与页面开关验证</h2>
+<p><code>pageToggles</code> 从 5 项扩到 8 项（<code>moments</code> / <code>bookmarks</code> / <code>favorites</code>）。<code>visibleNavItems()</code> 改为<strong>递归过滤</strong>子菜单，分组无可用子项则整组隐藏。</p>
+<p>实测把 <code>moments: false</code> 后重新构建：</p>
+<table>
+<thead>
+<tr>
+<th>检查项</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/moments/</code></td>
+<td>渲染 404 内容 ✓</td>
+</tr>
+<tr>
+<td>导航 / 页脚「说说」入口</td>
+<td>全部消失 ✓</td>
+</tr>
+<tr>
+<td>sitemap</td>
+<td>不含 <code>/moments</code> ✓</td>
+</tr>
+<tr>
+<td>首页</td>
+<td><strong>回到纯文章流</strong>（0 条说说卡片、0 个 <code>href="/moments"</code>） ✓</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>这里发现并补了一个漏洞：初版 <code>getMixedFeed()</code> 没读页面开关，关闭后首页仍在渲染说说卡片，且 <code>MomentCard</code> 的「全部说说」链接指向 404。修复：<code>feed.ts</code> 关闭时返回空说说数组，<code>FeedList</code> 把 <code>showArchiveLink</code> 绑定到 <code>isPageEnabled('moments')</code>。</p>
+</blockquote>
+<p><code>sitemap.xml.ts</code> 的分页页数也改为按混合流计算（现在 3 页），并新增 7 个页面 URL，总计 58 条。</p>
+<hr />
+<h2 id="8-cms">8. CMS 与内容体检</h2>
+<p><code>public/admin/config.yml</code> 新增 <code>moments</code>、<code>favorites</code> 两个 collection，YAML 解析校验通过：</p>
+<button class="copy" type="button">复制</button><pre><code>collections: ['posts', 'moments', 'favorites']
+fields: {'posts': 16, 'moments': 9, 'favorites': 16}
+</code></pre>
+<p><strong>关键约定</strong>：CMS 保存已有条目会重写整个 frontmatter，未列在 <code>fields</code> 里的字段会被抹掉，所以每个 collection 都把对应 schema 字段列全了（顺便给 <code>posts</code> 补上了原先漏掉的 <code>images</code>）。</p>
+<p>说说与另外两个 collection 有一处刻意不同：说说的 <code>fields</code> 里<strong>没有 <code>slug</code></strong>（用 <code>{{year}}-{{month}}-{{day}}-...</code> 自动生成文件名），避免 Astro 把 frontmatter <code>slug</code> 当条目 ID；文章和收藏保留 <code>slug</code> 字段，10 个收藏示例已补上与文件名一致的值。</p>
+<p><code>scripts/check-content.mjs</code> 从只查 posts 扩展到三个目录：别名一致性、别名重复、必填字段、日期合法性、<code>category</code> 枚举、<code>rating</code>/<code>progress</code> 范围。当前输出 <code>文章 16 · 说说 8 · 收藏 10 全部通过</code>。</p>
+<hr />
+<h2 id="9">9. 新增与修改文件</h2>
+<p><strong>新增</strong>
+- 配置：<code>src/config/bookmarks.ts</code>、<code>src/config/favorites.ts</code>
+- 工具：<code>src/utils/feed.ts</code>、<code>src/utils/mini-markdown.ts</code>
+- 组件：<code>MomentCard.astro</code>、<code>FeedList.astro</code>、<code>FavoriteCard.astro</code>、<code>PageHeader.astro</code>
+- 页面：<code>moments/index.astro</code>、<code>bookmarks/index.astro</code>、<code>favorites/index.astro</code>、<code>favorites/[category].astro</code>
+- 内容：<code>content/moments/</code> 8 篇、<code>content/favorites/</code> 10 篇、<code>public/images/favorites/</code> 10 张 SVG</p>
+<p><strong>重写 / 修改</strong>
+- <code>config/site.ts</code>（分组导航、8 个开关、home / feed 配置）、<code>content/config.ts</code>（3 个 collection）
+- <code>components/Header.astro</code>（Firefly 风格）、<code>components/PostCard.astro</code>（类型徽标 + 置顶徽标）
+- <code>styles/global.css</code>（header 底色透明化）
+- <code>pages/index.astro</code>、<code>pages/page/[page].astro</code>（混合流）
+- <code>pages/rss.xml.ts</code>、<code>atom.xml.ts</code>、<code>sitemap.xml.ts</code>
+- <code>public/admin/config.yml</code>、<code>scripts/check-content.mjs</code>
+- <code>站点管理与设置教程.md/.html</code> v3.0、<code>PROJECT_SUMMARY.md</code></p>
+<hr />
+<h2 id="10">10. 验收数据</h2>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>构建</td>
+<td><code>60 page(s) built in 5.0s</code>，无报错</td>
+</tr>
+<tr>
+<td>内容体检</td>
+<td>文章 16 · 说说 8 · 收藏 10，全通过</td>
+</tr>
+<tr>
+<td>新页面产物</td>
+<td><code>/moments</code>、<code>/bookmarks</code>、<code>/favorites</code>、<code>/favorites/{bookmarks,books,movies,music}</code> 全部生成</td>
+</tr>
+<tr>
+<td>sitemap</td>
+<td>58 条 URL，含 7 个新路由 + <code>/page/3</code></td>
+</tr>
+<tr>
+<td>RSS / Atom</td>
+<td>各 16 item/entry（<code>includeMoments=false</code>），XML 合法</td>
+</tr>
+<tr>
+<td>导航 DOM</td>
+<td>3 个下拉父级、13 个子项；下拉展开实测 6 项齐全</td>
+</tr>
+<tr>
+<td>视觉</td>
+<td>首页浅/暗、说说、书签、收藏总览、书架浅/暗均实拍；封面裂图 0</td>
+</tr>
+<tr>
+<td>窄屏</td>
+<td>CDP 强制 390px：<code>scrollWidth=390</code>（无横向溢出）、桌面菜单 <code>display:none</code>、菜单按钮 <code>flex</code>、抽屉与遮罩正常</td>
+</tr>
+<tr>
+<td>页面开关</td>
+<td><code>moments=false</code> 五项联动全部通过（见第 7 节）</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="11">11. 未做项与后续建议</h2>
+<ul>
+<li><strong>未接 Pagefind / Giscus / 真实浏览量</strong>：本轮聚焦四个需求，这些仍属于此前的 P1/P2 清单。</li>
+<li><strong>书签导航未进 CMS</strong>：刻意如此（TS 配置）。若确实需要后台管理，可改成 <code>content/links/*.json</code> 的 data collection，但要评估 Sveltia 对 JSON 编辑的支持。</li>
+<li><strong>收藏封面</strong>：目前是示例 SVG，建议替换成真实封面并统一放到 <code>public/images/uploads/</code>（CMS 上传目录）。</li>
+<li><strong>移动端抽屉</strong>：二级分组默认折叠；若想默认展开当前所在组，<code>&lt;details open={active}&gt;</code> 已支持，把 <code>active</code> 判定放宽即可。</li>
+</ul>
+<hr />
+<h2 id="12">12. 回滚方法</h2>
+<button class="copy" type="button">复制</button><pre><code class="language-bash">cd /Users/ming/mango-astro
+git log --oneline -8                 # 找到本轮之前的提交
+git revert --no-commit &lt;本轮提交&gt;     # 或 git reset --hard &lt;commit&gt;（会丢未提交改动，慎用）
+git commit -m &quot;回滚 Firefly 功能移植&quot; &amp;&amp; git push
+npm run build
+wrangler pages deploy dist --project-name mango-astro --branch main --commit-dirty=true
+</code></pre>
+<p>也可在 Cloudflare Pages 的 Deployments 里直接把上一版设为 Production。只回滚代码不会自动回滚线上，必须重新构建部署。</p>
+<hr />
+<h2 id="13">13. 数据来源与自洽校验</h2>
+<ul>
+<li>首页顺序表来自对 <code>dist/index.html</code> 的逐卡片解析（类型 + 时间），非推测。</li>
+<li>页面开关验证来自临时把 <code>moments</code> 改 <code>false</code> 后的真实构建产物，验证后已恢复 <code>true</code> 并重建。</li>
+<li>60 页 / 58 URL / 16 item / 16 entry / 16+8+10 条内容分别来自构建日志、<code>dist/sitemap.xml</code>、<code>dist/rss.xml</code>、<code>dist/atom.xml</code> 与 <code>check-content</code> 输出，彼此对得上。</li>
+<li>390px 无横向溢出的结论来自 CDP <code>Emulation.setDeviceMetricsOverride</code> 的真实视口测量（<code>scrollWidth=390</code>），而非无头 Chrome 的 <code>--window-size</code> —— 后者有最小窗口宽度限制，会给出假的裁切。</li>
+<li>Firefly 参考文件均实际读取：<code>navBarConfig.ts</code>、<code>navbar.css</code>、<code>Navbar.astro</code>、<code>dynamicConfig.ts</code>、<code>api/dynamic.json.ts</code>、<code>dynamic/index.astro</code>、<code>booknavConfig.ts</code>、<code>booknav.astro</code>、<code>bangumi.astro</code>。</li>
+</ul>
+<div class="footer">参考 Firefly 的四项功能移植 · 实施报告 v1.0 · 2026-11-07 · 支持日间 / 夜间 / 系统三态切换 · 对照图以正文为准</div>
+</main>
+</div>
+<script>
+document.querySelectorAll('.copy').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var pre = b.nextElementSibling;
+    if (!pre || pre.tagName !== 'PRE') return;
+    navigator.clipboard.writeText(pre.innerText).then(function () {
+      b.textContent = '已复制'; setTimeout(function () { b.textContent = '复制'; }, 1500);
+    });
+  });
+});
+(function () {
+  var root = document.documentElement;
+  var btns = Array.prototype.slice.call(document.querySelectorAll('.theme-switch button'));
+  function apply(mode, persist) {
+    if (persist) {
+      try { localStorage.setItem('report-theme', mode); } catch (e) {}
+      try {
+        var u = new URL(location.href);
+        u.searchParams.delete('theme');
+        history.replaceState(null, '', u.href);
+      } catch (e) {}
+    }
+    var dark = mode === 'dark' || (mode === 'system' && window.matchMedia &&
+               window.matchMedia('(prefers-color-scheme: dark)').matches);
+    root.setAttribute('data-theme', dark ? 'dark' : 'light');
+    root.setAttribute('data-mode', mode);
+    btns.forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.getAttribute('data-mode') === mode));
+    });
+  }
+  btns.forEach(function (b) {
+    b.addEventListener('click', function () { apply(b.getAttribute('data-mode'), true); });
+  });
+  apply(root.getAttribute('data-mode') || 'system', false);
+  if (window.matchMedia) {
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    var onChange = function () {
+      if (root.getAttribute('data-mode') === 'system') apply('system', false);
+    };
+    if (mq.addEventListener) mq.addEventListener('change', onChange);
+    else if (mq.addListener) mq.addListener(onChange);
+  }
+})();
+</script>
+</body>
+</html>

@@ -13,6 +13,8 @@ interface Props {
   tags?: string[];
   likes?: number;
   views?: number;
+  /** 混合时间流里显示的类型徽标，例如「文章」；不传则不显示 */
+  typeBadge?: string;
 }
 
 const {
@@ -27,6 +29,7 @@ const {
   tags = [],
   likes = 0,
   views = 0,
+  typeBadge = '',
 } = Astro.props;
 
 /* Halo 优化：显示绝对日期 YYYY-MM-DD HH:mm，替代原版「X 年前」。
@@ -47,9 +50,13 @@ function formatDate(date: string | Date): string {
       <h3 class="text-sm font-medium text-[#333] dark:text-[#ccc]">{author}</h3>
       <div class="text-xs text-[#C6C6C6]">{formatDate(timestamp)}</div>
     </div>
-    <a href={`/posts/${slug}`} class="more-btn" aria-label="更多选项">
-      <i class="bi bi-three-dots"></i>
-    </a>
+    <div class="flex items-center gap-2">
+      {sticky && <span class="post-sticky-badge"><i class="bi bi-pin-angle-fill"></i>置顶</span>}
+      {typeBadge && <span class="post-type-badge"><i class="bi bi-journal-text"></i>{typeBadge}</span>}
+      <a href={`/posts/${slug}`} class="more-btn" aria-label="更多选项">
+        <i class="bi bi-three-dots"></i>
+      </a>
+    </div>
   </div>
 
   <!-- Content Area：Halo 优化，取消 60px 缩进 -->
@@ -106,5 +113,25 @@ function formatDate(date: string | Date): string {
 
   .more-btn:hover {
     opacity: 0.7;
+  }
+
+  .post-type-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 9px; border-radius: 999px;
+    background: rgba(120, 130, 145, 0.12); color: #6f7885;
+    font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  :global(.dark) .post-type-badge {
+    background: rgba(160, 170, 185, 0.14); color: #a8b0bc;
+  }
+
+  .post-sticky-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 9px; border-radius: 999px;
+    background: rgba(255, 159, 28, 0.14); color: #c98214;
+    font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  :global(.dark) .post-sticky-badge {
+    background: rgba(255, 193, 7, 0.14); color: #ffc861;
   }
 </style>

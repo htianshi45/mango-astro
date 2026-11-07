@@ -1,0 +1,163 @@
+---
+/**
+ * 说说归档 — 参考 Firefly 的 /dynamic/ 页面：
+ * 页头统计、关键词搜索、年份筛选、按年份分组的时间线。
+ * 卡片与首页混合流共用 MomentCard，图片复用全站灯箱。
+ */
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import PageHeader from '@/components/PageHeader.astro';
+import MomentCard from '@/components/MomentCard.astro';
+import { getCollection } from 'astro:content';
+import { isPageEnabled, siteConfig } from '@/config/site';
+import { extractImages } from '@/utils/post-images';
+import { stripImages } from '@/utils/feed';
+
+if (!isPageEnabled('moments')) return Astro.rewrite('/404');
+
+const moments = await getCollection('moments', ({ data }) => data.draft !== true);
+
+const sorted = [...moments].sort(
+  (a, b) => new Date(b.data.published).getTime() - new Date(a.data.published).getTime()
+);
+
+const items = sorted.map((moment) => {
+  const date = new Date(moment.data.published);
+  return {
+    id: moment.id,
+    year: String(date.getUTCFullYear()),
+    author: moment.data.author,
+    avatar: moment.data.avatar,
+    published: moment.data.published,
+    pinned: moment.data.pinned,
+    location: moment.data.location,
+    tags: moment.data.tags,
+    images: extractImages(moment.body),
+    text: stripImages(moment.body),
+    search: `${stripImages(moment.body)} ${moment.data.location} ${moment.data.tags.join(' ')}`.toLowerCase(),
+  };
+});
+
+const years = Array.from(new Set(items.map((item) => item.year)));
+---
+
+<BaseLayout title={`说说 - ${siteConfig.name}`} description="随手记的碎碎念、照片与地点。">
+  <PageHeader
+    icon="bi-chat-square-dots"
+    title="说说"
+    description="不长不短的碎碎念，和一些顺手拍下的照片。"
+    count={items.length}
+    unit="条动态"
+  >
+    <div class="moment-filters">
+      <label class="filter-search">
+        <i class="bi bi-search"></i>
+        <input type="search" id="moment-search" placeholder="搜索说说内容、地点或标签…" aria-label="搜索说说" />
+      </label>
+      <label class="filter-year">
+        <i class="bi bi-calendar3"></i>
+        <select id="moment-year" aria-label="按年份筛选">
+          <option value="all">全部年份</option>
+          {years.map((year) => <option value={year}>{year} 年</option>)}
+        </select>
+      </label>
+      <span class="filter-result" id="moment-result"></span>
+    </div>
+  </PageHeader>
+
+  <div id="moment-list">
+    {years.map((year) => (
+      <section class="moment-year-group" data-year={year}>
+        <h2 class="moment-year-label"><span>{year}</span></h2>
+        <div class="space-y-5">
+          {items.filter((item) => item.year === year).map((item) => (
+            <div class="moment-item" id={`moment-${item.id}`} data-search={item.search}>
+              <MomentCard
+                id={item.id}
+                author={item.author}
+                avatar={item.avatar}
+                published={item.published}
+                pinned={item.pinned}
+                location={item.location}
+                tags={item.tags}
+                images={item.images}
+                text={item.text}
+                showTypeBadge={false}
+              />
+            </div>
+          ))}
+        </div>
+      </section>
+    ))}
+  </div>
+
+  <p id="moment-empty" class="moment-empty" hidden>没有匹配的说说，换个关键词试试。</p>
+</BaseLayout>
+
+<script>
+  const searchInput = document.getElementById('moment-search') as HTMLInputElement | null;
+  const yearSelect = document.getElementById('moment-year') as HTMLSelectElement | null;
+  const result = document.getElementById('moment-result');
+  const empty = document.getElementById('moment-empty');
+  const cards = Array.from(document.querySelectorAll<HTMLElement>('.moment-item'));
+  const groups = Array.from(document.querySelectorAll<HTMLElement>('.moment-year-group'));
+
+  function applyFilter() {
+    const keyword = (searchInput?.value || '').trim().toLowerCase();
+    const year = yearSelect?.value || 'all';
+    let visible = 0;
+    cards.forEach((card) => {
+      const group = card.closest<HTMLElement>('.moment-year-group');
+      const yearOk = year === 'all' || group?.dataset.year === year;
+      const textOk = !keyword || (card.dataset.search || '').includes(keyword);
+      const show = yearOk && textOk;
+      card.hidden = !show;
+      if (show) visible += 1;
+    });
+    groups.forEach((group) => {
+      group.hidden = !Array.from(group.querySelectorAll<HTMLElement>('.moment-item')).some((c) => !c.hidden);
+    });
+    if (result) result.textContent = keyword || year !== 'all' ? `找到 ${visible} 条` : '';
+    if (empty) empty.hidden = visible > 0;
+  }
+
+  searchInput?.addEventListener('input', applyFilter);
+  yearSelect?.addEventListener('change', applyFilter);
+  applyFilter();
+</script>
+
+<style>
+  .moment-filters { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+  .filter-search, .filter-year {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #f6f7f9; border: 1px solid #e8eaee; border-radius: 9px;
+    padding: 0 12px; color: #9aa3af; font-size: 14px;
+  }
+  :global(.dark) .filter-search, :global(.dark) .filter-year { background: #2a2a2b; border-color: #3a3a3b; }
+  .filter-search { flex: 1; min-width: 200px; height: 38px; }
+  .filter-search input {
+    flex: 1; min-width: 0; border: 0; outline: 0; background: transparent;
+    font-size: 13px; color: #333; font-family: inherit;
+  }
+  :global(.dark) .filter-search input { color: #ddd; }
+  .filter-year { height: 38px; }
+  .filter-year select {
+    border: 0; outline: 0; background: transparent; color: #555;
+    font-size: 13px; font-family: inherit; cursor: pointer; padding-right: 4px;
+  }
+  :global(.dark) .filter-year select { color: #ddd; }
+  .filter-result { font-size: 12px; color: #4270f5; margin-left: auto; }
+
+  .moment-year-group { margin-bottom: 26px; }
+  .moment-year-label {
+    display: flex; align-items: center; gap: 12px;
+    margin: 0 0 16px; font-size: 13px; font-weight: 700; color: #4270f5;
+  }
+  .moment-year-label::after { content: ''; flex: 1; height: 1px; background: #e6e9ef; }
+  :global(.dark) .moment-year-label::after { background: #333; }
+  .moment-year-label span {
+    display: inline-flex; align-items: center;
+    padding: 4px 12px; border-radius: 999px;
+    background: rgba(66, 112, 245, 0.1);
+  }
+  .moment-empty { text-align: center; color: #999; padding: 40px 0; font-size: 14px; }
+</style>

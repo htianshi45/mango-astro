@@ -1,0 +1,80 @@
+---
+/**
+ * 通用页头卡片 — 参考 Firefly 各功能页的 `.page-header.card-base`
+ * （图标 + 标题 + 描述 + 右侧数量统计），视觉沿用 Mango 的白卡片。
+ */
+interface Props {
+  icon: string;
+  title: string;
+  description?: string;
+  /** 右侧统计数字，不传则不显示统计块 */
+  count?: number;
+  unit?: string;
+  accent?: string;
+}
+
+const { icon, title, description = '', count, unit = '', accent = '#4270f5' } = Astro.props;
+---
+
+<section class="page-head-card" style={`--head-accent:${accent}`}>
+  <div class="page-head-main">
+    <div class="page-head-icon"><i class={`bi ${icon}`}></i></div>
+    <div class="page-head-text">
+      <h1>{title}</h1>
+      {description && <p>{description}</p>}
+    </div>
+  </div>
+  {typeof count === 'number' && (
+    <div class="page-head-count">
+      <strong>{count}</strong>
+      <span>{unit}</span>
+    </div>
+  )}
+  <div class="page-head-extra"><slot /></div>
+</section>
+
+<style>
+  .page-head-card {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 16px;
+    background: #fff;
+    border-radius: 10px;
+    padding: 26px 30px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .page-head-card::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+    background: var(--head-accent);
+  }
+  :global(.dark) .page-head-card { background: #212121; }
+
+  .page-head-main { display: flex; align-items: center; gap: 16px; min-width: 0; }
+  .page-head-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 46px; height: 46px; flex-shrink: 0;
+    border-radius: 12px; font-size: 21px;
+    color: var(--head-accent);
+    background: color-mix(in srgb, var(--head-accent) 12%, transparent);
+  }
+  .page-head-text h1 { margin: 0 0 4px; font-size: 21px; font-weight: 700; color: #333; }
+  .page-head-text p { margin: 0; font-size: 13px; color: #8c96a3; line-height: 1.6; }
+  :global(.dark) .page-head-text h1 { color: #e6e6e6; }
+
+  .page-head-count { text-align: right; color: var(--head-accent); white-space: nowrap; }
+  .page-head-count strong { display: block; font-size: 30px; line-height: 1; font-weight: 700; }
+  .page-head-count span { font-size: 12px; opacity: 0.75; }
+
+  .page-head-extra { grid-column: 1 / -1; }
+  .page-head-extra:empty { display: none; }
+
+  @media (max-width: 640px) {
+    .page-head-card { padding: 20px; }
+    .page-head-text h1 { font-size: 18px; }
+    .page-head-count strong { font-size: 24px; }
+  }
+</style>

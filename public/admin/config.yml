@@ -6,6 +6,10 @@
 #   backend.base_url    = 自建 Cloudflare Worker OAuth 网关 https://auth.840428.xyz
 #   backend.site_domain = 站点标识，用于 OAuth site_id；网关白名单需包含它
 # 详细步骤见工程根目录《后台接入-操作清单.md》与《站点管理与设置教程》
+#
+# ⚠️ 每个 collection 的 fields 必须列全对应 schema 的字段：
+#    CMS 保存已有条目时会重写整个 frontmatter，未列出的字段会被抹掉。
+#    构建前 scripts/check-content.mjs 会再校验一遍 URL 别名、日期与枚举。
 
 backend:
   name: github
@@ -22,6 +26,7 @@ media_folder: public/images/uploads
 public_folder: /images/uploads
 
 collections:
+  # ---------------- 文章 ----------------
   - name: posts
     label: 文章
     folder: src/content/posts
@@ -42,6 +47,11 @@ collections:
       - { label: "发布日期", name: "pubDate", widget: "datetime" }
       - { label: "更新日期", name: "updatedDate", widget: "datetime", required: false }
       - { label: "封面图", name: "heroImage", widget: "image", required: false }
+      - label: "九宫格图片（一般留空，正文图片会自动提取）"
+        name: "images"
+        widget: "list"
+        required: false
+        field: { label: "图片地址", name: "image", widget: "string" }
       - { label: "作者", name: "author", widget: "string", default: "Mango" }
       - { label: "头像", name: "avatar", widget: "image", default: "/images/default-avatar.svg" }
       - label: "标签"
@@ -56,5 +66,82 @@ collections:
       - { label: "草稿", name: "draft", widget: "boolean", default: false, required: false }
       - { label: "正文", name: "body", widget: "markdown", hint: "在正文中按段落插入图片；首页九宫格会自动取正文前 9 张，超出部分显示 +N" }
 
+  # ---------------- 说说（首页混合时间流） ----------------
+  - name: moments
+    label: 说说
+    folder: src/content/moments
+    create: true
+    # 用发布时间自动生成文件名，作者不必手填 ID；fields 里刻意不放 slug，
+    # 避免 Astro 把 frontmatter slug 当成条目 ID。
+    slug: "{{year}}-{{month}}-{{day}}-{{hour}}-{{minute}}-{{second}}"
+    summary: "{{published}} · {{location}}"
+    editor:
+      preview: true
+    fields:
+      - { label: "发布时间", name: "published", widget: "datetime" }
+      - { label: "更新时间", name: "updatedDate", widget: "datetime", required: false }
+      - { label: "置顶", name: "pinned", widget: "boolean", default: false, required: false }
+      - { label: "地点", name: "location", widget: "string", required: false }
+      - label: "标签"
+        name: "tags"
+        widget: "list"
+        required: false
+        field: { label: "标签", name: "tag", widget: "string" }
+      - { label: "作者", name: "author", widget: "string", default: "Mango", required: false }
+      - { label: "头像", name: "avatar", widget: "image", default: "/images/default-avatar.svg", required: false }
+      - { label: "草稿", name: "draft", widget: "boolean", default: false, required: false }
+      - { label: "内容", name: "body", widget: "markdown", hint: "短内容 + 可选图片；图片会自动走九宫格与灯箱，首页按发布时间和文章交替显示" }
+
+  # ---------------- 收藏（收藏夹 / 书架 / 片库 / 音乐库） ----------------
+  - name: favorites
+    label: 收藏条目
+    folder: src/content/favorites
+    create: true
+    slug: "{{fields.slug}}"
+    summary: "{{title}} · {{category}} · {{status}}"
+    editor:
+      preview: true
+    fields:
+      - label: "条目 ID（文件名，小写英文/数字/连字符）"
+        name: "slug"
+        widget: "string"
+        pattern: ["^[a-z0-9-]+$", "只能用小写字母、数字和连字符"]
+        hint: "编辑已有条目时保持与文件名一致；改动会改变条目 ID。"
+      - { label: "名称", name: "title", widget: "string" }
+      - label: "所属库"
+        name: "category"
+        widget: "select"
+        options:
+          - { label: "收藏夹", value: "bookmarks" }
+          - { label: "书架", value: "books" }
+          - { label: "片库", value: "movies" }
+          - { label: "音乐库", value: "music" }
+      - { label: "封面图", name: "cover", widget: "image", required: false, hint: "留空则显示名称首字母占位" }
+      - { label: "一句话简介", name: "description", widget: "text", required: false }
+      - label: "状态"
+        name: "status"
+        widget: "select"
+        default: "done"
+        options:
+          - { label: "待办 / 想读想看", value: "wish" }
+          - { label: "进行中", value: "doing" }
+          - { label: "已完成", value: "done" }
+          - { label: "精选 / 最爱", value: "favorite" }
+      - { label: "评分（0–10，0 为未评分）", name: "rating", widget: "number", default: 0, min: 0, max: 10, required: false }
+      - { label: "进度（0–100）", name: "progress", widget: "number", default: 0, min: 0, max: 100, required: false }
+      - { label: "外链", name: "url", widget: "string", required: false }
+      - { label: "作者 / 导演 / 歌手 / 站点", name: "creator", widget: "string", required: false }
+      - { label: "年份", name: "year", widget: "string", required: false }
+      - label: "标签"
+        name: "tags"
+        widget: "list"
+        required: false
+        field: { label: "标签", name: "tag", widget: "string" }
+      - { label: "加入时间", name: "addedAt", widget: "datetime" }
+      - { label: "排序权重（越大越靠前）", name: "weight", widget: "number", default: 0, required: false }
+      - { label: "草稿", name: "draft", widget: "boolean", default: false, required: false }
+      - { label: "短评", name: "body", widget: "markdown", required: false }
+
 # 说明：没有配置 pages collection。原模板里的 "关于页面" 指向 src/pages/about.astro，
 # 那是 Astro 组件而非 Markdown；用 CMS 的 markdown widget 编辑会写坏组件文件。
+# 书签导航是站点配置（src/config/bookmarks.ts），不在 CMS 里管理，避免误改 TS 文件。

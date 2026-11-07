@@ -1,0 +1,136 @@
+---
+/**
+ * 说说卡片 — 参考 Firefly 的 dynamic 时间线样式，但沿用 Mango 的 post_loop 卡片，
+ * 这样在首页混合时间流里和文章卡片能自然交替而不割裂。
+ */
+import PostImages from './PostImages.astro';
+import { renderMomentText } from '@/utils/mini-markdown';
+
+interface Props {
+  id: string;
+  author: string;
+  avatar: string;
+  published: string | Date;
+  pinned?: boolean;
+  location?: string;
+  tags?: string[];
+  images?: string[];
+  text: string;
+  showTypeBadge?: boolean;
+  /** 说说归档页是否启用；关闭后不渲染指向 404 的「全部说说」入口 */
+  showArchiveLink?: boolean;
+}
+
+const {
+  id,
+  author,
+  avatar,
+  published,
+  pinned = false,
+  location = '',
+  tags = [],
+  images = [],
+  text,
+  showTypeBadge = true,
+  showArchiveLink = true,
+} = Astro.props;
+
+function formatDate(date: string | Date): string {
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return '';
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
+}
+
+const html = renderMomentText(text);
+---
+
+<article class="post-loop moment-card">
+  <!-- 作者行 -->
+  <div class="flex items-start mb-4">
+    <img src={avatar} alt={author} class="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+    <div class="ml-3 flex-1 min-w-0">
+      <h3 class="text-sm font-medium text-[#333] dark:text-[#ccc]">{author}</h3>
+      <div class="text-xs text-[#C6C6C6]">{formatDate(published)}</div>
+    </div>
+    <div class="moment-badges">
+      {pinned && <span class="moment-badge pinned"><i class="bi bi-pin-angle-fill"></i> 置顶</span>}
+      {showTypeBadge && <span class="moment-badge"><i class="bi bi-chat-square-dots"></i> 说说</span>}
+    </div>
+  </div>
+
+  <div class="moment-content-area">
+    <div class="moment-text" set:html={html}></div>
+
+    {images.length > 0 && (
+      <div class="moment-images">
+        <PostImages images={images} slug={`moment-${id}`} />
+      </div>
+    )}
+
+    <div class="moment-footer">
+      {location && (
+        <span class="moment-location"><i class="bi bi-geo-alt"></i>{location}</span>
+      )}
+      {tags.map((tag) => (
+        <a href={`/tags/${encodeURIComponent(tag)}`} class="moment-tag">#{tag}</a>
+      ))}
+      {showArchiveLink && (
+        <a href="/moments" class="moment-archive-link">全部说说 <i class="bi bi-arrow-right"></i></a>
+      )}
+    </div>
+  </div>
+</article>
+
+<style>
+  .moment-card { position: relative; }
+  .moment-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, #4270f5, #6ba0ff);
+  }
+  .moment-badges { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .moment-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 9px; border-radius: 999px;
+    background: rgba(66, 112, 245, 0.1); color: #4270f5;
+    font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  .moment-badge.pinned { background: rgba(255, 159, 28, 0.14); color: #c98214; }
+  :global(.dark) .moment-badge { background: rgba(138, 176, 255, 0.15); color: #8ab0ff; }
+  :global(.dark) .moment-badge.pinned { background: rgba(255, 193, 7, 0.14); color: #ffc861; }
+
+  .moment-text { font-size: 14px; line-height: 1.85; color: #444; margin-bottom: 14px; }
+  .moment-text :global(p) { margin: 0 0 10px; }
+  .moment-text :global(p:last-child) { margin-bottom: 0; }
+  .moment-text :global(h3) { font-size: 16px; font-weight: 600; margin: 0 0 10px; color: #333; }
+  .moment-text :global(strong) { font-weight: 700; color: #2b2b2b; }
+  .moment-text :global(em) { font-style: italic; }
+  .moment-text :global(a) { color: #4270f5; text-decoration: underline; text-underline-offset: 2px; }
+  .moment-text :global(code) {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9em;
+    background: #f2f4f8; color: #0c447c; padding: 2px 5px; border-radius: 4px;
+  }
+  :global(.dark) .moment-text { color: #c9c9c9; }
+  :global(.dark) .moment-text :global(h3),
+  :global(.dark) .moment-text :global(strong) { color: #e6e6e6; }
+  :global(.dark) .moment-text :global(a) { color: #8ab0ff; }
+  :global(.dark) .moment-text :global(code) { background: #2a2a2b; color: #a8c7ff; }
+
+  .moment-images { margin-top: 4px; }
+  .moment-footer {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
+    margin-top: 18px; padding-top: 14px;
+    border-top: 1px solid #f0f0f0;
+    font-size: 12px;
+  }
+  :global(.dark) .moment-footer { border-color: #333; }
+  .moment-location { color: #8c96a3; display: inline-flex; align-items: center; gap: 4px; }
+  .moment-tag { color: #4270f5; text-decoration: none; }
+  .moment-tag:hover { text-decoration: underline; }
+  .moment-archive-link { margin-left: auto; color: #a8a8a8; text-decoration: none; }
+  .moment-archive-link:hover { color: #4270f5; }
+  :global(.dark) .moment-archive-link { color: #777; }
+</style>

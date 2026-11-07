@@ -1,0 +1,108 @@
+---
+/** 收藏总览 — 四个库的入口 + 最近添加 */
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import PageHeader from '@/components/PageHeader.astro';
+import FavoriteCard from '@/components/FavoriteCard.astro';
+import { getCollection } from 'astro:content';
+import { favoritePageConfig, favoriteCategories, getCategoryMeta } from '@/config/favorites';
+import { isPageEnabled, siteConfig } from '@/config/site';
+
+if (!isPageEnabled('favorites')) return Astro.rewrite('/404');
+
+const items = await getCollection('favorites', ({ data }) => data.draft !== true);
+
+const groups = favoriteCategories.map((meta) => {
+  const list = items.filter((item) => item.data.category === meta.id);
+  const done = list.filter((item) => item.data.status === 'done' || item.data.status === 'favorite').length;
+  return {
+    meta,
+    count: list.length,
+    done,
+    percent: list.length ? Math.round((done / list.length) * 100) : 0,
+  };
+});
+
+const recent = [...items]
+  .sort((a, b) => new Date(b.data.addedAt).getTime() - new Date(a.data.addedAt).getTime())
+  .slice(0, 6);
+---
+
+<BaseLayout title={`${favoritePageConfig.title} - ${siteConfig.name}`} description={favoritePageConfig.description}>
+  <PageHeader
+    icon="bi-stars"
+    title={favoritePageConfig.title}
+    description={favoritePageConfig.description}
+    count={items.length}
+    unit="件收藏"
+  />
+
+  <div class="fav-overview-grid">
+    {groups.map(({ meta, count, done, percent }) => (
+      <a href={`/favorites/${meta.id}`} class="fav-overview-card" style={`--accent:${meta.accent}`}>
+        <div class="ov-icon"><i class={`bi ${meta.icon}`}></i></div>
+        <div class="ov-main">
+          <h2>{meta.name}</h2>
+          <p>{meta.desc}</p>
+          <div class="ov-progress"><i style={`width:${percent}%`}></i></div>
+          <span class="ov-foot">已完成 {done} / {count} {meta.unit} · {percent}%</span>
+        </div>
+        <strong class="ov-count">{count}</strong>
+        <i class="bi bi-arrow-right ov-arrow"></i>
+      </a>
+    ))}
+  </div>
+
+  <section class="fav-recent">
+    <h2 class="fav-section-title"><i class="bi bi-clock-history"></i> 最近添加</h2>
+    <div class="fav-grid">
+      {/* 总览里统一封面比例，避免 2:3 与 1:1 混排导致卡片高低不齐 */}
+      {recent.map((item) => (
+        <FavoriteCard
+          item={item}
+          meta={{ ...getCategoryMeta(item.data.category)!, coverRatio: '1 / 1' as const }}
+        />
+      ))}
+    </div>
+    <a href="/favorites/books" class="fav-all-link">查看全部分类 <i class="bi bi-arrow-right"></i></a>
+  </section>
+</BaseLayout>
+
+<style>
+  .fav-overview-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 26px; }
+  .fav-overview-card {
+    position: relative; display: flex; align-items: flex-start; gap: 14px;
+    padding: 20px; border-radius: 12px; border: 1px solid #eceef2;
+    background: #fff; text-decoration: none; overflow: hidden;
+    transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s;
+  }
+  .fav-overview-card:hover { border-color: var(--accent); box-shadow: 0 8px 24px rgba(8, 8, 8, 0.1); transform: translateY(-2px); }
+  :global(.dark) .fav-overview-card { background: #212121; border-color: #333; }
+  .ov-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 44px; height: 44px; flex-shrink: 0; border-radius: 11px;
+    font-size: 20px; color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+  .ov-main { flex: 1; min-width: 0; }
+  .ov-main h2 { margin: 0 0 4px; font-size: 16px; font-weight: 700; color: #333; }
+  :global(.dark) .ov-main h2 { color: #e6e6e6; }
+  .ov-main p { margin: 0 0 12px; font-size: 12px; color: #9aa3af; }
+  .ov-progress { height: 5px; border-radius: 99px; background: #eceef2; overflow: hidden; }
+  :global(.dark) .ov-progress { background: #3a3a3b; }
+  .ov-progress i { display: block; height: 100%; background: var(--accent); border-radius: 99px; }
+  .ov-foot { display: block; margin-top: 7px; font-size: 11px; color: #a5acb6; }
+  .ov-count { position: absolute; top: 14px; right: 18px; font-size: 24px; font-weight: 700; color: color-mix(in srgb, var(--accent) 55%, #fff); }
+  .ov-arrow { position: absolute; bottom: 16px; right: 18px; font-size: 13px; color: #c3c9d1; }
+
+  .fav-section-title { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; font-size: 16px; font-weight: 700; color: #333; }
+  .fav-section-title i { color: #4270f5; }
+  :global(.dark) .fav-section-title { color: #e6e6e6; }
+  .fav-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; align-items: stretch; }
+  .fav-all-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 18px; font-size: 13px; color: #4270f5; text-decoration: none; }
+  .fav-all-link:hover { text-decoration: underline; }
+
+  @media (max-width: 640px) {
+    .fav-overview-grid { grid-template-columns: 1fr; }
+    .fav-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  }
+</style>

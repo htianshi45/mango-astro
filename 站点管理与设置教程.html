@@ -138,6 +138,16 @@ hr { border:0; border-top:1px solid var(--line); margin:34px 0; }
 </li>
 <li><a href="#9">9. 命令速查</a></li>
 <li><a href="#10">10. 例行清单</a></li>
+<li><a href="#11">11. 新功能维护：说说 / 书签导航 / 收藏四库</a><ul>
+<li><a href="#111">11.1 导航栏与页面开关</a></li>
+<li><a href="#112">11.2 首页混合时间流</a></li>
+<li><a href="#113">11.3 写说说</a></li>
+<li><a href="#114">11.4 书签导航</a></li>
+<li><a href="#115">11.5 收藏夹 / 书架 / 片库 / 音乐库</a></li>
+<li><a href="#116-cms">11.6 CMS 字段与构建前体检（重要）</a></li>
+<li><a href="#117">11.7 示例内容与自洽校验</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -472,22 +482,26 @@ draft: false
 </table>
 <h3 id="31">3.1 改导航菜单的具体写法</h3>
 <p><code>src/config/site.ts</code> 的 <code>siteConfig.navItems</code>：</p>
+<p>导航已改为 <strong>Firefly 风格的分组下拉</strong>：三段式胶囊卡片（Logo｜居中菜单｜右侧工具按钮），桌面 hover / 点击 / 键盘聚焦都能展开二级菜单，窄屏收进右侧抽屉。</p>
 <button class="copy" type="button">复制</button><pre><code class="language-ts">navItems: [
-  { name: '风景', href: '/categories/风景' },
-  { name: '旅拍', href: '/categories/旅拍', icon: 'bi-palette' },
+  { name: '主页', href: '/', icon: 'bi-house' },
   {
-    name: '科技', href: '/categories/科技',
-    children: [{ name: '数码', href: '/categories/数码' }],
+    name: '文章', href: '#', icon: 'bi-journal-text',   // href 为 '#' = 只作下拉父级
+    children: [
+      { name: '文章归档', href: '/archive', icon: 'bi-archive', page: 'archive' },
+      { name: '说说', href: '/moments', icon: 'bi-chat-square-dots', page: 'moments' },
+    ],
   },
-  { name: '主题下载', href: '/download', page: 'download' },
+  { name: '关于我', href: '/about', icon: 'bi-info-circle' },
+  { name: 'GitHub', href: 'https://github.com', icon: 'bi-github', external: true },
 ],
 </code></pre>
 <ul>
-<li><code>name</code> 显示文字，<code>href</code> 链接</li>
-<li><code>icon</code> 可选，用 Bootstrap Icons 类名（如 <code>bi-palette</code>）</li>
-<li><code>children</code> 存在即自动生成二级下拉菜单</li>
-<li><code>page</code> 关联页面开关；对应开关设为 <code>false</code> 时，该导航项自动消失</li>
-<li>加一项就复制一行，删一项就删一行</li>
+<li><code>name</code> 显示文字，<code>href</code> 链接；<code>icon</code> 用 Bootstrap Icons 类名</li>
+<li><code>children</code> 存在即自动生成二级下拉菜单；父级 <code>href: '#'</code> 时不会跳转</li>
+<li><code>page</code> 关联页面开关；开关设为 <code>false</code> 时该项（含子项）自动消失，分组若无可用子项整组隐藏</li>
+<li><code>external: true</code> 会新窗口打开并加 <code>noopener noreferrer</code></li>
+<li>加一项就复制一行，删一项就删一行；更多见第 11.1 节</li>
 </ul>
 <h3 id="32">3.2 改轮播的具体写法</h3>
 <p><code>src/config/banner.ts</code>：</p>
@@ -785,7 +799,253 @@ git log --oneline -10                             # 看最近提交
 <li class="task">☐ 若绑定了 <code>mango.840428.xyz</code>，同步改 <code>src/config/site.ts</code> 的 <code>url</code> 与 <code>astro.config.mjs</code> 的 <code>site</code></li>
 </ul>
 <p><strong>已自动处理（不用再管）</strong>：备案号占位改为「留空不显示」（<code>siteConfig.icp</code>）；<code>site</code> 已改为实际域名 <code>https://mango-astro.pages.dev</code>；站名 / 导航 / 页脚 / 每页文章数已收进 <code>src/config/site.ts</code>。</p>
-<div class="footer">Mango Astro · 站点管理与设置教程 v2.1 · 2026-11-07 · 新增 8.1「CMS 写入的常见坑」与构建前内容体检 · 支持日间 / 夜间 / 系统三态切换</div>
+<hr />
+<h2 id="11">11. 新功能维护：说说 / 书签导航 / 收藏四库</h2>
+<p>本轮参考 Firefly 主题补了四块功能：分组导航栏、说说与首页混合时间流、书签导航、四个收藏库。除书签导航是配置文件外，其余内容都能在 Sveltia CMS 后台维护。</p>
+<h3 id="111">11.1 导航栏与页面开关</h3>
+<p>导航栏由 <code>src/config/site.ts</code> 的 <code>navItems</code> 驱动（写法见 3.1）。渲染逻辑在 <code>src/components/Header.astro</code>：桌面是三段式毛玻璃胶囊 + 分组下拉，窄屏（&lt;1024px）收进右侧抽屉，抽屉里的二级菜单用原生 <code>&lt;details&gt;</code> 折叠。</p>
+<p>当前页面开关（<code>pageToggles</code>）共 8 个：</p>
+<table>
+<thead>
+<tr>
+<th>开关</th>
+<th>控制</th>
+<th>关闭后的联动</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>moments</code></td>
+<td>说说</td>
+<td>导航/页脚入口隐藏、<code>/moments</code> 返 404、sitemap 排除、<strong>首页回到纯文章流</strong></td>
+</tr>
+<tr>
+<td><code>bookmarks</code></td>
+<td>书签导航</td>
+<td>导航/页脚入口隐藏、<code>/bookmarks</code> 返 404、sitemap 排除</td>
+</tr>
+<tr>
+<td><code>favorites</code></td>
+<td>收藏四库 + 总览</td>
+<td>导航里 5 个收藏入口隐藏、5 个页面返 404、sitemap 排除</td>
+</tr>
+<tr>
+<td><code>archive</code> / <code>tags</code> / <code>search</code> / <code>download</code> / <code>map</code></td>
+<td>原有页面</td>
+<td>同上</td>
+</tr>
+</tbody>
+</table>
+<p>改法：在 <code>src/config/site.ts</code> 把对应值改成 <code>false</code>，重新构建部署即可，<code>visibleNavItems()</code> 会递归过滤子菜单，分组无可用子项时整组隐藏。</p>
+<h3 id="112">11.2 首页混合时间流</h3>
+<p><code>src/utils/feed.ts</code> 把 <code>posts</code> 和 <code>moments</code> 归一成同一种 <code>FeedEntry</code>，再按发布时间倒序合并。<code>index.astro</code> 与 <code>page/[page].astro</code> 共用同一份结果，所以第一页和第二页顺序不会错位。</p>
+<p><code>siteConfig.home</code> 有三个开关：</p>
+<table>
+<thead>
+<tr>
+<th>配置</th>
+<th>默认</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mixMode</code></td>
+<td><code>'timeline'</code></td>
+<td>严格按发布时间倒序合并；改成 <code>'alternate'</code> 会强制文章/说说一比一交替（同类型内部仍按时间倒序）</td>
+</tr>
+<tr>
+<td><code>stickyFirst</code></td>
+<td><code>false</code></td>
+<td>置顶项是否插队到最前。默认 <code>false</code>：严格按时间交替，置顶只用徽标体现</td>
+</tr>
+<tr>
+<td><code>showTypeBadge</code></td>
+<td><code>true</code></td>
+<td>是否在卡片上显示「文章 / 说说」类型徽标</td>
+</tr>
+</tbody>
+</table>
+<p><code>postsPerPage</code> 现在是<strong>混合流</strong>的每页条数（文章 + 说说一起计数）。示例说说的日期特意穿插在现有文章之间，所以首页打开就是「文章—说说—文章—说说」。</p>
+<p>订阅源也接了这份混合流：<code>feed.includeMoments</code> 默认 <code>false</code>（只订阅文章），改成 <code>true</code> 后说说会以「短内容 · 说说」的标题进 RSS / Atom，链接指向 <code>/moments/#moment-&lt;id&gt;</code>。</p>
+<h3 id="113">11.3 写说说</h3>
+<p><strong>后台</strong>：登录 <code>/admin/</code> → 左侧「说说」→ 新建。文件名由发布时间自动生成，不用手填 ID。</p>
+<p><strong>手动</strong>：在 <code>src/content/moments/</code> 新建 Markdown，例如 <code>2026-11-07-1.md</code>：</p>
+<button class="copy" type="button">复制</button><pre><code class="language-md">---
+published: 2026-11-07 14:30:00
+pinned: false
+location: 杭州 · 西湖
+tags:
+  - 随手拍
+---
+
+今天天气不错。
+
+![照片](/images/uploads/photo.jpg)
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>必填</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>published</code></td>
+<td>是</td>
+<td>发布时间，决定首页排序</td>
+</tr>
+<tr>
+<td><code>pinned</code></td>
+<td>否</td>
+<td>置顶徽标；默认不插队（见 11.2）</td>
+</tr>
+<tr>
+<td><code>location</code></td>
+<td>否</td>
+<td>显示在卡片底部</td>
+</tr>
+<tr>
+<td><code>tags</code></td>
+<td>否</td>
+<td>标签，链接到标签页</td>
+</tr>
+<tr>
+<td><code>author</code> / <code>avatar</code> / <code>draft</code> / <code>updatedDate</code></td>
+<td>否</td>
+<td>有默认值</td>
+</tr>
+</tbody>
+</table>
+<p>正文里直接写 Markdown 图片；图片会自动抽出来走九宫格和全站灯箱，正文只渲染文字。<code>pinned: true</code> 只加徽标，<code>draft: true</code> 不会出现在任何页面。</p>
+<p><code>/moments/</code> 是独立归档页：按年份分组、支持关键词搜索和年份下拉，都是浏览器端过滤，无需后端。</p>
+<h3 id="114">11.4 书签导航</h3>
+<p>数据在 <strong><code>src/config/bookmarks.ts</code></strong>（仿 Firefly 的 <code>booknavConfig.ts</code>），不在 CMS 里——它是 TS 配置，用 CMS 的 Markdown 编辑器打开会写坏文件。</p>
+<button class="copy" type="button">复制</button><pre><code class="language-ts">{
+  id: 'dev', name: '开发', icon: 'bi-code-slash', desc: '写代码时离不开的站点', weight: 100,
+  items: [
+    { title: 'GitHub', url: 'https://github.com', desc: '全球最大的代码托管平台', icon: 'bi-github', weight: 10 },
+    { title: 'MDN Web Docs', url: 'https://developer.mozilla.org', desc: '最权威的 Web 文档', weight: 9 },
+  ],
+}
+</code></pre>
+<ul>
+<li><code>weight</code> 越大越靠前（分组与组内条目分别排序）</li>
+<li><code>icon</code> 可填 <code>bi-*</code> 图标名、图片路径或 URL；留空则自动取目标站点 favicon</li>
+<li>favicon 接口在 <code>bookmarksPageConfig.favicon.api</code>，取不到时自动回退名称首字母，不会裂图</li>
+<li><code>applyNote</code> 是页脚说明，留空则不显示</li>
+</ul>
+<p><code>/bookmarks/</code> 页头有搜索框与分类锚点，都是纯前端过滤。</p>
+<h3 id="115">11.5 收藏夹 / 书架 / 片库 / 音乐库</h3>
+<p>参考 Firefly 的番剧页模型，用<strong>一个 collection 驱动四个页面</strong>：数据在 <code>src/content/favorites/*.md</code>，分类元数据在 <code>src/config/favorites.ts</code>。</p>
+<table>
+<thead>
+<tr>
+<th>页面</th>
+<th>分类键</th>
+<th>封面比例</th>
+<th>状态标签</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/favorites/bookmarks</code></td>
+<td><code>bookmarks</code> 收藏夹</td>
+<td>1:1</td>
+<td>待读 / 在读 / 已读 / 精选</td>
+</tr>
+<tr>
+<td><code>/favorites/books</code></td>
+<td><code>books</code> 书架</td>
+<td>2:3</td>
+<td>想读 / 在读 / 读过 / 最爱</td>
+</tr>
+<tr>
+<td><code>/favorites/movies</code></td>
+<td><code>movies</code> 片库</td>
+<td>2:3</td>
+<td>想看 / 在看 / 看过 / 最爱</td>
+</tr>
+<tr>
+<td><code>/favorites/music</code></td>
+<td><code>music</code> 音乐库</td>
+<td>1:1</td>
+<td>想听 / 在听 / 听过 / 循环</td>
+</tr>
+</tbody>
+</table>
+<p><code>/favorites/</code> 是总览：四个分类卡片（数量 + 完成率进度条）+ 最近添加。分类页有 Tab、状态筛选、搜索、统计条（平均评分 / 已完成 / 进行中 / 已评分）。</p>
+<p>一条收藏的 frontmatter：</p>
+<button class="copy" type="button">复制</button><pre><code class="language-md">---
+slug: 'book-1'
+title: 置身事内
+category: books
+cover: /images/favorites/book-1.svg
+description: 从地方政府的角度理解中国经济是怎样运转的
+status: done          # wish | doing | done | favorite
+rating: 9             # 0–10，0 为未评分
+progress: 100         # 0–100，书架/片库显示进度条
+url: ''
+creator: 兰小欢
+year: '2021'
+tags: [经济, 非虚构]
+addedAt: 2024-09-18
+weight: 10
+---
+
+正文写短评，卡片里可折叠展开。
+</code></pre>
+<p>封面示例是本地生成的渐变 SVG（<code>public/images/favorites/</code>），不依赖外链；留空 <code>cover</code> 会显示名称首字母占位。想加第五个库，在 <code>favoriteCategories</code> 里加一项，动态路由会自动生成新页面。</p>
+<h3 id="116-cms">11.6 CMS 字段与构建前体检（重要）</h3>
+<p><code>public/admin/config.yml</code> 现在有 3 个 collection：<code>posts</code>（文章）、<code>moments</code>（说说）、<code>favorites</code>（收藏条目）。</p>
+<blockquote>
+<p><strong>CMS 保存已有条目时会重写整个 frontmatter，未在 <code>fields</code> 里列出的字段会被抹掉。</strong> 所以每个 collection 都把对应 schema 的字段列全了；以后给 schema 加字段，必须同步改 <code>config.yml</code>。</p>
+</blockquote>
+<p><code>npm run check:content</code>（已串进 <code>npm run build</code>）现在覆盖三个目录：URL 别名与文件名一致性、别名重复、必填字段、日期合法性、<code>category</code> 枚举、<code>rating</code>/<code>progress</code> 数值范围。当前输出：</p>
+<button class="copy" type="button">复制</button><pre><code>[check-content] ✓ 文章 16 · 说说 8 · 收藏 10 全部通过
+</code></pre>
+<p>说说与文章/收藏有一处不同：<strong>说说的 <code>fields</code> 里刻意没有 <code>slug</code></strong>（用发布时间自动生成文件名），避免 Astro 把 frontmatter <code>slug</code> 当成条目 ID；文章和收藏则保留 <code>slug</code> 字段，编辑时务必保持与文件名一致，详见 8.1。</p>
+<h3 id="117">11.7 示例内容与自洽校验</h3>
+<table>
+<thead>
+<tr>
+<th>内容</th>
+<th>数量</th>
+<th>位置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>文章</td>
+<td>16</td>
+<td><code>src/content/posts/</code></td>
+</tr>
+<tr>
+<td>说说</td>
+<td>8</td>
+<td><code>src/content/moments/</code>（7 条 2024 年穿插 + 1 条 2023 年用于跨年归档）</td>
+</tr>
+<tr>
+<td>收藏条目</td>
+<td>10</td>
+<td><code>src/content/favorites/</code>（收藏夹 2 / 书架 3 / 片库 3 / 音乐库 2）</td>
+</tr>
+<tr>
+<td>封面</td>
+<td>10</td>
+<td><code>public/images/favorites/</code></td>
+</tr>
+<tr>
+<td>书签</td>
+<td>14（4 组）</td>
+<td><code>src/config/bookmarks.ts</code></td>
+</tr>
+</tbody>
+</table>
+<p>这些内容只是演示，替换成你自己的即可；删到 0 条时对应页面会显示空状态而不会报错。</p>
+<div class="footer">Mango Astro · 站点管理与设置教程 v3.0 · 2026-11-07 · 新增第 11 章「说说 / 书签导航 / 收藏四库 / 分组导航栏」维护说明 · 支持日间 / 夜间 / 系统三态切换</div>
 </main>
 </div>
 <script>

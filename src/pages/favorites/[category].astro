@@ -1,0 +1,184 @@
+---
+/**
+ * 收藏分类页 — 参考 Firefly BangumiGrid 的分类 Tab + 状态统计 + 封面网格。
+ * 一个动态路由由 favoriteCategories 驱动四个页面：
+ *   /favorites/bookmarks 收藏夹 · /favorites/books 书架
+ *   /favorites/movies 片库 · /favorites/music 音乐库
+ */
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import PageHeader from '@/components/PageHeader.astro';
+import FavoriteCard from '@/components/FavoriteCard.astro';
+import { getCollection } from 'astro:content';
+import { favoriteCategories, favoritePageConfig, type FavoriteCategoryMeta } from '@/config/favorites';
+import { isPageEnabled, siteConfig } from '@/config/site';
+
+export async function getStaticPaths() {
+  return favoriteCategories.map((meta) => ({
+    params: { category: meta.id },
+    props: { meta },
+  }));
+}
+
+const { meta } = Astro.props as { meta: FavoriteCategoryMeta };
+if (!isPageEnabled('favorites')) return Astro.rewrite('/404');
+
+const all = await getCollection('favorites', ({ data }) => data.draft !== true);
+const items = all
+  .filter((item) => item.data.category === meta.id)
+  .sort((a, b) => {
+    if (b.data.weight !== a.data.weight) return b.data.weight - a.data.weight;
+    return new Date(b.data.addedAt).getTime() - new Date(a.data.addedAt).getTime();
+  });
+
+const statusCounts = meta.statuses.map((status) => ({
+  ...status,
+  count: items.filter((item) => item.data.status === status.key).length,
+}));
+const rated = items.filter((item) => item.data.rating > 0);
+const avgRating = rated.length
+  ? (rated.reduce((sum, item) => sum + item.data.rating, 0) / rated.length).toFixed(1)
+  : '—';
+const doneCount = items.filter((item) => item.data.status === 'done' || item.data.status === 'favorite').length;
+const doingCount = items.filter((item) => item.data.status === 'doing').length;
+---
+
+<BaseLayout
+  title={`${meta.name} - ${favoritePageConfig.title} - ${siteConfig.name}`}
+  description={meta.desc}
+>
+  <PageHeader
+    icon={meta.icon}
+    title={meta.name}
+    description={meta.desc}
+    count={items.length}
+    unit={meta.unit}
+    accent={meta.accent}
+  >
+    <nav class="fav-tabs" aria-label="收藏分类">
+      <a href="/favorites" class="fav-tab"><i class="bi bi-grid"></i>总览</a>
+      {favoriteCategories.map((cat) => (
+        <a
+          href={`/favorites/${cat.id}`}
+          class:list={['fav-tab', cat.id === meta.id && 'active']}
+          style={cat.id === meta.id ? `--accent:${cat.accent}` : ''}
+        >
+          <i class={`bi ${cat.icon}`}></i>{cat.name}
+        </a>
+      ))}
+    </nav>
+
+    <div class="fav-filters">
+      <label class="fav-search">
+        <i class="bi bi-search"></i>
+        <input type="search" id="fav-search" placeholder="搜索标题、作者、标签…" aria-label="搜索收藏" />
+      </label>
+      <div class="fav-status-pills" id="fav-status-pills">
+        <button type="button" class="fav-status-pill active" data-status="all">全部 <span>{items.length}</span></button>
+        {statusCounts.map((status) => (
+          <button type="button" class="fav-status-pill" data-status={status.key}>
+            {status.label} <span>{status.count}</span>
+          </button>
+        ))}
+      </div>
+      <span class="fav-result" id="fav-result"></span>
+    </div>
+  </PageHeader>
+
+  <div class="fav-stats" style={`--accent:${meta.accent}`}>
+    <div><strong>{avgRating}</strong><span>平均评分</span></div>
+    <div><strong>{doneCount}</strong><span>已完成</span></div>
+    <div><strong>{doingCount}</strong><span>进行中</span></div>
+    <div><strong>{rated.length}</strong><span>已评分</span></div>
+  </div>
+
+  <div class="fav-grid" id="fav-grid">
+    {items.map((item) => <FavoriteCard item={item} meta={meta} />)}
+  </div>
+  <p id="fav-empty" class="fav-empty" hidden>这个分类下没有匹配的条目。</p>
+</BaseLayout>
+
+<script>
+  const searchInput = document.getElementById('fav-search') as HTMLInputElement | null;
+  const pills = Array.from(document.querySelectorAll<HTMLButtonElement>('.fav-status-pill'));
+  const cards = Array.from(document.querySelectorAll<HTMLElement>('.fav-card'));
+  const result = document.getElementById('fav-result');
+  const empty = document.getElementById('fav-empty');
+  let activeStatus = 'all';
+
+  function applyFilter() {
+    const keyword = (searchInput?.value || '').trim().toLowerCase();
+    let visible = 0;
+    cards.forEach((card) => {
+      const statusOk = activeStatus === 'all' || card.dataset.status === activeStatus;
+      const textOk = !keyword || (card.dataset.search || '').includes(keyword);
+      const show = statusOk && textOk;
+      card.hidden = !show;
+      if (show) visible += 1;
+    });
+    if (result) result.textContent = keyword || activeStatus !== 'all' ? `找到 ${visible} 条` : '';
+    if (empty) empty.hidden = visible > 0;
+  }
+
+  searchInput?.addEventListener('input', applyFilter);
+  pills.forEach((pill) => {
+    pill.addEventListener('click', () => {
+      pills.forEach((p) => p.classList.remove('active'));
+      pill.classList.add('active');
+      activeStatus = pill.dataset.status || 'all';
+      applyFilter();
+    });
+  });
+  applyFilter();
+</script>
+
+<style>
+  .fav-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+  .fav-tab {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 13px; border-radius: 9px; font-size: 13px;
+    background: #f6f7f9; border: 1px solid transparent; color: #666; text-decoration: none;
+    transition: all 0.2s ease;
+  }
+  .fav-tab:hover { color: #4270f5; border-color: #d7e2ff; }
+  .fav-tab.active { background: var(--accent, #4270f5); color: #fff; }
+  :global(.dark) .fav-tab { background: #2a2a2b; color: #bbb; }
+  :global(.dark) .fav-tab.active { color: #fff; }
+
+  .fav-filters { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+  .fav-search {
+    display: inline-flex; align-items: center; gap: 8px; flex: 1; min-width: 190px;
+    height: 36px; padding: 0 12px; border-radius: 9px;
+    background: #f6f7f9; border: 1px solid #e8eaee; color: #9aa3af;
+  }
+  :global(.dark) .fav-search { background: #2a2a2b; border-color: #3a3a3b; }
+  .fav-search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font-size: 13px; font-family: inherit; color: #333; }
+  :global(.dark) .fav-search input { color: #ddd; }
+  .fav-status-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .fav-status-pill {
+    padding: 5px 11px; border: 1px solid #e6e9ef; border-radius: 999px;
+    background: #fff; color: #666; font-size: 12px; font-family: inherit; cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .fav-status-pill span { opacity: 0.6; margin-left: 2px; }
+  .fav-status-pill:hover, .fav-status-pill.active { border-color: #4270f5; color: #4270f5; background: rgba(66, 112, 245, 0.07); }
+  :global(.dark) .fav-status-pill { background: #262627; border-color: #3a3a3b; color: #bbb; }
+  .fav-result { font-size: 12px; color: #4270f5; margin-left: auto; }
+
+  .fav-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+    background: #eceef2; border: 1px solid #eceef2; border-radius: 10px;
+    overflow: hidden; margin-bottom: 20px;
+  }
+  :global(.dark) .fav-stats { background: #333; border-color: #333; }
+  .fav-stats div { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 14px 6px; background: #fff; }
+  :global(.dark) .fav-stats div { background: #212121; }
+  .fav-stats strong { font-size: 20px; font-weight: 700; color: var(--accent, #4270f5); line-height: 1.1; }
+  .fav-stats span { font-size: 11px; color: #9aa3af; }
+
+  .fav-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; align-items: stretch; }
+  .fav-empty { text-align: center; color: #999; padding: 40px 0; font-size: 14px; }
+
+  @media (max-width: 640px) {
+    .fav-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  }
+</style>

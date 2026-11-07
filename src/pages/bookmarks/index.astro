@@ -1,0 +1,221 @@
+---
+/**
+ * 书签导航 — 参考 Firefly 的 booknav.astro + booknavConfig.ts
+ * 分组配置、锚点 pills、前端搜索、favicon 自动获取（失败回退首字母）。
+ */
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import PageHeader from '@/components/PageHeader.astro';
+import {
+  bookmarksPageConfig,
+  getVisibleBookmarkGroups,
+  getBookmarkDomain,
+  getBookmarkLetter,
+  resolveBookmarkIcon,
+} from '@/config/bookmarks';
+import { isPageEnabled, siteConfig } from '@/config/site';
+
+if (!isPageEnabled('bookmarks')) return Astro.rewrite('/404');
+
+const groups = getVisibleBookmarkGroups().map((group) => ({
+  ...group,
+  items: group.items.map((item) => ({
+    ...item,
+    domain: getBookmarkDomain(item.url),
+    letter: getBookmarkLetter(item.title),
+    resolved: resolveBookmarkIcon(item),
+  })),
+}));
+
+const total = groups.reduce((sum, group) => sum + group.items.length, 0);
+---
+
+<BaseLayout title={`${bookmarksPageConfig.title} - ${siteConfig.name}`} description={bookmarksPageConfig.description}>
+  <PageHeader
+    icon="bi-bookmarks"
+    title={bookmarksPageConfig.title}
+    description={bookmarksPageConfig.description}
+    count={total}
+    unit="个书签"
+  >
+    <div class="bm-filters">
+      <label class="bm-search">
+        <i class="bi bi-search"></i>
+        <input type="search" id="bm-search" placeholder="搜索站点名称、描述或域名…" aria-label="搜索书签" />
+      </label>
+      <span class="bm-result" id="bm-result"></span>
+    </div>
+    <div class="bm-pills" id="bm-pills">
+      {groups.map((group) => (
+        <button type="button" class="bm-pill" data-target={group.id}>
+          {group.icon && <i class={`bi ${group.icon}`}></i>}
+          {group.name}<span class="pill-count">{group.items.length}</span>
+        </button>
+      ))}
+    </div>
+  </PageHeader>
+
+  <div id="bm-groups">
+    {groups.map((group) => (
+      <section class="bm-group" id={group.id} data-group={group.id}>
+        <div class="bm-group-head">
+          {group.icon && <i class={`bi ${group.icon}`}></i>}
+          <h2>{group.name}</h2>
+          {group.desc && <span>{group.desc}</span>}
+          <em>{group.items.length} 个</em>
+        </div>
+        <div class="bm-grid">
+          {group.items.map((item) => (
+            <a
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="bm-card"
+              title={item.desc || item.title}
+              data-search={`${item.title} ${item.desc || ''} ${item.domain}`.toLowerCase()}
+            >
+              <span class="bm-icon">
+                <span class="bm-letter">{item.letter}</span>
+                {item.resolved.kind === 'icon' && <i class={`bi ${item.resolved.value}`}></i>}
+                {item.resolved.kind === 'image' && (
+                  <img class="bm-favicon" src={item.resolved.value} alt="" loading="lazy" />
+                )}
+                {item.resolved.kind === 'favicon' && bookmarksPageConfig.favicon.enabled && (
+                  <img class="bm-favicon" src={item.resolved.value} alt="" loading="lazy" />
+                )}
+              </span>
+              <span class="bm-info">
+                <strong>{item.title}</strong>
+                <small>{item.desc || item.domain}</small>
+                <span class="bm-domain"><i class="bi bi-link-45deg"></i>{item.domain}</span>
+              </span>
+              <i class="bi bi-box-arrow-up-right bm-ext"></i>
+            </a>
+          ))}
+        </div>
+      </section>
+    ))}
+  </div>
+
+  {bookmarksPageConfig.applyNote && (
+    <div class="bm-note"><i class="bi bi-info-circle"></i>{bookmarksPageConfig.applyNote}</div>
+  )}
+  <p id="bm-empty" class="bm-empty" hidden>没有匹配的书签，换个关键词试试。</p>
+</BaseLayout>
+
+<script>
+  // favicon 取不到时回退首字母，避免裂图
+  document.querySelectorAll<HTMLImageElement>('.bm-favicon').forEach((img) => {
+    img.addEventListener('error', () => img.classList.add('failed'));
+    if (img.complete && img.naturalWidth === 0) img.classList.add('failed');
+  });
+
+  const searchInput = document.getElementById('bm-search') as HTMLInputElement | null;
+  const result = document.getElementById('bm-result');
+  const empty = document.getElementById('bm-empty');
+  const cards = Array.from(document.querySelectorAll<HTMLElement>('.bm-card'));
+  const sections = Array.from(document.querySelectorAll<HTMLElement>('.bm-group'));
+
+  function applyFilter() {
+    const keyword = (searchInput?.value || '').trim().toLowerCase();
+    let visible = 0;
+    cards.forEach((card) => {
+      const show = !keyword || (card.dataset.search || '').includes(keyword);
+      card.hidden = !show;
+      if (show) visible += 1;
+    });
+    sections.forEach((section) => {
+      section.hidden = !Array.from(section.querySelectorAll<HTMLElement>('.bm-card')).some((c) => !c.hidden);
+    });
+    if (result) result.textContent = keyword ? `找到 ${visible} 个` : '';
+    if (empty) empty.hidden = visible > 0;
+  }
+  searchInput?.addEventListener('input', applyFilter);
+  applyFilter();
+
+  // 分类锚点
+  document.querySelectorAll<HTMLButtonElement>('.bm-pill').forEach((pill) => {
+    pill.addEventListener('click', () => {
+      const target = document.getElementById(pill.dataset.target || '');
+      if (!target) return;
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.querySelectorAll('.bm-pill').forEach((p) => p.classList.remove('active'));
+      pill.classList.add('active');
+    });
+  });
+</script>
+
+<style>
+  .bm-filters { display: flex; align-items: center; gap: 12px; margin-top: 18px; }
+  .bm-search {
+    display: inline-flex; align-items: center; gap: 8px; flex: 1; min-width: 200px;
+    height: 38px; padding: 0 12px; border-radius: 9px;
+    background: #f6f7f9; border: 1px solid #e8eaee; color: #9aa3af;
+  }
+  :global(.dark) .bm-search { background: #2a2a2b; border-color: #3a3a3b; }
+  .bm-search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font-size: 13px; font-family: inherit; color: #333; }
+  :global(.dark) .bm-search input { color: #ddd; }
+  .bm-result { font-size: 12px; color: #4270f5; }
+
+  .bm-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .bm-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 12px; border: 1px solid #e6e9ef; border-radius: 999px;
+    background: #fff; color: #666; font-size: 12px; font-family: inherit; cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .bm-pill:hover, .bm-pill.active { border-color: #4270f5; color: #4270f5; background: rgba(66, 112, 245, 0.07); }
+  :global(.dark) .bm-pill { background: #262627; border-color: #3a3a3b; color: #bbb; }
+  :global(.dark) .bm-pill:hover, :global(.dark) .bm-pill.active { border-color: #8ab0ff; color: #8ab0ff; }
+  .pill-count { font-size: 11px; opacity: 0.65; }
+
+  .bm-group { margin-bottom: 26px; scroll-margin-top: 90px; }
+  .bm-group-head { display: flex; align-items: baseline; gap: 10px; padding-bottom: 10px; margin-bottom: 14px; border-bottom: 1px solid #eceef2; }
+  :global(.dark) .bm-group-head { border-color: #333; }
+  .bm-group-head > i { color: #4270f5; font-size: 17px; }
+  .bm-group-head h2 { margin: 0; font-size: 17px; font-weight: 700; color: #333; }
+  :global(.dark) .bm-group-head h2 { color: #e6e6e6; }
+  .bm-group-head span { font-size: 12px; color: #9aa3af; }
+  .bm-group-head em { margin-left: auto; font-size: 11px; color: #bbb; font-style: normal; }
+
+  .bm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+  .bm-card {
+    position: relative; display: flex; align-items: center; gap: 12px;
+    padding: 14px; border-radius: 12px; border: 1px solid #eceef2;
+    background: #fff; text-decoration: none; overflow: hidden;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+  }
+  .bm-card::before { content: ''; position: absolute; inset: 0; background: #4270f5; opacity: 0; transition: opacity 0.25s; pointer-events: none; }
+  .bm-card:hover { border-color: #4270f5; box-shadow: 0 8px 22px rgba(66, 112, 245, 0.14); transform: translateY(-2px); }
+  .bm-card:hover::before { opacity: 0.03; }
+  :global(.dark) .bm-card { background: #212121; border-color: #333; }
+
+  .bm-icon {
+    position: relative; display: inline-flex; align-items: center; justify-content: center;
+    width: 52px; height: 52px; flex-shrink: 0; border-radius: 12px;
+    background: #f2f4f8; border: 1px solid #e6e9ef; overflow: hidden;
+    font-size: 24px; color: #4270f5;
+  }
+  :global(.dark) .bm-icon { background: #2a2a2b; border-color: #3a3a3b; }
+  .bm-letter { font-size: 20px; font-weight: 700; color: #9aa3af; }
+  .bm-icon > i, .bm-favicon { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .bm-icon > i { display: flex; align-items: center; justify-content: center; font-size: 24px; }
+  .bm-favicon { object-fit: contain; padding: 10px; background: #f2f4f8; }
+  :global(.dark) .bm-favicon { background: #2a2a2b; }
+  .bm-favicon.failed { display: none; }
+
+  .bm-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .bm-info strong { font-size: 14px; font-weight: 600; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bm-info small { font-size: 12px; color: #8c96a3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bm-domain { font-size: 11px; color: #b3b9c2; }
+  :global(.dark) .bm-info strong { color: #e6e6e6; }
+  .bm-ext { margin-left: auto; flex-shrink: 0; font-size: 12px; color: #c3c9d1; }
+
+  .bm-note { margin-top: 8px; padding: 14px 18px; border-radius: 10px; background: rgba(66, 112, 245, 0.07); color: #6f7885; font-size: 13px; }
+  .bm-note i { margin-right: 8px; color: #4270f5; }
+  :global(.dark) .bm-note { color: #a8b0bc; }
+  .bm-empty { text-align: center; color: #999; padding: 36px 0; font-size: 14px; }
+
+  @media (max-width: 640px) {
+    .bm-grid { grid-template-columns: 1fr; }
+  }
+</style>

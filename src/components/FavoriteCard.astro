@@ -1,0 +1,135 @@
+---
+/**
+ * 收藏卡片 — 参考 Firefly BangumiGrid 的「封面 + 状态 + 评分 + 进度」模型。
+ * 四个库（收藏夹 / 书架 / 片库 / 音乐库）共用，差异由 meta 驱动。
+ */
+import type { CollectionEntry } from 'astro:content';
+import type { FavoriteCategoryMeta } from '@/config/favorites';
+import { getStatusLabel } from '@/config/favorites';
+import { renderMomentText } from '@/utils/mini-markdown';
+
+interface Props {
+  item: CollectionEntry<'favorites'>;
+  meta: FavoriteCategoryMeta;
+}
+
+const { item, meta } = Astro.props;
+const d = item.data;
+const statusLabel = getStatusLabel(meta, d.status);
+const review = renderMomentText(item.body || '');
+const letter = (d.title.trim()[0] || '#').toUpperCase();
+---
+
+<article
+  class="fav-card"
+  style={`--accent:${meta.accent};--ratio:${meta.coverRatio}`}
+  data-status={d.status}
+  data-search={`${d.title} ${d.creator} ${d.description} ${d.tags.join(' ')} ${d.year}`.toLowerCase()}
+>
+  <div class="fav-cover">
+    {d.cover ? (
+      <img src={d.cover} alt={d.title} loading="lazy" />
+    ) : (
+      <span class="fav-cover-letter">{letter}</span>
+    )}
+    <span class="fav-status">{statusLabel}</span>
+    {d.rating > 0 && (
+      <span class="fav-score"><i class="bi bi-star-fill"></i>{d.rating.toFixed(1)}</span>
+    )}
+  </div>
+
+  <div class="fav-body">
+    <h3 class="fav-title">
+      {d.url ? (
+        <a href={d.url} target="_blank" rel="noopener noreferrer">{d.title}</a>
+      ) : (
+        d.title
+      )}
+    </h3>
+    <div class="fav-meta">
+      {d.creator && <span>{d.creator}</span>}
+      {d.creator && d.year && <span class="dot">·</span>}
+      {d.year && <span>{d.year}</span>}
+    </div>
+    {d.description && <p class="fav-desc">{d.description}</p>}
+
+    {meta.showProgress && d.progress > 0 && (
+      <div class="fav-progress">
+        <div class="fav-progress-bar"><i style={`width:${Math.min(100, d.progress)}%`}></i></div>
+        <span>{d.progress}%</span>
+      </div>
+    )}
+
+    {d.tags.length > 0 && (
+      <div class="fav-tags">{d.tags.slice(0, 3).map((tag) => <span>#{tag}</span>)}</div>
+    )}
+
+    {review && (
+      <details class="fav-review">
+        <summary>短评 <i class="bi bi-chevron-down"></i></summary>
+        <div class="fav-review-text" set:html={review}></div>
+      </details>
+    )}
+  </div>
+</article>
+
+<style>
+  .fav-card {
+    display: flex; flex-direction: column;
+    background: #fff; border: 1px solid #eceef2; border-radius: 12px;
+    overflow: hidden; transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+  }
+  .fav-card:hover { border-color: var(--accent); box-shadow: 0 8px 24px rgba(8, 8, 8, 0.1); transform: translateY(-2px); }
+  :global(.dark) .fav-card { background: #212121; border-color: #333; }
+
+  .fav-cover {
+    position: relative; width: 100%; aspect-ratio: var(--ratio);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 70%, #111), #2a2a2a);
+    overflow: hidden;
+  }
+  .fav-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .fav-cover-letter { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 56px; font-weight: 700; color: rgba(255, 255, 255, 0.6); }
+  .fav-status {
+    position: absolute; top: 10px; left: 10px;
+    padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600;
+    background: rgba(0, 0, 0, 0.62); color: #fff; backdrop-filter: blur(6px);
+  }
+  .fav-score {
+    position: absolute; top: 10px; right: 10px;
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 700;
+    background: rgba(255, 193, 7, 0.92); color: #3a2a00;
+  }
+
+  .fav-body { display: flex; flex-direction: column; gap: 6px; padding: 14px 15px 16px; flex: 1; }
+  .fav-title { margin: 0; font-size: 15px; font-weight: 700; color: #333; line-height: 1.4; }
+  .fav-title a { color: inherit; text-decoration: none; }
+  .fav-title a:hover { color: var(--accent); }
+  :global(.dark) .fav-title { color: #e6e6e6; }
+  .fav-meta { display: flex; gap: 5px; font-size: 12px; color: #9aa3af; }
+  .fav-meta .dot { opacity: 0.6; }
+  .fav-desc {
+    margin: 2px 0 0; font-size: 12.5px; line-height: 1.6; color: #7b8491;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  :global(.dark) .fav-desc { color: #a0a6ae; }
+
+  .fav-progress { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+  .fav-progress-bar { flex: 1; height: 5px; border-radius: 99px; background: #eceef2; overflow: hidden; }
+  :global(.dark) .fav-progress-bar { background: #3a3a3b; }
+  .fav-progress-bar i { display: block; height: 100%; border-radius: 99px; background: var(--accent); }
+  .fav-progress span { font-size: 11px; color: #9aa3af; min-width: 30px; text-align: right; }
+
+  .fav-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+  .fav-tags span { font-size: 11px; color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); padding: 2px 7px; border-radius: 5px; }
+
+  .fav-review { margin-top: auto; padding-top: 8px; border-top: 1px dashed #eceef2; font-size: 12px; }
+  :global(.dark) .fav-review { border-color: #3a3a3b; }
+  .fav-review summary { list-style: none; cursor: pointer; color: #9aa3af; display: flex; align-items: center; gap: 5px; }
+  .fav-review summary::-webkit-details-marker { display: none; }
+  .fav-review[open] summary i { transform: rotate(180deg); }
+  .fav-review-text { margin-top: 8px; color: #666; line-height: 1.7; }
+  .fav-review-text :global(p) { margin: 0 0 8px; }
+  .fav-review-text :global(a) { color: var(--accent); }
+  :global(.dark) .fav-review-text { color: #b0b6be; }
+</style>

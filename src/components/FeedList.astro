@@ -1,0 +1,49 @@
+---
+/** 首页混合流渲染器：文章与说说共用同一个列表，按 FeedEntry.type 分派卡片 */
+import PostCard from './PostCard.astro';
+import MomentCard from './MomentCard.astro';
+import type { FeedEntry } from '@/utils/feed';
+import { isPageEnabled } from '@/config/site';
+
+interface Props {
+  entries: FeedEntry[];
+  showTypeBadge?: boolean;
+}
+
+const { entries, showTypeBadge = true } = Astro.props;
+---
+
+<div class="space-y-5">
+  {entries.map((entry) =>
+    entry.type === 'post' ? (
+      <PostCard
+        title={entry.post.data.title}
+        slug={entry.post.slug}
+        author={entry.post.data.author}
+        avatar={entry.post.data.avatar}
+        content={entry.post.data.description || ''}
+        images={entry.images}
+        timestamp={entry.post.data.pubDate}
+        sticky={entry.sticky}
+        tags={entry.post.data.tags}
+        likes={entry.post.data.likes || 0}
+        views={entry.post.data.views || 0}
+        typeBadge={showTypeBadge ? '文章' : ''}
+      />
+    ) : (
+      <MomentCard
+        id={entry.moment.id}
+        author={entry.moment.data.author}
+        avatar={entry.moment.data.avatar}
+        published={entry.moment.data.published}
+        pinned={entry.sticky}
+        location={entry.moment.data.location}
+        tags={entry.moment.data.tags}
+        images={entry.images}
+        text={entry.text}
+        showTypeBadge={showTypeBadge}
+        showArchiveLink={isPageEnabled('moments')}
+      />
+    )
+  )}
+</div>

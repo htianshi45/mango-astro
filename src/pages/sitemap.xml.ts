@@ -1,5 +1,7 @@
 import { getCollection } from 'astro:content';
+import { favoriteCategories } from '@/config/favorites';
 import { pageToggles, siteConfig } from '@/config/site';
+import { getMixedFeed } from '@/utils/feed';
 
 function esc(value: string): string {
   return value
@@ -29,8 +31,16 @@ export async function GET() {
   if (pageToggles.archive) staticPaths.push('/archive');
   if (pageToggles.download) staticPaths.push('/download');
   if (pageToggles.map) staticPaths.push('/map');
+  if (pageToggles.moments) staticPaths.push('/moments');
+  if (pageToggles.bookmarks) staticPaths.push('/bookmarks');
+  if (pageToggles.favorites) {
+    staticPaths.push('/favorites');
+    favoriteCategories.forEach((meta) => staticPaths.push(`/favorites/${meta.id}`));
+  }
 
-  const totalPages = Math.ceil(posts.length / siteConfig.postsPerPage);
+  // 分页页数按「文章 + 说说」的混合流计算，与首页 /page/N 一致
+  const feed = await getMixedFeed();
+  const totalPages = Math.ceil(feed.length / siteConfig.postsPerPage);
   for (let page = 2; page <= totalPages; page += 1) {
     staticPaths.push(`/page/${page}`);
   }
