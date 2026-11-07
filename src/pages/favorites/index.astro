@@ -1,5 +1,11 @@
 ---
-/** 收藏总览 — 四个库的入口 + 最近添加 */
+/**
+ * 收藏总览 — 四个库的入口 + 最近添加
+ *
+ * 2026-11-07 宽屏重排：版心 900 → 1180。
+ *   上排四个库入口改成一行四列（图标+大数字+进度条）；
+ *   下方「最近添加」改成一条 6 格的横向书架，标题与「查看全部」同行。
+ */
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import PageHeader from '@/components/PageHeader.astro';
 import FavoriteCard from '@/components/FavoriteCard.astro';
@@ -25,9 +31,15 @@ const groups = favoriteCategories.map((meta) => {
 const recent = [...items]
   .sort((a, b) => new Date(b.data.addedAt).getTime() - new Date(a.data.addedAt).getTime())
   .slice(0, 6);
+
+const totalDone = groups.reduce((sum, g) => sum + g.done, 0);
 ---
 
-<BaseLayout title={`${favoritePageConfig.title} - ${siteConfig.name}`} description={favoritePageConfig.description}>
+<BaseLayout
+  title={`${favoritePageConfig.title} - ${siteConfig.name}`}
+  description={favoritePageConfig.description}
+  wide
+>
   <PageHeader
     icon="bi-stars"
     title={favoritePageConfig.title}
@@ -39,21 +51,31 @@ const recent = [...items]
   <div class="fav-overview-grid">
     {groups.map(({ meta, count, done, percent }) => (
       <a href={`/favorites/${meta.id}`} class="fav-overview-card" style={`--accent:${meta.accent}`}>
-        <div class="ov-icon"><i class={`bi ${meta.icon}`}></i></div>
-        <div class="ov-main">
-          <h2>{meta.name}</h2>
-          <p>{meta.desc}</p>
-          <div class="ov-progress"><i style={`width:${percent}%`}></i></div>
-          <span class="ov-foot">已完成 {done} / {count} {meta.unit} · {percent}%</span>
+        <div class="ov-top">
+          <span class="ov-icon"><i class={`bi ${meta.icon}`}></i></span>
+          <strong class="ov-count">{count}</strong>
         </div>
-        <strong class="ov-count">{count}</strong>
-        <i class="bi bi-arrow-right ov-arrow"></i>
+        <h2>{meta.name}</h2>
+        <p>{meta.desc}</p>
+        <div class="ov-progress"><i style={`width:${percent}%`}></i></div>
+        <span class="ov-foot">
+          已完成 {done} / {count} {meta.unit}
+          <i class="bi bi-arrow-right ov-arrow"></i>
+        </span>
       </a>
     ))}
   </div>
 
+  <div class="fav-summary">
+    <span><i class="bi bi-check2-circle"></i>共 {items.length} 件收藏，已完结 {totalDone} 件</span>
+    <span class="fav-summary-hint">整理进度会随条目状态自动更新</span>
+  </div>
+
   <section class="fav-recent">
-    <h2 class="fav-section-title"><i class="bi bi-clock-history"></i> 最近添加</h2>
+    <div class="fav-section-head">
+      <h2 class="fav-section-title"><i class="bi bi-clock-history"></i> 最近添加</h2>
+      <a href="/favorites/books" class="fav-all-link">查看全部分类 <i class="bi bi-arrow-right"></i></a>
+    </div>
     <div class="fav-grid">
       {/* 总览里统一封面比例，避免 2:3 与 1:1 混排导致卡片高低不齐 */}
       {recent.map((item) => (
@@ -63,45 +85,119 @@ const recent = [...items]
         />
       ))}
     </div>
-    <a href="/favorites/books" class="fav-all-link">查看全部分类 <i class="bi bi-arrow-right"></i></a>
   </section>
 </BaseLayout>
 
 <style>
-  .fav-overview-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 26px; }
+  /* ===== 四个库入口：桌面一行四列 ===== */
+  .fav-overview-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 14px;
+  }
   .fav-overview-card {
-    position: relative; display: flex; align-items: flex-start; gap: 14px;
-    padding: 20px; border-radius: 12px; border: 1px solid #eceef2;
-    background: #fff; text-decoration: none; overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 18px 20px 16px;
+    border-radius: 12px;
+    border: 1px solid #eceef2;
+    background: #fff;
+    text-decoration: none;
+    overflow: hidden;
     transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s;
   }
-  .fav-overview-card:hover { border-color: var(--accent); box-shadow: 0 8px 24px rgba(8, 8, 8, 0.1); transform: translateY(-2px); }
+  .fav-overview-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--accent);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  .fav-overview-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 10px 26px -14px rgba(8, 8, 8, 0.35);
+    transform: translateY(-2px);
+  }
+  .fav-overview-card:hover::after { opacity: 0.03; }
   :global(.dark) .fav-overview-card { background: #212121; border-color: #333; }
+
+  .ov-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
   .ov-icon {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 44px; height: 44px; flex-shrink: 0; border-radius: 11px;
-    font-size: 20px; color: var(--accent);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border-radius: 11px;
+    font-size: 19px;
+    color: var(--accent);
     background: color-mix(in srgb, var(--accent) 12%, transparent);
   }
-  .ov-main { flex: 1; min-width: 0; }
-  .ov-main h2 { margin: 0 0 4px; font-size: 16px; font-weight: 700; color: #333; }
-  :global(.dark) .ov-main h2 { color: #e6e6e6; }
-  .ov-main p { margin: 0 0 12px; font-size: 12px; color: #9aa3af; }
+  .ov-count { font-size: 28px; line-height: 1; font-weight: 700; color: color-mix(in srgb, var(--accent) 52%, #fff); }
+  .fav-overview-card h2 { margin: 0 0 3px; font-size: 16px; font-weight: 700; color: #333; }
+  :global(.dark) .fav-overview-card h2 { color: #e6e6e6; }
+  .fav-overview-card p {
+    margin: 0 0 14px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #9aa3af;
+    min-height: 19px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   .ov-progress { height: 5px; border-radius: 99px; background: #eceef2; overflow: hidden; }
   :global(.dark) .ov-progress { background: #3a3a3b; }
-  .ov-progress i { display: block; height: 100%; background: var(--accent); border-radius: 99px; }
-  .ov-foot { display: block; margin-top: 7px; font-size: 11px; color: #a5acb6; }
-  .ov-count { position: absolute; top: 14px; right: 18px; font-size: 24px; font-weight: 700; color: color-mix(in srgb, var(--accent) 55%, #fff); }
-  .ov-arrow { position: absolute; bottom: 16px; right: 18px; font-size: 13px; color: #c3c9d1; }
+  .ov-progress i { display: block; height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.4s ease; }
+  .ov-foot {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    font-size: 11px;
+    color: #a5acb6;
+  }
+  .ov-arrow { margin-left: auto; font-size: 12px; color: #c3c9d1; transition: transform 0.25s, color 0.25s; }
+  .fav-overview-card:hover .ov-arrow { transform: translateX(3px); color: var(--accent); }
 
-  .fav-section-title { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; font-size: 16px; font-weight: 700; color: #333; }
+  /* ===== 汇总提示行 ===== */
+  .fav-summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 30px;
+    font-size: 12px;
+    color: #9aa3af;
+  }
+  .fav-summary i { margin-right: 4px; color: #4caf82; font-size: 13px; }
+  .fav-summary-hint { margin-left: auto; color: #c3c9d1; }
+
+  /* ===== 最近添加：一条横向书架 ===== */
+  .fav-section-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .fav-section-title { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 16px; font-weight: 700; color: #333; }
   .fav-section-title i { color: #4270f5; }
   :global(.dark) .fav-section-title { color: #e6e6e6; }
-  .fav-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: stretch; }
-  .fav-all-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 18px; font-size: 13px; color: #4270f5; text-decoration: none; }
+  .fav-all-link { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; font-size: 12.5px; color: #4270f5; text-decoration: none; }
   .fav-all-link:hover { text-decoration: underline; }
+  .fav-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; align-items: stretch; }
 
+  /* ===== 响应式 ===== */
+  @media (max-width: 1023px) {
+    .fav-overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .fav-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
+  @media (max-width: 767px) {
+    .fav-summary-hint { display: none; }
+    .fav-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  }
   @media (max-width: 640px) {
-    .fav-overview-grid { grid-template-columns: 1fr; }
-    .fav-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }  }
+    .fav-overview-grid { grid-template-columns: 1fr; gap: 10px; }
+    .fav-overview-card { padding: 16px; }
+    .fav-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  }
 </style>

@@ -1,7 +1,11 @@
 ---
 /**
  * 书签导航 — 参考 Firefly 的 booknav.astro + booknavConfig.ts
- * 分组配置、锚点 pills、前端搜索、favicon 自动获取（失败回退首字母）。
+ * 分组配置、左侧分类索引、前端搜索、favicon 自动获取（失败回退首字母）。
+ *
+ * 2026-11-07 宽屏重排：版心 900 → 1180。
+ *   顶部胶囊分类改成左侧竖向索引（sticky 吸顶，滚动联动高亮），
+ *   右侧卡片区按宽屏排 3 列，把多出来的水平空间用掉。
  */
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import PageHeader from '@/components/PageHeader.astro';
@@ -29,7 +33,11 @@ const groups = getVisibleBookmarkGroups().map((group) => ({
 const total = groups.reduce((sum, group) => sum + group.items.length, 0);
 ---
 
-<BaseLayout title={`${bookmarksPageConfig.title} - ${siteConfig.name}`} description={bookmarksPageConfig.description}>
+<BaseLayout
+  title={`${bookmarksPageConfig.title} - ${siteConfig.name}`}
+  description={bookmarksPageConfig.description}
+  wide
+>
   <PageHeader
     icon="bi-bookmarks"
     title={bookmarksPageConfig.title}
@@ -44,56 +52,61 @@ const total = groups.reduce((sum, group) => sum + group.items.length, 0);
       </label>
       <span class="bm-result" id="bm-result"></span>
     </div>
-    <div class="bm-pills" id="bm-pills">
-      {groups.map((group) => (
-        <button type="button" class="bm-pill" data-target={group.id}>
-          {group.icon && <i class={`bi ${group.icon}`}></i>}
-          {group.name}<span class="pill-count">{group.items.length}</span>
-        </button>
-      ))}
-    </div>
   </PageHeader>
 
-  <div id="bm-groups">
-    {groups.map((group) => (
-      <section class="bm-group" id={group.id} data-group={group.id}>
-        <div class="bm-group-head">
+  <div class="bm-layout">
+    <aside class="bm-index" id="bm-index" aria-label="书签分类">
+      <p class="bm-index-title">分类索引</p>
+      {groups.map((group) => (
+        <a href={`#${group.id}`} class="bm-index-item" data-target={group.id}>
           {group.icon && <i class={`bi ${group.icon}`}></i>}
-          <h2>{group.name}</h2>
-          {group.desc && <span>{group.desc}</span>}
-          <em>{group.items.length} 个</em>
-        </div>
-        <div class="bm-grid">
-          {group.items.map((item) => (
-            <a
-              href={item.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="bm-card"
-              title={item.desc || item.title}
-              data-search={`${item.title} ${item.desc || ''} ${item.domain}`.toLowerCase()}
-            >
-              <span class="bm-icon">
-                <span class="bm-letter">{item.letter}</span>
-                {item.resolved.kind === 'icon' && <i class={`bi ${item.resolved.value}`}></i>}
-                {item.resolved.kind === 'image' && (
-                  <img class="bm-favicon" src={item.resolved.value} alt="" loading="lazy" />
-                )}
-                {item.resolved.kind === 'favicon' && bookmarksPageConfig.favicon.enabled && (
-                  <img class="bm-favicon" src={item.resolved.value} alt="" loading="lazy" />
-                )}
-              </span>
-              <span class="bm-info">
-                <strong>{item.title}</strong>
-                <small>{item.desc || item.domain}</small>
-                <span class="bm-domain"><i class="bi bi-link-45deg"></i>{item.domain}</span>
-              </span>
-              <i class="bi bi-box-arrow-up-right bm-ext"></i>
-            </a>
-          ))}
-        </div>
-      </section>
-    ))}
+          <span>{group.name}</span>
+          <em>{group.items.length}</em>
+        </a>
+      ))}
+    </aside>
+
+    <div class="bm-content" id="bm-groups">
+      {groups.map((group) => (
+        <section class="bm-group" id={group.id} data-group={group.id}>
+          <div class="bm-group-head">
+            {group.icon && <i class={`bi ${group.icon}`}></i>}
+            <h2>{group.name}</h2>
+            {group.desc && <span>{group.desc}</span>}
+            <em>{group.items.length} 个</em>
+          </div>
+          <div class="bm-grid">
+            {group.items.map((item) => (
+              <a
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="bm-card"
+                title={item.desc || item.title}
+                data-search={`${item.title} ${item.desc || ''} ${item.domain}`.toLowerCase()}
+              >
+                <span class="bm-icon">
+                  <span class="bm-letter">{item.letter}</span>
+                  {item.resolved.kind === 'icon' && <i class={`bi ${item.resolved.value}`}></i>}
+                  {item.resolved.kind === 'image' && (
+                    <img class="bm-favicon" src={item.resolved.value} alt="" loading="lazy" />
+                  )}
+                  {item.resolved.kind === 'favicon' && bookmarksPageConfig.favicon.enabled && (
+                    <img class="bm-favicon" src={item.resolved.value} alt="" loading="lazy" />
+                  )}
+                </span>
+                <span class="bm-info">
+                  <strong>{item.title}</strong>
+                  <small>{item.desc || item.domain}</small>
+                  <span class="bm-domain"><i class="bi bi-link-45deg"></i>{item.domain}</span>
+                </span>
+                <i class="bi bi-box-arrow-up-right bm-ext"></i>
+              </a>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
   </div>
 
   {bookmarksPageConfig.applyNote && (
@@ -114,6 +127,7 @@ const total = groups.reduce((sum, group) => sum + group.items.length, 0);
   const empty = document.getElementById('bm-empty');
   const cards = Array.from(document.querySelectorAll<HTMLElement>('.bm-card'));
   const sections = Array.from(document.querySelectorAll<HTMLElement>('.bm-group'));
+  const indexItems = Array.from(document.querySelectorAll<HTMLElement>('.bm-index-item'));
 
   function applyFilter() {
     const keyword = (searchInput?.value || '').trim().toLowerCase();
@@ -124,7 +138,11 @@ const total = groups.reduce((sum, group) => sum + group.items.length, 0);
       if (show) visible += 1;
     });
     sections.forEach((section) => {
-      section.hidden = !Array.from(section.querySelectorAll<HTMLElement>('.bm-card')).some((c) => !c.hidden);
+      const hasVisible = Array.from(section.querySelectorAll<HTMLElement>('.bm-card')).some((c) => !c.hidden);
+      section.hidden = !hasVisible;
+      // 左侧索引跟着隐藏，避免点了跳不到
+      const link = indexItems.find((i) => i.dataset.target === section.dataset.group);
+      if (link) link.hidden = !hasVisible;
     });
     if (result) result.textContent = keyword ? `找到 ${visible} 个` : '';
     if (empty) empty.hidden = visible > 0;
@@ -132,43 +150,129 @@ const total = groups.reduce((sum, group) => sum + group.items.length, 0);
   searchInput?.addEventListener('input', applyFilter);
   applyFilter();
 
-  // 分类锚点
-  document.querySelectorAll<HTMLButtonElement>('.bm-pill').forEach((pill) => {
-    pill.addEventListener('click', () => {
-      const target = document.getElementById(pill.dataset.target || '');
+  // ===== 左侧索引：点击平滑滚动；点击后短暂锁定高亮，避免滚动判定抢走 =====
+  let clickLockUntil = 0;
+
+  const setActive = (id: string) => {
+    indexItems.forEach((item) => item.classList.toggle('active', item.dataset.target === id));
+  };
+
+  indexItems.forEach((item) => {
+    item.addEventListener('click', (event) => {
+      const target = document.getElementById(item.dataset.target || '');
       if (!target) return;
+      event.preventDefault();
       target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      document.querySelectorAll('.bm-pill').forEach((p) => p.classList.remove('active'));
-      pill.classList.add('active');
+      setActive(item.dataset.target || '');
+      clickLockUntil = Date.now() + 800;
+      history.replaceState(null, '', `#${item.dataset.target}`);
     });
   });
+
+  // ===== 滚动联动高亮：取「顶边越过判定线」的最后一个分组 =====
+  // 注：页面内容不够长时（如分组少），有些分组永远到不了判定线，
+  //     此时点亮「离判定线最近的」分组，避免高亮卡死在第一项。
+  const visibleSections = () => sections.filter((s) => !s.hidden);
+
+  const updateActive = () => {
+    const line = 120; // 判定线：导航栏下沿稍下方
+    const list = visibleSections();
+    if (!list.length) return;
+    let current = list[0];
+    let best = Infinity;
+    list.forEach((section) => {
+      const top = section.getBoundingClientRect().top;
+      if (top <= line) {
+        current = section;
+        best = -top; // 已越线：越深越优先
+      } else if (current === list[0] && top < best) {
+        current = section; // 还没有越线的：取最接近判定线的
+        best = top;
+      }
+    });
+    setActive(current.dataset.group || '');
+  };
+
+  // rAF 节流，避免滚动时高频重排
+  let ticking = false;
+  window.addEventListener(
+    'scroll',
+    () => {
+      if (ticking || Date.now() < clickLockUntil) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        updateActive();
+        ticking = false;
+      });
+    },
+    { passive: true }
+  );
+  window.addEventListener('resize', updateActive);
+  updateActive();
 </script>
 
 <style>
   .bm-filters { display: flex; align-items: center; gap: 12px; margin-top: 18px; }
   .bm-search {
-    display: inline-flex; align-items: center; gap: 8px; flex: 1; min-width: 200px;
+    display: inline-flex; align-items: center; gap: 8px; flex: 1; min-width: 200px; max-width: 420px;
     height: 38px; padding: 0 12px; border-radius: 9px;
     background: #f6f7f9; border: 1px solid #e8eaee; color: #9aa3af;
   }
   :global(.dark) .bm-search { background: #2a2a2b; border-color: #3a3a3b; }
   .bm-search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font-size: 13px; font-family: inherit; color: #333; }
   :global(.dark) .bm-search input { color: #ddd; }
-  .bm-result { font-size: 12px; color: #4270f5; }
+  .bm-result { font-size: 12px; color: #4270f5; margin-left: auto; }
 
-  .bm-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-  .bm-pill {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 5px 12px; border: 1px solid #e6e9ef; border-radius: 999px;
-    background: #fff; color: #666; font-size: 12px; font-family: inherit; cursor: pointer;
-    transition: all 0.2s ease;
+  /* ===== 双栏：左索引 + 右卡片 ===== */
+  .bm-layout { display: grid; grid-template-columns: 188px minmax(0, 1fr); gap: 26px; align-items: start; }
+
+  .bm-index {
+    position: sticky;
+    top: 88px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 12px 10px;
+    border-radius: 12px;
+    background: #fff;
+    border: 1px solid #eceef2;
+    transition: top 0.28s ease;
   }
-  .bm-pill:hover, .bm-pill.active { border-color: #4270f5; color: #4270f5; background: rgba(66, 112, 245, 0.07); }
-  :global(.dark) .bm-pill { background: #262627; border-color: #3a3a3b; color: #bbb; }
-  :global(.dark) .bm-pill:hover, :global(.dark) .bm-pill.active { border-color: #8ab0ff; color: #8ab0ff; }
-  .pill-count { font-size: 11px; opacity: 0.65; }
+  :global(.dark) .bm-index { background: #212121; border-color: #333; }
+  :global(body:has(#site-header.nav-hidden)) .bm-index { top: 16px; }
+  .bm-index-title {
+    margin: 2px 8px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: #b3b9c2;
+    text-transform: uppercase;
+  }
+  .bm-index-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #666;
+    text-decoration: none;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+  .bm-index-item i { font-size: 14px; color: #aeb6c0; transition: color 0.2s ease; }
+  .bm-index-item span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bm-index-item em { font-style: normal; font-size: 11px; color: #c3c9d1; }
+  .bm-index-item:hover { background: #f5f7fb; color: #4270f5; }
+  .bm-index-item:hover i { color: #4270f5; }
+  .bm-index-item.active { background: rgba(66, 112, 245, 0.09); color: #4270f5; font-weight: 600; }
+  .bm-index-item.active i, .bm-index-item.active em { color: #4270f5; opacity: 0.85; }
+  :global(.dark) .bm-index-item { color: #bbb; }
+  :global(.dark) .bm-index-item:hover { background: #2a2a2b; color: #8ab0ff; }
+  :global(.dark) .bm-index-item:hover i { color: #8ab0ff; }
+  :global(.dark) .bm-index-item.active { background: rgba(138, 176, 255, 0.14); color: #8ab0ff; }
 
-  .bm-group { margin-bottom: 26px; scroll-margin-top: 90px; }
+  .bm-group { margin-bottom: 28px; scroll-margin-top: 96px; }
+  .bm-group:last-child { margin-bottom: 0; }
   .bm-group-head { display: flex; align-items: baseline; gap: 10px; padding-bottom: 10px; margin-bottom: 14px; border-bottom: 1px solid #eceef2; }
   :global(.dark) .bm-group-head { border-color: #333; }
   .bm-group-head > i { color: #4270f5; font-size: 17px; }
@@ -177,7 +281,7 @@ const total = groups.reduce((sum, group) => sum + group.items.length, 0);
   .bm-group-head span { font-size: 12px; color: #9aa3af; }
   .bm-group-head em { margin-left: auto; font-size: 11px; color: #bbb; font-style: normal; }
 
-  .bm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+  .bm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(276px, 1fr)); gap: 12px; }
   .bm-card {
     position: relative; display: flex; align-items: center; gap: 12px;
     padding: 14px; border-radius: 12px; border: 1px solid #eceef2;
@@ -210,11 +314,28 @@ const total = groups.reduce((sum, group) => sum + group.items.length, 0);
   :global(.dark) .bm-info strong { color: #e6e6e6; }
   .bm-ext { margin-left: auto; flex-shrink: 0; font-size: 12px; color: #c3c9d1; }
 
-  .bm-note { margin-top: 8px; padding: 14px 18px; border-radius: 10px; background: rgba(66, 112, 245, 0.07); color: #6f7885; font-size: 13px; }
+  .bm-note { margin-top: 24px; padding: 14px 18px; border-radius: 10px; background: rgba(66, 112, 245, 0.07); color: #6f7885; font-size: 13px; }
   .bm-note i { margin-right: 8px; color: #4270f5; }
   :global(.dark) .bm-note { color: #a8b0bc; }
   .bm-empty { text-align: center; color: #999; padding: 36px 0; font-size: 14px; }
 
+  /* ===== 窄屏：索引变成横向滑动条 ===== */
+  @media (max-width: 1023px) {
+    .bm-layout { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+    .bm-index {
+      position: static;
+      flex-direction: row;
+      gap: 6px;
+      padding: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .bm-index::-webkit-scrollbar { display: none; }
+    .bm-index-title { display: none; }
+    .bm-index-item { flex: 0 0 auto; padding: 7px 11px; background: #f6f7f9; }
+    :global(.dark) .bm-index-item { background: #262627; }
+    .bm-index-item em { display: none; }
+  }
   @media (max-width: 640px) {
     .bm-grid { grid-template-columns: 1fr; }
   }
