@@ -5,6 +5,8 @@ import PostCard from '@/components/PostCard.astro';
 import Sidebar from '@/components/Sidebar.astro';
 import Pagination from '@/components/Pagination.astro';
 import { getCollection } from 'astro:content';
+import { extractImages } from '@/utils/post-images';
+import { siteConfig } from '@/config/site';
 
 const allPosts = await getCollection('posts', ({ data }) => {
   return data.draft !== true;
@@ -17,7 +19,7 @@ const sortedPosts = allPosts.sort((a, b) => {
   return new Date(b.data.pubDate).getTime() - new Date(a.data.pubDate).getTime();
 });
 
-const POSTS_PER_PAGE = 8;
+const POSTS_PER_PAGE = siteConfig.postsPerPage;
 const currentPage = 1;
 const totalPages = Math.ceil(sortedPosts.length / POSTS_PER_PAGE);
 const paginatedPosts = sortedPosts.slice(0, POSTS_PER_PAGE);
@@ -39,8 +41,7 @@ const postData = allPosts.map(post => ({
   slug: post.slug,
   timestamp: post.data.pubDate,
   views: post.data.views,
-  comments: post.data.comments,
-  heroImage: post.data.heroImage ?? post.data.images?.[0],
+  heroImage: post.data.heroImage ?? extractImages(post.body)[0],
   excerpt: post.data.description,
 }));
 ---
@@ -58,12 +59,11 @@ const postData = allPosts.map(post => ({
             author={post.data.author}
             avatar={post.data.avatar}
             content={post.data.description || ''}
-            images={post.data.images || []}
+            images={extractImages(post.body)}
             timestamp={post.data.pubDate}
             sticky={post.data.sticky > 0}
             tags={post.data.tags}
             likes={post.data.likes || 0}
-            comments={post.data.comments || 0}
             views={post.data.views || 0}
           />
         ))}

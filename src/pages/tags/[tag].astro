@@ -2,6 +2,7 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import PostCard from '@/components/PostCard.astro';
 import { getCollection } from 'astro:content';
+import { extractImages } from '@/utils/post-images';
 
 export async function getStaticPaths() {
   const posts = await getCollection('posts');
@@ -46,12 +47,11 @@ const posts = allPosts
           author={post.data.author}
           avatar={post.data.avatar}
           excerpt={post.data.description || ''}
-          images={post.data.images || []}
+          images={extractImages(post.body)}
           timestamp={post.data.pubDate}
           sticky={false}
           tags={post.data.tags}
           likes={post.data.views || 0}
-          comments={0}
         />
       ))}
     </div>

@@ -1,32 +1,37 @@
 ---
+import { siteConfig, visibleFooterLinks } from '@/config/site';
+
 const currentYear = new Date().getFullYear();
+const links = visibleFooterLinks(siteConfig.footerLinks);
 ---
 
 <footer class="site-footer">
   <div class="links">
     <div class="container mx-auto px-4 max-w-mango text-center">
-      <a href="/about">关于我们</a>
-      <span>|</span>
-      <a href="/tags">标签云</a>
-      <span>|</span>
-      <a href="/archive">文章归档</a>
-      <span>|</span>
-      <a href="/download">主题下载</a>
-      <span>|</span>
-      <a href="/map">旅游地图</a>
+      {links.map((link, index) => (
+        <Fragment>
+          {index > 0 && <span>|</span>}
+          <a href={link.href}>{link.name}</a>
+        </Fragment>
+      ))}
     </div>
   </div>
   <div class="footbox">
     <div class="container mx-auto px-4 max-w-mango text-center">
       <p class="mb-2">
-        &copy; {currentYear} Mango Theme. All rights reserved.
+        &copy; {currentYear} {siteConfig.name}. All rights reserved.
       </p>
       <p class="text-xs opacity-75">
         Powered by <a href="https://astro.build" class="text-[#4270f5] hover:text-[#6b8ff7] transition-colors duration-200" target="_blank" rel="noopener">Astro</a>
       </p>
-      <p class="text-xs opacity-50 mt-2">
-        京ICP备00000000号
-      </p>
+      {siteConfig.feed.rss && (
+        <p class="text-xs opacity-50 mt-2">
+          <a href="/rss.xml">RSS</a>
+          <span class="mx-2">·</span>
+          <a href="/atom.xml">Atom</a>
+        </p>
+      )}
+      {siteConfig.icp && <p class="text-xs opacity-50 mt-2">{siteConfig.icp}</p>}
     </div>
   </div>
 </footer>

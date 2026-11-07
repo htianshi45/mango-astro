@@ -4,6 +4,8 @@
 
 成功将 WordPress 的 Mango 主题复刻为基于 Astro 的静态站点，保留了核心的微信朋友圈风格布局，并集成了现代化的内容管理和部署方案。
 
+> **维护状态（2026-11-07 更新）**：本文件是项目初版总结，部分描述已过时，请以源码为准。后台已从 Decap CMS 换成 Sveltia CMS（中文界面），入口为 `src/pages/admin.astro`；站点设置已集中到 `src/config/site.ts`；已新增 RSS / Atom / sitemap、SEO（canonical / OG / JSON-LD）、文章页 TOC / 字数 / 阅读时间 / 阅读进度 / 上下篇 / 分享 / 复制链接、FLIP 图片灯箱、统一页面开关。
+
 ## 已完成的功能
 
 ### ✅ 核心功能
@@ -34,7 +36,7 @@
 
 ### ✅ 内容管理
 
-1. **Decap CMS 集成**
+1. **Sveltia CMS 集成**
    - 可视化后台界面
    - GitHub 认证
    - Markdown 编辑
@@ -77,7 +79,7 @@
 | Astro | ^5.0.0 | 静态站点框架 |
 | Tailwind CSS | ^3.4.0 | 样式框架 |
 | TypeScript | ^5.7.0 | 类型安全 |
-| Decap CMS | ^3.0.0 | 内容管理 |
+| Sveltia CMS | ^3.0.0 | 内容管理 |
 | @astrojs/mdx | ^4.0.0 | Markdown 支持 |
 | @tailwindcss/typography | ^0.5.10 | 排版样式 |
 
@@ -190,7 +192,7 @@ npm run preview
    - 设置构建命令：`npm run build`
    - 设置输出目录：`dist`
 
-3. **配置 Decap CMS**
+3. **配置 Sveltia CMS**
    - 编辑 `public/admin/config.yml`
    - 更新 repo 为你的 GitHub 仓库
    - 配置 OAuth 认证
@@ -250,16 +252,22 @@ export default defineConfig({
 
 ## 待完善功能
 
-### 可选功能
+### 已完成（2026-11-07）
 
-- [ ] 搜索功能
-- [ ] 评论系统（Giscus / Utterances）
-- [ ] 文章目录（TOC）
-- [ ] 阅读进度条
-- [ ] 分享功能
-- [ ] 相关文章推荐
-- [ ] 站点地图（sitemap.xml）
-- [ ] RSS 订阅
+- [x] 搜索功能（客户端过滤 frontmatter，**暂不搜正文**）
+- [x] 文章目录（TOC）、阅读进度条、字数与阅读时间
+- [x] 分享 / 复制链接、上一篇 / 下一篇、相关文章推荐
+- [x] sitemap.xml、RSS 2.0、Atom 1.0
+- [x] canonical / OpenGraph / Twitter card / JSON-LD
+- [x] FLIP 原位放大灯箱（滑动、缩放、拖拽）
+- [x] 统一配置 `src/config/site.ts` + 页面开关
+
+### 仍待完善
+
+- [ ] 评论系统（Giscus 配置骨架已就位，填 `comment.ts` 三个参数即可启用）
+- [ ] 全文搜索（Pagefind，中文分词需单独验证）
+- [ ] 说说 / 动态流、相册页、友链页
+- [ ] 浏览量真实化（当前 `views` 为 frontmatter 静态数字）
 
 ### 高级功能
 
@@ -274,7 +282,7 @@ export default defineConfig({
 无重大问题。如有问题请查看：
 - [Astro 文档](https://docs.astro.build/)
 - [Cloudflare 文档](https://developers.cloudflare.com/)
-- [Decap CMS 文档](https://decapcms.org/docs/)
+- [Sveltia CMS 文档](https://decapcms.org/docs/)
 
 ## 贡献指南
 

@@ -119,6 +119,7 @@ hr { border:0; border-top:1px solid var(--line); margin:34px 0; }
 <li><a href="#4">4. 主题色怎么改（三处要一起改）</a></li>
 <li><a href="#5">5. 发布上线</a><ul>
 <li><a href="#51">5.1 手动部署（当前方式）</a></li>
+<li><a href="#53-seo">5.3 订阅与 SEO（已内置，无需额外操作）</a></li>
 <li><a href="#52">5.2 自动部署（推荐开启）</a></li>
 </ul>
 </li>
@@ -366,7 +367,7 @@ draft: false
 </ul>
 <hr />
 <h2 id="3">3. 改站点信息（对照表）</h2>
-<p>这一节是「改哪里」的字典。全部是改源码 → 重新构建 → 部署。</p>
+<p>这一节是「改哪里」的字典。<strong>站点设置现在集中在 <code>src/config/site.ts</code></strong>，站名、Logo、描述、备案号、导航、页脚、功能开关、订阅开关都在里面改；改完重新构建 + 部署。</p>
 <table>
 <thead>
 <tr>
@@ -378,28 +379,38 @@ draft: false
 <tbody>
 <tr>
 <td><strong>站名 + Logo</strong></td>
-<td><code>src/components/Header.astro</code></td>
-<td>第 20–23 行，<code>&lt;b&gt;Mango&lt;/b&gt;</code> 和 <code>/images/logo.svg</code></td>
+<td><code>src/config/site.ts</code></td>
+<td><code>siteConfig.name</code> / <code>siteConfig.logo</code></td>
 </tr>
 <tr>
 <td><strong>顶部导航菜单</strong></td>
-<td><code>src/components/Header.astro</code></td>
-<td>第 4–13 行的 <code>navItems</code> 数组</td>
+<td><code>src/config/site.ts</code></td>
+<td><code>siteConfig.navItems</code> 数组</td>
 </tr>
 <tr>
 <td><strong>页脚链接</strong></td>
-<td><code>src/components/Footer.astro</code></td>
-<td>第 8–16 行 <code>关于我们 / 标签云 / 文章归档 / 主题下载 / 旅游地图</code></td>
+<td><code>src/config/site.ts</code></td>
+<td><code>siteConfig.footerLinks</code> 数组</td>
 </tr>
 <tr>
 <td><strong>页脚版权</strong></td>
 <td><code>src/components/Footer.astro</code></td>
-<td>第 22 行 <code>© {currentYear} Mango Theme</code></td>
+<td>自动取 <code>siteConfig.name</code>，无需单独改</td>
 </tr>
 <tr>
 <td><strong>ICP 备案号</strong></td>
-<td><code>src/components/Footer.astro</code></td>
-<td>第 28 行，现在是占位 <code>京ICP备00000000号</code>，<strong>上线前必须改或删</strong></td>
+<td><code>src/config/site.ts</code></td>
+<td><code>siteConfig.icp</code>，<strong>留空则不显示</strong>（占位文案已移除）</td>
+</tr>
+<tr>
+<td><strong>功能开关</strong></td>
+<td><code>src/config/site.ts</code></td>
+<td><code>features</code>（TOC / 进度 / 字数 / 阅读时间 / 上下篇 / 分享）与 <code>feed</code>（RSS / Atom / sitemap）</td>
+</tr>
+<tr>
+<td><strong>页面开关</strong></td>
+<td><code>src/config/site.ts</code></td>
+<td><code>pageToggles</code>，关掉会同时隐藏导航并让该页返回 404</td>
 </tr>
 <tr>
 <td><strong>首页轮播</strong></td>
@@ -418,13 +429,13 @@ draft: false
 </tr>
 <tr>
 <td><strong>每页文章数</strong></td>
-<td><code>src/pages/index.astro</code></td>
-<td><code>POSTS_PER_PAGE = 8</code>（<code>page/[page].astro</code> 同步改）</td>
+<td><code>src/config/site.ts</code></td>
+<td><code>siteConfig.postsPerPage</code>（首页与分页共用）</td>
 </tr>
 <tr>
 <td><strong>站点域名</strong></td>
-<td><code>astro.config.mjs</code></td>
-<td><code>site: 'https://mango.840428.xyz'</code></td>
+<td><code>src/config/site.ts</code> + <code>astro.config.mjs</code></td>
+<td><code>siteConfig.url</code> 与 <code>site</code> <strong>必须保持一致</strong></td>
 </tr>
 <tr>
 <td><strong>浏览器标题后缀</strong></td>
@@ -432,9 +443,9 @@ draft: false
 <td><code>&lt;BaseLayout title="首页 - Mango"&gt;</code> 里的 <code>- Mango</code></td>
 </tr>
 <tr>
-<td><strong>默认 meta 描述</strong></td>
-<td><code>src/layouts/BaseLayout.astro</code></td>
-<td><code>description = 'Mango - 微信朋友圈风格图片博客'</code></td>
+<td><strong>默认 meta 描述 / SEO</strong></td>
+<td><code>src/config/site.ts</code> + <code>BaseLayout.astro</code></td>
+<td><code>siteConfig.description</code>；OG / JSON-LD 由 BaseLayout 自动生成</td>
 </tr>
 <tr>
 <td><strong>关于页内容</strong></td>
@@ -454,22 +465,22 @@ draft: false
 </tbody>
 </table>
 <h3 id="31">3.1 改导航菜单的具体写法</h3>
-<p><code>src/components/Header.astro</code> 第 4 行开始：</p>
-<button class="copy" type="button">复制</button><pre><code class="language-ts">const navItems = [
+<p><code>src/config/site.ts</code> 的 <code>siteConfig.navItems</code>：</p>
+<button class="copy" type="button">复制</button><pre><code class="language-ts">navItems: [
   { name: '风景', href: '/categories/风景' },
   { name: '旅拍', href: '/categories/旅拍', icon: 'bi-palette' },
-  { name: '科技', href: '/categories/科技', hasDropdown: true, children: [
-    { name: '数码', href: '/categories/数码' },
-    { name: '软件', href: '/categories/软件' },
-  ]},
-  { name: '主题下载', href: '/download' },
-  { name: '旅游地图', href: '/map' },
-];
+  {
+    name: '科技', href: '/categories/科技',
+    children: [{ name: '数码', href: '/categories/数码' }],
+  },
+  { name: '主题下载', href: '/download', page: 'download' },
+],
 </code></pre>
 <ul>
 <li><code>name</code> 显示文字，<code>href</code> 链接</li>
 <li><code>icon</code> 可选，用 Bootstrap Icons 类名（如 <code>bi-palette</code>）</li>
-<li><code>hasDropdown: true</code> + <code>children</code> 生成二级菜单</li>
+<li><code>children</code> 存在即自动生成二级下拉菜单</li>
+<li><code>page</code> 关联页面开关；对应开关设为 <code>false</code> 时，该导航项自动消失</li>
 <li>加一项就复制一行，删一项就删一行</li>
 </ul>
 <h3 id="32">3.2 改轮播的具体写法</h3>
@@ -534,6 +545,14 @@ wrangler pages deploy dist --project-name mango-astro --branch main --commit-dir
 <button class="copy" type="button">复制</button><pre><code class="language-bash">export PATH=&quot;$HOME/.local/bin:$PATH&quot;
 </code></pre>
 <p>成功标志：最后出现 <code>✨ Deployment complete!</code> 和一个 <code>https://xxxxx.mango-astro.pages.dev</code> 链接。</p>
+<h3 id="53-seo">5.3 订阅与 SEO（已内置，无需额外操作）</h3>
+<ul>
+<li><code>https://mango-astro.pages.dev/rss.xml</code> — RSS 2.0，16 篇文章</li>
+<li><code>https://mango-astro.pages.dev/atom.xml</code> — Atom 1.0</li>
+<li><code>https://mango-astro.pages.dev/sitemap.xml</code> — 50 条 URL（含文章 / 标签 / 分类 / 分页，不含后台）</li>
+<li>每页自动输出 canonical、OpenGraph、Twitter card、JSON-LD；文章页用 <code>BlogPosting</code> 结构</li>
+<li>想关掉：把 <code>src/config/site.ts</code> 里 <code>feed.rss</code> / <code>feed.atom</code> / <code>feed.sitemap</code> 设为 <code>false</code></li>
+</ul>
 <h3 id="52">5.2 自动部署（推荐开启）</h3>
 <p>现在后台写完文章，线上<strong>不会自动更新</strong>。开启 Git 构建后就能闭环：</p>
 <ol>
@@ -715,13 +734,13 @@ git log --oneline -10                             # 看最近提交
 <li>[ ] GitHub 令牌 / OAuth secret 是否需要轮换</li>
 <li>[ ] <code>public/images/</code> 体积是否过大（建议总量 &lt; 200 MB）</li>
 </ul>
-<p><strong>上线前必改的三处</strong></p>
+<p><strong>上线前建议做的两处</strong></p>
 <ul>
-<li>[ ] <code>src/components/Footer.astro</code> 第 28 行备案号（现在还是 <code>京ICP备00000000号</code>）</li>
 <li>[ ] <code>src/pages/about.astro</code> 的模板文案（特性列表还是主题默认内容，建议换成你自己的介绍）</li>
-<li>[ ] <code>astro.config.mjs</code> 的 <code>site</code>（当前是 <code>https://mango.840428.xyz</code>，与实际的 <code>pages.dev</code> 不一致）</li>
+<li>[ ] 若绑定了 <code>mango.840428.xyz</code>，同步改 <code>src/config/site.ts</code> 的 <code>url</code> 与 <code>astro.config.mjs</code> 的 <code>site</code></li>
 </ul>
-<div class="footer">Mango Astro · 站点管理与设置教程 v1.1 · 2026-11-07 · 支持日间 / 夜间 / 系统三态切换 · 对照图以正文为准</div>
+<p><strong>已自动处理（不用再管）</strong>：备案号占位改为「留空不显示」（<code>siteConfig.icp</code>）；<code>site</code> 已改为实际域名 <code>https://mango-astro.pages.dev</code>；站名 / 导航 / 页脚 / 每页文章数已收进 <code>src/config/site.ts</code>。</p>
+<div class="footer">Mango Astro · 站点管理与设置教程 v2.0 · 2026-11-07 · 支持日间 / 夜间 / 系统三态切换 · 对照图以正文为准</div>
 </main>
 </div>
 <script>

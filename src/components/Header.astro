@@ -1,16 +1,8 @@
 ---
-const currentPath = Astro.url.pathname;
+import { siteConfig, visibleNavItems, isPageEnabled } from '@/config/site';
 
-const navItems = [
-  { name: '风景', href: '/categories/风景' },
-  { name: '旅拍', href: '/categories/旅拍', icon: 'bi-palette' },
-  { name: '科技', href: '/categories/科技', hasDropdown: true, children: [
-    { name: '数码', href: '/categories/数码' },
-    { name: '软件', href: '/categories/软件' },
-  ]},
-  { name: '主题下载', href: '/download' },
-  { name: '旅游地图', href: '/map' },
-];
+const currentPath = Astro.url.pathname;
+const navItems = visibleNavItems(siteConfig.navItems);
 ---
 
 <header class="site-header">
@@ -18,8 +10,8 @@ const navItems = [
     <div class="flex items-center justify-between">
       <!-- Logo -->
       <a href="/" class="flex items-center space-x-2">
-        <img src="/images/logo.svg" alt="Mango" class="h-[30px]" />
-        <b class="text-xl font-bold text-[#333] dark:text-[#ccc]" style="letter-spacing: 0.5px;">Mango</b>
+        <img src={siteConfig.logo} alt={siteConfig.name} class="h-[30px]" />
+        <b class="text-xl font-bold text-[#333] dark:text-[#ccc]" style="letter-spacing: 0.5px;">{siteConfig.name}</b>
       </a>
 
       <!-- Desktop Navigation -->
@@ -34,15 +26,15 @@ const navItems = [
                   { 'nav-link-active': currentPath === item.href }
                 ]}
               >
-                {'icon' in item && item.icon && (
+                {item.icon && (
                   <i class:list={[item.icon, 'mr-1']}></i>
                 )}
                 {item.name}
-                {item.hasDropdown && (
+                {item.children && item.children.length > 0 && (
                   <i class="bi bi-chevron-down text-xs ml-1"></i>
                 )}
               </a>
-              {item.hasDropdown && item.children && (
+              {item.children && item.children.length > 0 && (
                 <ul class="absolute top-full left-0 w-40 bg-white dark:bg-[#212121] rounded-[10px] shadow-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                   {item.children.map((child) => (
                     <li>
@@ -60,9 +52,11 @@ const navItems = [
 
       <!-- Right side: Search toggle + Theme toggle + Mobile menu -->
       <div class="flex items-center space-x-3">
-        <button id="search-toggle" class="header-icon-btn flex items-center justify-center" aria-label="搜索" aria-expanded="false">
-          <i class="bi bi-search"></i>
-        </button>
+        {isPageEnabled('search') && (
+          <button id="search-toggle" class="header-icon-btn flex items-center justify-center" aria-label="搜索" aria-expanded="false">
+            <i class="bi bi-search"></i>
+          </button>
+        )}
 
         <button id="theme-toggle" class="header-icon-btn flex items-center justify-center" aria-label="切换主题">
           <i class="bi bi-lightbulb-fill dark-icon"></i>
@@ -76,16 +70,18 @@ const navItems = [
     </div>
 
     <!-- Expandable top search bar -->
-    <div id="c_sousuo">
-      <div class="search_box">
-        <form action="/search" method="get" class="ss_a">
-          <input type="text" name="q" placeholder="输入关键词搜索..." autocomplete="off" />
-          <button type="submit" aria-label="搜索">
-            <i class="bi bi-search"></i>
-          </button>
-        </form>
+    {isPageEnabled('search') && (
+      <div id="c_sousuo">
+        <div class="search_box">
+          <form action="/search" method="get" class="ss_a">
+            <input type="text" name="q" placeholder="输入关键词搜索..." autocomplete="off" />
+            <button type="submit" aria-label="搜索">
+              <i class="bi bi-search"></i>
+            </button>
+          </form>
+        </div>
       </div>
-    </div>
+    )}
 
     <!-- Mobile Navigation -->
     <ul id="mobile-menu" class="hidden lg:hidden mt-4 pb-4 space-y-2">

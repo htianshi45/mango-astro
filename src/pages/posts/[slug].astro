@@ -1,8 +1,7 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import PostImages from '@/components/PostImages.astro';
 import { getCollection } from 'astro:content';
-import { giscusConfig, isGiscusConfigured } from '@/config/comment';
+import { siteConfig } from '@/config/site';
 
 export async function getStaticPaths() {
   const posts = await getCollection('posts');
@@ -13,19 +12,54 @@ export async function getStaticPaths() {
 }
 
 const { post } = Astro.props;
-const { Content } = await post.render();
+const { Content, headings } = await post.render();
 
 const allPosts = await getCollection('posts', ({ data }) => data.draft !== true);
+const sortedPosts = allPosts.sort((a, b) => {
+  if (a.data.sticky !== b.data.sticky) return b.data.sticky - a.data.sticky;
+  return new Date(b.data.pubDate).getTime() - new Date(a.data.pubDate).getTime();
+});
+
+const currentIndex = sortedPosts.findIndex((p) => p.slug === post.slug);
+const newerPost = currentIndex > 0 ? sortedPosts[currentIndex - 1] : null;
+const olderPost = currentIndex >= 0 && currentIndex < sortedPosts.length - 1 ? sortedPosts[currentIndex + 1] : null;
+
 const relatedPosts = allPosts
-  .filter(p => p.slug !== post.slug && p.data.category === post.data.category)
+  .filter((p) => p.slug !== post.slug && p.data.category === post.data.category)
   .slice(0, 5);
 const fallbackRelated = relatedPosts.length < 2
-  ? allPosts.filter(p => p.slug !== post.slug).slice(0, 5 - relatedPosts.length)
+  ? allPosts.filter((p) => p.slug !== post.slug).slice(0, 5 - relatedPosts.length)
   : [];
 const displayRelated = [...relatedPosts, ...fallbackRelated].slice(0, 5);
+
+// 字数与阅读时间：剥离代码块、图片、链接与 Markdown 标记后统计
+const plain = post.body
+  .replace(/```[\s\S]*?```/g, '')
+  .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+  .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+  .replace(/<[^>]+>/g, '')
+  .replace(/[#>*`_~|\-]/g, '');
+const cjkCount = (plain.match(/[\u4e00-\u9fff]/g) || []).length;
+const enCount = (plain.replace(/[\u4e00-\u9fff]/g, ' ').match(/[a-zA-Z0-9]+/g) || []).length;
+const wordCount = cjkCount + enCount;
+const readingMinutes = Math.max(1, Math.ceil(wordCount / 300));
+
+const tocItems = headings.filter((h) => h.depth >= 2 && h.depth <= 3);
+const publishedTime = new Date(post.data.pubDate).toISOString();
+const shareUrl = new URL(`/posts/${post.slug}`, siteConfig.url).href;
+const ogImage = post.data.heroImage || post.data.images?.[0];
 ---
 
-<BaseLayout title={`${post.data.title} - Mango`}>
+<BaseLayout
+  title={`${post.data.title} - ${siteConfig.name}`}
+  description={post.data.description || siteConfig.description}
+  image={ogImage}
+  type="article"
+  publishedTime={publishedTime}
+  tags={post.data.tags}
+>
+  {siteConfig.features.readingProgress && <div id="reading-progress" aria-hidden="true"></div>}
+
   <!-- Section 1: Title Card -->
   <div class="post_container_title">
     <h1 class="text-xl font-bold text-[#333] dark:text-[#ccc] m-0">
@@ -35,14 +69,22 @@ const displayRelated = [...relatedPosts, ...fallbackRelated].slice(0, 5);
 
   <!-- Section 2: Content Card -->
   <div class="post_container">
-    <!-- Post Images -->
-    {post.data.images && post.data.images.length > 0 && (
-      <div class="mb-6">
-        <PostImages images={post.data.images} slug={post.slug} />
-      </div>
+    {siteConfig.features.toc && tocItems.length > 0 && (
+      <details class="post-toc">
+        <summary>
+          <i class="bi bi-list-ul mr-1"></i>目录 · {tocItems.length} 节
+        </summary>
+        <ul>
+          {tocItems.map((h) => (
+            <li class:list={['toc-depth-' + h.depth]}>
+              <a href={`#${h.slug}`}>{h.text}</a>
+            </li>
+          ))}
+        </ul>
+      </details>
     )}
 
-    <!-- Post Content -->
+    <!-- Post Content（图片随正文段落内嵌，不再顶部成组渲染） -->
     <div class="prose prose-lg dark:prose-invert max-w-none post-content">
       <Content />
     </div>
@@ -62,10 +104,16 @@ const displayRelated = [...relatedPosts, ...fallbackRelated].slice(0, 5);
 
     <!-- Post Footer Data -->
     <div class="post-info-footer mt-6">
-      <span class="flex items-center">
-        <i class="bi bi-chat-square-text-fill mr-1"></i>
-        {(post.data.comments || 0).toLocaleString()} 评论
-      </span>
+      {siteConfig.features.wordCount && (
+        <span class="flex items-center">
+          <i class="bi bi-file-text mr-1"></i>{wordCount.toLocaleString()} 字
+        </span>
+      )}
+      {siteConfig.features.readingTime && (
+        <span class="flex items-center">
+          <i class="bi bi-clock mr-1"></i>约 {readingMinutes} 分钟
+        </span>
+      )}
       <span class="flex items-center">
         <i class="bi bi-eye-fill mr-1"></i>
         {(post.data.views || 0).toLocaleString()} 浏览
@@ -92,18 +140,51 @@ const displayRelated = [...relatedPosts, ...fallbackRelated].slice(0, 5);
         </div>
       </div>
     </div>
-    <div class="flex space-x-2">
-      <button class="btn-primary text-xs py-1 px-3" style="background: #4270f5;">
-        <i class="bi bi-share mr-1"></i>分享
-      </button>
-      <button class="btn-primary text-xs py-1 px-3" style="background: #4270f5;">
-        <i class="bi bi-heart mr-1"></i>打赏
-      </button>
-    </div>
+    {siteConfig.features.share && (
+      <div class="flex items-center space-x-2">
+        <button
+          type="button"
+          id="share-post"
+          class="btn-primary text-xs py-1 px-3"
+          style="background: #4270f5;"
+          data-url={shareUrl}
+          data-title={post.data.title}
+        >
+          <i class="bi bi-share mr-1"></i>分享
+        </button>
+        <button
+          type="button"
+          id="copy-link"
+          class="btn-primary text-xs py-1 px-3"
+          style="background: #4270f5;"
+          data-url={shareUrl}
+        >
+          <i class="bi bi-link-45deg mr-1"></i>复制链接
+        </button>
+      </div>
+    )}
   </div>
 
-  <!-- Section 4: Related Posts Card -->
-  {displayRelated.length > 0 && (
+  <!-- Section 4: Previous / Next -->
+  {siteConfig.features.postNavigation && (newerPost || olderPost) && (
+    <div class="post-nav-grid">
+      {olderPost ? (
+        <a href={`/posts/${olderPost.slug}`} class="post-nav-item">
+          <span class="post-nav-label"><i class="bi bi-arrow-left mr-1"></i>较早一篇</span>
+          <span class="post-nav-title">{olderPost.data.title}</span>
+        </a>
+      ) : <span></span>}
+      {newerPost ? (
+        <a href={`/posts/${newerPost.slug}`} class="post-nav-item post-nav-right">
+          <span class="post-nav-label">较新一篇<i class="bi bi-arrow-right ml-1"></i></span>
+          <span class="post-nav-title">{newerPost.data.title}</span>
+        </a>
+      ) : <span></span>}
+    </div>
+  )}
+
+  <!-- Section 5: Related Posts Card -->
+  {siteConfig.features.relatedPosts && displayRelated.length > 0 && (
     <div class="post_related">
       <h3 class="widget-title mb-4">相关文章</h3>
       <ul class="space-y-2">
@@ -119,28 +200,6 @@ const displayRelated = [...relatedPosts, ...fallbackRelated].slice(0, 5);
     </div>
   )}
 
-  <!-- Section 5: Comments (Giscus) -->
-  <div class="post_comments">
-    <h3 class="widget-title mb-4">评论</h3>
-    {isGiscusConfigured ? (
-      <div
-        id="giscus-container"
-        data-repo={giscusConfig.repo}
-        data-repo-id={giscusConfig.repoId}
-        data-category={giscusConfig.category}
-        data-category-id={giscusConfig.categoryId}
-        data-mapping={giscusConfig.mapping}
-        data-lang={giscusConfig.lang}
-      ></div>
-    ) : (
-      <div class="comment-disabled">
-        <i class="bi bi-chat-square-dots"></i>
-        <p class="comment-disabled-title">评论未启用</p>
-        <span class="comment-disabled-hint">在 src/config/comment.ts 中配置 Giscus 的 repo / repoId / categoryId 后即可开启评论。</span>
-      </div>
-    )}
-  </div>
-
   <!-- Navigation -->
   <div class="mt-5 flex justify-between">
     <a href="/" class="btn-secondary">
@@ -149,51 +208,68 @@ const displayRelated = [...relatedPosts, ...fallbackRelated].slice(0, 5);
   </div>
 </BaseLayout>
 
-{isGiscusConfigured && (
-  <script is:inline>
-    (function () {
-      function initGiscus() {
-        var container = document.getElementById('giscus-container');
-        if (!container || container.querySelector('script')) return;
+<script>
+  // 阅读进度条
+  const progressBar = document.getElementById('reading-progress');
+  const updateProgress = () => {
+    const total = document.documentElement.scrollHeight - window.innerHeight;
+    const ratio = total > 0 ? Math.min(100, Math.max(0, (window.scrollY / total) * 100)) : 0;
+    if (progressBar) progressBar.style.width = ratio + '%';
+  };
+  window.addEventListener('scroll', updateProgress, { passive: true });
+  window.addEventListener('resize', updateProgress);
+  updateProgress();
 
-        var isDark = document.documentElement.classList.contains('dark');
-        var script = document.createElement('script');
-        script.src = 'https://giscus.app/client.js';
-        script.setAttribute('data-repo', container.dataset.repo || '');
-        script.setAttribute('data-repo-id', container.dataset.repoId || '');
-        script.setAttribute('data-category', container.dataset.category || '');
-        script.setAttribute('data-category-id', container.dataset.categoryId || '');
-        script.setAttribute('data-mapping', container.dataset.mapping || 'pathname');
-        script.setAttribute('data-strict', '0');
-        script.setAttribute('data-reactions-enabled', '1');
-        script.setAttribute('data-emit-metadata', '0');
-        script.setAttribute('data-input-position', 'bottom');
-        script.setAttribute('data-theme', isDark ? 'dark' : 'light');
-        script.setAttribute('data-lang', container.dataset.lang || 'zh-CN');
-        script.crossOrigin = 'anonymous';
-        script.async = true;
-        container.appendChild(script);
+  // 分享与复制链接
+  function toast(message) {
+    const el = document.createElement('div');
+    el.textContent = message;
+    el.style.cssText = 'position:fixed;left:50%;bottom:32px;transform:translateX(-50%);z-index:10001;' +
+      'background:rgba(0,0,0,.82);color:#fff;font-size:13px;padding:9px 16px;border-radius:20px;' +
+      'opacity:0;transition:opacity .2s ease;pointer-events:none';
+    document.body.appendChild(el);
+    requestAnimationFrame(() => { el.style.opacity = '1'; });
+    setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 220); }, 1800);
+  }
+
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (err) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      ta.remove();
+      return ok;
+    }
+  }
+
+  document.getElementById('copy-link')?.addEventListener('click', async (e) => {
+    const url = e.currentTarget.dataset.url;
+    toast(await copyText(url) ? '链接已复制' : '复制失败，请手动复制地址栏');
+  });
+
+  document.getElementById('share-post')?.addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    const url = btn.dataset.url;
+    const title = btn.dataset.title;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, url });
+        return;
+      } catch (err) {
+        if (err && err.name === 'AbortError') return;
       }
-
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initGiscus);
-      } else {
-        initGiscus();
-      }
-
-      var observer = new MutationObserver(function () {
-        var iframe = document.querySelector('#giscus-container iframe');
-        if (!iframe) return;
-        var isDark = document.documentElement.classList.contains('dark');
-        iframe.contentWindow.postMessage(
-          { giscus: { setTheme: isDark ? 'dark' : 'light' } },
-          'https://giscus.app'
-        );
-      });
-      observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    })();
-  </script>
-)}
+    }
+    toast(await copyText(url) ? '链接已复制，可粘贴分享' : '复制失败，请手动复制地址栏');
+  });
+</script>
 
 <style>
   .post_container_title {
@@ -247,50 +323,129 @@ const displayRelated = [...relatedPosts, ...fallbackRelated].slice(0, 5);
     background: #212121;
   }
 
-  .post_comments {
-    background: #fff;
-    padding: 25px 30px;
-    border-radius: 4px;
+  :global(#reading-progress) {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 2px;
+    width: 0;
+    background: #4270f5;
+    z-index: 9998;
+    transition: width 0.1s linear;
   }
 
-  :global(.dark) .post_comments {
-    background: #212121;
+  .post-toc {
+    background: #f7f8fa;
+    border: 1px solid #e8eaed;
+    border-radius: 8px;
+    padding: 12px 18px;
+    margin-bottom: 24px;
+    font-size: 13px;
   }
 
-  .comment-disabled {
-    text-align: center;
-    padding: 40px 20px;
-    color: #999;
+  :global(.dark) .post-toc {
+    background: #1d1d1f;
+    border-color: #333;
   }
 
-  .comment-disabled i {
-    font-size: 28px;
-    display: block;
-    margin-bottom: 12px;
-    color: #c6c6c6;
+  .post-toc summary {
+    cursor: pointer;
+    color: #4270f5;
+    font-weight: 500;
+    list-style: none;
   }
 
-  .comment-disabled-title {
-    font-size: 14px;
-    color: #666;
-    margin: 0 0 6px;
+  .post-toc summary::-webkit-details-marker {
+    display: none;
   }
 
-  .comment-disabled-hint {
-    font-size: 12px;
-    color: #9b9b9b;
+  .post-toc ul {
+    margin: 12px 0 2px;
+    padding-left: 18px;
+    list-style: disc;
+  }
+
+  .post-toc li {
+    margin: 5px 0;
     line-height: 1.6;
   }
 
-  :global(.dark) .comment-disabled i {
-    color: #444;
+  .post-toc a {
+    color: #555;
+    text-decoration: none;
   }
 
-  :global(.dark) .comment-disabled-title {
-    color: #aaa;
+  :global(.dark) .post-toc a {
+    color: #bbb;
   }
 
-  :global(.dark) .comment-disabled-hint {
-    color: #777;
+  .post-toc a:hover {
+    color: #4270f5;
+  }
+
+  .post-toc .toc-depth-3 {
+    margin-left: 16px;
+    font-size: 12px;
+  }
+
+  .post-nav-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .post-nav-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: #fff;
+    border: 1px solid #f0f0f0;
+    border-radius: 8px;
+    padding: 16px 20px;
+    text-decoration: none;
+    transition: border-color 0.2s ease;
+  }
+
+  :global(.dark) .post-nav-item {
+    background: #212121;
+    border-color: #333;
+  }
+
+  .post-nav-item:hover {
+    border-color: #4270f5;
+  }
+
+  .post-nav-right {
+    text-align: right;
+  }
+
+  .post-nav-label {
+    font-size: 12px;
+    color: #999;
+  }
+
+  .post-nav-title {
+    font-size: 14px;
+    color: #333;
+    line-height: 1.5;
+  }
+
+  :global(.dark) .post-nav-title {
+    color: #ccc;
+  }
+
+  :global(html) {
+    scroll-behavior: smooth;
+  }
+
+  @media (max-width: 768px) {
+    .post-nav-grid {
+      grid-template-columns: 1fr;
+    }
+    .post_author {
+      flex-wrap: wrap;
+      gap: 12px;
+    }
   }
 </style>

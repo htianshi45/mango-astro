@@ -59,9 +59,7 @@ npm run preview
 title: 文章标题
 description: 文章描述
 pubDate: 2024-01-01
-images:
-  - https://example.com/image1.jpg
-  - https://example.com/image2.jpg
+heroImage: /images/cover.jpg
 author: 作者名
 avatar: /images/avatar.png
 tags:
@@ -73,36 +71,18 @@ views: 0
 draft: false
 ---
 
-文章内容...
+开头段落……
+
+![第一张图](/images/image1.jpg)
+
+中间段落……
+
+![第二张图](/images/image2.jpg)
+
+结尾段落……
 ```
 
-## 💬 评论系统（Giscus）
-
-详情页评论区使用 [Giscus](https://giscus.app/)（基于 GitHub Discussions），配置集中在 `src/config/comment.ts`。
-
-> ⚠️ 需要到 **https://giscus.app/** 获取 `repoId` 与 `categoryId`，AI 无法代填。
-
-启用步骤：
-
-1. 准备一个**公开的 GitHub 仓库**，在 Settings → General → Features 勾选 **Discussions**；
-2. 到 <https://giscus.app/> 输入仓库名，选择分类（推荐 `Announcements`），复制页面给出的 `repoId` 与 `categoryId`；
-3. 编辑 `src/config/comment.ts`，填入 `repo`、`repoId`、`categoryId`，并把 `enabled` 设为 `true`；
-4. 在仓库安装并授权 giscus app。
-
-```ts
-// src/config/comment.ts
-export const giscusConfig = {
-  enabled: true,
-  repo: 'yourname/yourrepo',
-  repoId: 'R_xxxxxxxx',
-  category: 'Announcements',
-  categoryId: 'DIC_xxxxxxxx',
-  mapping: 'pathname',
-  lang: 'zh-CN',
-};
-```
-
-未配置时，评论区会显示「评论未启用」占位块，**不会注入任何会报错的脚本**。
+**图片规则（与原版一致）**：图片按段落插入正文，详情页原样随文显示；首页卡片的九宫格由正文图片自动提取（按出现顺序取前 9 张，超出显示 `+N`，点击可灯箱浏览全部）。因此不需要在 frontmatter 里再维护图片列表，新增图片只要插在正文里即可。
 
 ## 🔍 站内搜索说明
 

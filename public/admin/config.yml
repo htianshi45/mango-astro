@@ -41,11 +41,6 @@ collections:
       - { label: "发布日期", name: "pubDate", widget: "datetime" }
       - { label: "更新日期", name: "updatedDate", widget: "datetime", required: false }
       - { label: "封面图", name: "heroImage", widget: "image", required: false }
-      - label: "九宫格图片"
-        name: "images"
-        widget: "list"
-        required: false
-        field: { label: "图片", name: "image", widget: "image" }
       - { label: "作者", name: "author", widget: "string", default: "Mango" }
       - { label: "头像", name: "avatar", widget: "image", default: "/images/default-avatar.svg" }
       - label: "标签"
@@ -59,7 +54,7 @@ collections:
       - { label: "评论数", name: "comments", widget: "number", default: 0, required: false }
       - { label: "点赞数", name: "likes", widget: "number", default: 0, required: false }
       - { label: "草稿", name: "draft", widget: "boolean", default: false, required: false }
-      - { label: "正文", name: "body", widget: "markdown" }
+      - { label: "正文", name: "body", widget: "markdown", hint: "在正文中按段落插入图片；首页九宫格会自动取正文前 9 张，超出部分显示 +N" }
 
 # 说明：没有配置 pages collection。原模板里的 "关于页面" 指向 src/pages/about.astro，
 # 那是 Astro 组件而非 Markdown；用 CMS 的 markdown widget 编辑会写坏组件文件。

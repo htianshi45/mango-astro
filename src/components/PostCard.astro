@@ -12,7 +12,6 @@ interface Props {
   sticky?: boolean;
   tags?: string[];
   likes?: number;
-  comments?: number;
   views?: number;
 }
 
@@ -27,7 +26,6 @@ const {
   sticky = false,
   tags = [],
   likes = 0,
-  comments = 0,
   views = 0,
 } = Astro.props;
 
@@ -84,12 +82,8 @@ function formatDate(date: string | Date): string {
       </div>
     )}
 
-    <!-- Footer Data: Comments / Views / Likes -->
+    <!-- Footer Data: Views / Likes -->
     <div class="post-info-footer">
-      <span class="flex items-center">
-        <i class="bi bi-chat-square-text-fill mr-1"></i>
-        {comments.toLocaleString()} 评论
-      </span>
       <span class="flex items-center">
         <i class="bi bi-eye-fill mr-1"></i>
         {views.toLocaleString()} 浏览

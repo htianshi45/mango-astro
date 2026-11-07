@@ -1,5 +1,8 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import { isPageEnabled } from '@/config/site';
+
+if (!isPageEnabled('map')) return Astro.rewrite('/404');
 ---
 
 <BaseLayout title="旅游地图 - Mango">
