@@ -1,4 +1,17 @@
 ---
+/**
+ * 侧边栏 — 参考 Firefly 的 SideBar.astro「top / sticky 两段式」
+ *
+ * Firefly 把侧栏组件分成两类：
+ *   position: "top"     → 正常流，跟着页面滚走（作者卡、音乐播放器）
+ *   position: "sticky"  → 粘在视口顶部，翻页时保持不动（目录、热门文章、标签）
+ * 这里照搬同一个模型：上半段跟随滚动，下半段吸顶。
+ *
+ * 吸顶细节：
+ *   - 顶部偏移 88px，正好在导航栏（64px）下面留 24px 呼吸；
+ *   - 导航栏滚走（#site-header.nav-hidden）时收回到 16px，不浪费纵向空间；
+ *   - 内容比视口高的极端情况下才在自己的盒子里滚动（平时不会出现滚动条）。
+ */
 import AuthorCard from './AuthorCard.astro';
 import HotPostsWidget from './HotPostsWidget.astro';
 import TagsWidget from './TagsWidget.astro';
@@ -34,50 +47,93 @@ interface Props {
   showAuthor?: boolean;
   /** 文章页不重复放音乐播放器，保持首页的音乐入口 */
   showMusic?: boolean;
+  /** 文章页不放标签云：正文底部已经有整组标签，省下的高度让吸顶块完整可见 */
+  showTags?: boolean;
 }
 
-const { posts, tags, toc, showAuthor = true, showMusic = true } = Astro.props;
+const { posts, tags, toc, showAuthor = true, showMusic = true, showTags = true } = Astro.props;
 
 const hotPosts = [...posts]
   .sort((a, b) => (b.views || 0) - (a.views || 0))
   .slice(0, 3);
 ---
 
-<aside class="space-y-5 sidebar_sticky">
-  {toc && toc.length > 0 && <TocWidget items={toc} />}
-  {showAuthor && <AuthorCard postCount={posts.length} tagCount={tags.length} />}
-  {showMusic && <MusicWidget />}
-  <HotPostsWidget posts={hotPosts} />
-  <TagsWidget {tags} />
+<aside class="sidebar">
+  <!-- 上半段：跟随页面滚动（Firefly 的 position: top） -->
+  <div class="sidebar-flow">
+    {showAuthor && <AuthorCard postCount={posts.length} tagCount={tags.length} />}
+    {showMusic && <MusicWidget />}
+  </div>
+
+  <!-- 下半段：吸顶不动（Firefly 的 position: sticky） -->
+  <div class="sidebar-sticky">
+    {toc && toc.length > 0 && <TocWidget items={toc} />}
+    <HotPostsWidget posts={hotPosts} />
+    {showTags && <TagsWidget {tags} />}
+  </div>
 </aside>
 
 <style>
-  .sidebar_sticky {
-    position: sticky;
-    top: 95px;
+  /* 让 aside 撑满整列高度，吸顶元素才有可移动的区间 */
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
   }
 
-  /* 侧栏比屏幕高时 sticky 会让底部内容够不到，超长时允许自身滚动
-     （滚到底会自然接力给页面，不用 contain 卡住） */
+  /* 用 grid + gap 统一间距，并清掉 .widget 自带的 mb-5：
+     Astro 的 scoped 选择器不会命中子组件根节点，必须用 :global(*) */
+  .sidebar-flow,
+  .sidebar-sticky {
+    display: grid;
+    gap: 20px;
+  }
+  .sidebar-flow > :global(*),
+  .sidebar-sticky > :global(*) {
+    margin-bottom: 0;
+  }
+
+  .sidebar-sticky {
+    position: sticky;
+    top: 88px;
+    transition: top 0.28s ease;
+  }
+
+  /* 导航栏下滑隐藏时，吸顶块自动上提，避免顶上留一条空白 */
+  :global(body:has(#site-header.nav-hidden)) .sidebar-sticky {
+    top: 16px;
+  }
+
+  /* 只有内容真的比视口高时才内部滚动（平时不出现滚动条） */
   @media (min-width: 1024px) {
-    .sidebar_sticky {
-      max-height: calc(100vh - 115px);
+    .sidebar-sticky {
+      max-height: calc(100dvh - 108px);
       overflow-y: auto;
+      overflow-x: hidden;
       scrollbar-width: thin;
-      scrollbar-color: rgba(0, 0, 0, 0.16) transparent;
+      scrollbar-color: rgba(0, 0, 0, 0.14) transparent;
     }
-    .sidebar_sticky::-webkit-scrollbar {
+    .sidebar-sticky::-webkit-scrollbar {
       width: 4px;
     }
-    .sidebar_sticky::-webkit-scrollbar-thumb {
+    .sidebar-sticky::-webkit-scrollbar-thumb {
       background: rgba(0, 0, 0, 0.14);
       border-radius: 4px;
     }
-    :global(.dark) .sidebar_sticky {
-      scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+    :global(.dark) .sidebar-sticky {
+      scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
     }
-    :global(.dark) .sidebar_sticky::-webkit-scrollbar-thumb {
+    :global(.dark) .sidebar-sticky::-webkit-scrollbar-thumb {
       background: rgba(255, 255, 255, 0.16);
+    }
+  }
+
+  /* 窄屏（侧栏被挤到主栏下方）不吸顶，按正常流排 */
+  @media (max-width: 1023px) {
+    .sidebar-sticky {
+      position: static;
+      max-height: none;
+      overflow: visible;
     }
   }
 </style>
