@@ -52,3 +52,4 @@ oauth-gateway/.wrangler/
 # 豆瓣导入的本地缓存与登录 Cookie（不要提交）
 .cache/
 .douban-cookie
+screenshots/
