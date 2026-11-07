@@ -47,7 +47,7 @@ const html = renderMomentText(text);
 
 <article class="post-loop moment-card">
   <!-- 作者行 -->
-  <div class="flex items-start mb-4">
+  <div class="flex items-start mb-3">
     <img src={avatar} alt={author} class="w-10 h-10 rounded-full object-cover flex-shrink-0" />
     <div class="ml-3 flex-1 min-w-0">
       <h3 class="text-sm font-medium text-[#333] dark:text-[#ccc]">{author}</h3>
@@ -83,7 +83,11 @@ const html = renderMomentText(text);
 </article>
 
 <style>
-  .moment-card { position: relative; }
+  .moment-card {
+    position: relative;
+    /* 比文章卡略松一点，但不再像原来那样上下各 30px 白边 */
+    padding: 24px 30px 22px;
+  }
   .moment-card::before {
     content: '';
     position: absolute;
@@ -102,7 +106,7 @@ const html = renderMomentText(text);
   :global(.dark) .moment-badge { background: rgba(138, 176, 255, 0.15); color: #8ab0ff; }
   :global(.dark) .moment-badge.pinned { background: rgba(255, 193, 7, 0.14); color: #ffc861; }
 
-  .moment-text { font-size: 14px; line-height: 1.85; color: #444; margin-bottom: 14px; }
+  .moment-text { font-size: 14px; line-height: 1.8; color: #444; margin-bottom: 12px; }
   .moment-text :global(p) { margin: 0 0 10px; }
   .moment-text :global(p:last-child) { margin-bottom: 0; }
   .moment-text :global(h3) { font-size: 16px; font-weight: 600; margin: 0 0 10px; color: #333; }
@@ -122,7 +126,7 @@ const html = renderMomentText(text);
   .moment-images { margin-top: 4px; }
   .moment-footer {
     display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
-    margin-top: 18px; padding-top: 14px;
+    margin-top: 16px; padding-top: 12px;
     border-top: 1px solid #f0f0f0;
     font-size: 12px;
   }
