@@ -7,10 +7,12 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import PageHeader from '@/components/PageHeader.astro';
 import MomentCard from '@/components/MomentCard.astro';
+import Sidebar from '@/components/Sidebar.astro';
 import { getCollection } from 'astro:content';
 import { isPageEnabled, siteConfig } from '@/config/site';
 import { extractImages } from '@/utils/post-images';
 import { stripImages } from '@/utils/feed';
+import { getSidebarData } from '@/utils/sidebar';
 
 if (!isPageEnabled('moments')) return Astro.rewrite('/404');
 
@@ -38,59 +40,69 @@ const items = sorted.map((moment) => {
 });
 
 const years = Array.from(new Set(items.map((item) => item.year)));
+
+const sidebar = await getSidebarData();
 ---
 
-<BaseLayout title={`说说 - ${siteConfig.name}`} description="随手记的碎碎念、照片与地点。">
-  <PageHeader
-    icon="bi-chat-square-dots"
-    title="说说"
-    description="不长不短的碎碎念，和一些顺手拍下的照片。"
-    count={items.length}
-    unit="条动态"
-  >
-    <div class="moment-filters">
-      <label class="filter-search">
-        <i class="bi bi-search"></i>
-        <input type="search" id="moment-search" placeholder="搜索说说内容、地点或标签…" aria-label="搜索说说" />
-      </label>
-      <label class="filter-year">
-        <i class="bi bi-calendar3"></i>
-        <select id="moment-year" aria-label="按年份筛选">
-          <option value="all">全部年份</option>
-          {years.map((year) => <option value={year}>{year} 年</option>)}
-        </select>
-      </label>
-      <span class="filter-result" id="moment-result"></span>
-    </div>
-  </PageHeader>
-
-  <div id="moment-list">
-    {years.map((year) => (
-      <section class="moment-year-group" data-year={year}>
-        <h2 class="moment-year-label"><span>{year}</span></h2>
-        <div class="space-y-5">
-          {items.filter((item) => item.year === year).map((item) => (
-            <div class="moment-item" id={`moment-${item.id}`} data-search={item.search}>
-              <MomentCard
-                id={item.id}
-                author={item.author}
-                avatar={item.avatar}
-                published={item.published}
-                pinned={item.pinned}
-                location={item.location}
-                tags={item.tags}
-                images={item.images}
-                text={item.text}
-                showTypeBadge={false}
-              />
-            </div>
-          ))}
+<BaseLayout title={`说说 - ${siteConfig.name}`} description="随手记的碎碎念、照片与地点。" wide>
+  <div class="layout-sidebar">
+    <div>
+      <PageHeader
+        icon="bi-chat-square-dots"
+        title="说说"
+        description="不长不短的碎碎念，和一些顺手拍下的照片。"
+        count={items.length}
+        unit="条动态"
+      >
+        <div class="moment-filters">
+          <label class="filter-search">
+            <i class="bi bi-search"></i>
+            <input type="search" id="moment-search" placeholder="搜索说说内容、地点或标签…" aria-label="搜索说说" />
+          </label>
+          <label class="filter-year">
+            <i class="bi bi-calendar3"></i>
+            <select id="moment-year" aria-label="按年份筛选">
+              <option value="all">全部年份</option>
+              {years.map((year) => <option value={year}>{year} 年</option>)}
+            </select>
+          </label>
+          <span class="filter-result" id="moment-result"></span>
         </div>
-      </section>
-    ))}
-  </div>
+      </PageHeader>
 
-  <p id="moment-empty" class="moment-empty" hidden>没有匹配的说说，换个关键词试试。</p>
+      <div id="moment-list">
+        {years.map((year) => (
+          <section class="moment-year-group" data-year={year}>
+            <h2 class="moment-year-label"><span>{year}</span></h2>
+            <div class="space-y-5">
+              {items.filter((item) => item.year === year).map((item) => (
+                <div class="moment-item" id={`moment-${item.id}`} data-search={item.search}>
+                  <MomentCard
+                    id={item.id}
+                    author={item.author}
+                    avatar={item.avatar}
+                    published={item.published}
+                    pinned={item.pinned}
+                    location={item.location}
+                    tags={item.tags}
+                    images={item.images}
+                    text={item.text}
+                    showTypeBadge={false}
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+
+      <p id="moment-empty" class="moment-empty" hidden>没有匹配的说说，换个关键词试试。</p>
+    </div>
+
+    <div>
+      <Sidebar posts={sidebar.postData} tags={sidebar.tags} />
+    </div>
+  </div>
 </BaseLayout>
 
 <script>

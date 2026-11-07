@@ -94,6 +94,15 @@
     padding: 30px;
   }
 
+  /* 归档 / 标签 / 关于等页面的通用卡片（此前只有类名没有样式） */
+  .card {
+    @apply bg-white dark:bg-[#212121] rounded-[10px];
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  }
+  .dark .card {
+    box-shadow: none;
+  }
+
   /* Widget styles */
   .widget {
     @apply bg-white dark:bg-[#212121] rounded-[10px] mb-5;

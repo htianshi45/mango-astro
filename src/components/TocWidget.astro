@@ -1,0 +1,132 @@
+---
+/**
+ * 侧栏目录（文章详情页专用）
+ *
+ * 与正文顶部那个 <details> 目录不同：这个常驻侧栏、跟随滚动高亮当前小节。
+ * 窄屏（<1024px）由页面里的折叠版目录接管，侧栏本来也会被挤到主栏下方。
+ */
+interface Heading {
+  depth: number;
+  slug: string;
+  text: string;
+}
+
+interface Props {
+  items: Heading[];
+}
+
+const { items } = Astro.props;
+---
+
+<aside class="widget toc-widget" id="toc-widget">
+  <h3 class="widget-title">目录</h3>
+  <nav class="toc-nav" aria-label="文章目录">
+    <ul id="toc-list">
+      {items.map((h) => (
+        <li class:list={['toc-item', `toc-lv-${h.depth}`]}>
+          <a href={`#${h.slug}`} data-toc-anchor={h.slug}>{h.text}</a>
+        </li>
+      ))}
+    </ul>
+  </nav>
+</aside>
+
+<style>
+  .toc-nav {
+    max-height: min(46vh, 460px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    margin-right: -6px;
+    padding-right: 6px;
+    scrollbar-width: thin;
+  }
+  .toc-nav::-webkit-scrollbar { width: 4px; }
+  .toc-nav::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.14); border-radius: 4px; }
+  :global(.dark) .toc-nav::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.16); }
+
+  .toc-nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-left: 1px solid #ececf0;
+  }
+  :global(.dark) .toc-nav ul { border-left-color: #333; }
+
+  .toc-item { margin: 0; }
+
+  .toc-item a {
+    display: block;
+    padding: 6px 0 6px 12px;
+    margin-left: -1px;
+    border-left: 2px solid transparent;
+    color: #6b7280;
+    font-size: 13px;
+    line-height: 1.55;
+    text-decoration: none;
+    transition: color 0.16s ease, border-color 0.16s ease, background-color 0.16s ease;
+  }
+  :global(.dark) .toc-item a { color: #a1a1a6; }
+
+  .toc-item a:hover { color: #4270f5; }
+  :global(.dark) .toc-item a:hover { color: #7fa0ff; }
+
+  .toc-item a.active {
+    color: #4270f5;
+    border-left-color: #4270f5;
+    font-weight: 600;
+    background: linear-gradient(90deg, rgba(66, 112, 245, 0.08), rgba(66, 112, 245, 0));
+  }
+  :global(.dark) .toc-item a.active {
+    color: #7fa0ff;
+    border-left-color: #7fa0ff;
+    background: linear-gradient(90deg, rgba(127, 160, 255, 0.12), rgba(127, 160, 255, 0));
+  }
+
+  .toc-lv-3 a {
+    padding-left: 26px;
+    font-size: 12.5px;
+    color: #9aa1ac;
+  }
+  :global(.dark) .toc-lv-3 a { color: #8d8d92; }
+</style>
+
+<script>
+  const nav = document.querySelector<HTMLElement>('#toc-widget .toc-nav');
+  const links = Array.from(document.querySelectorAll<HTMLAnchorElement>('[data-toc-anchor]'));
+  const targets = links
+    .map((link) => ({ link, el: document.getElementById(link.dataset.tocAnchor || '') }))
+    .filter((item): item is { link: HTMLAnchorElement; el: HTMLElement } => item.el !== null);
+
+  if (targets.length > 0) {
+    let activeId = '';
+
+    const setActive = (id: string) => {
+      if (id === activeId) return;
+      activeId = id;
+      links.forEach((link) => link.classList.toggle('active', link.dataset.tocAnchor === id));
+
+      // 目录自身滚动（不回滚页面）：让高亮项留在可视区
+      const current = targets.find((t) => t.el.id === id)?.link;
+      if (!nav || !current) return;
+      const navRect = nav.getBoundingClientRect();
+      const rect = current.getBoundingClientRect();
+      if (rect.top < navRect.top || rect.bottom > navRect.bottom) {
+        nav.scrollTop += rect.top - navRect.top - navRect.height / 2 + rect.height / 2;
+      }
+    };
+
+    const onScroll = () => {
+      const line = window.scrollY + 120; // 视口上方 120px 作为判定线
+      let current = targets[0];
+      for (const item of targets) {
+        if (item.el.offsetTop <= line) current = item;
+        else break;
+      }
+      setActive(current.el.id);
+    };
+
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+  }
+</script>

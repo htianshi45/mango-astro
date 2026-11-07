@@ -2,13 +2,14 @@
 /**
  * 右下角浮动按钮组
  *
- * 需求：日夜间切换按钮从导航栏挪到右下角。
- * 顺手把「返回顶部」并进来，两枚按钮竖排成一条，避免两个 fixed 元素抢同一个角落。
+ * 需求：日夜间切换 + 返回顶部两枚按钮，贴着「页面版心」的右边缘对齐，
+ * 而不是钉在浏览器窗口最右侧（宽屏下会飘到内容之外的空白里）。
  *
  * 行为：
  *   - 主题按钮常驻，切换 html.dark，写 localStorage（键与 Halo 一致：isDarkMode / theme）；
  *   - 返回顶部在滚动 300px 后淡入，点击平滑回顶；
- *   - 窄屏（<=640px）整体缩小并贴边，避免挡住正文。
+ *   - 位置由脚本按 <main> 的实际右边缘计算，窄屏（版心 = 满宽）自动退回贴边；
+ *   - 窄屏（<=640px）整体缩小，避免挡住正文。
  */
 ---
 
@@ -32,7 +33,8 @@
 <style>
   .float-tools {
     position: fixed;
-    right: 24px;
+    /* --float-right 由脚本按版心右边缘算出；没算出来之前退回 24px */
+    right: var(--float-right, 24px);
     bottom: 30px;
     z-index: 45;
     display: flex;
@@ -88,7 +90,7 @@
   .float-top.visible { opacity: 1; visibility: visible; transform: translateY(0); }
 
   @media (max-width: 640px) {
-    .float-tools { right: 14px; bottom: 18px; gap: 8px; }
+    .float-tools { bottom: 18px; gap: 8px; }
     .float-btn { width: 40px; height: 40px; font-size: 15px; }
   }
 
@@ -100,6 +102,28 @@
 <script>
   const root = document.documentElement;
   const themeBtn = document.getElementById('theme-toggle');
+
+  /* ---------- 贴版心右边缘 ---------- */
+  const tools = document.getElementById('float-tools');
+  const main = document.querySelector('main');
+
+  const syncFloatX = () => {
+    if (!tools) return;
+    const viewport = document.documentElement.clientWidth;
+    const rect = main?.getBoundingClientRect();
+    const margin = rect ? viewport - rect.right : 0; // 版心右侧留白宽度
+    const min = window.innerWidth <= 640 ? 14 : 16;
+    // 留白够宽（≥68px）→ 按钮贴在版心外侧、紧挨内容右边缘，不压侧栏卡片；
+    // 留白不够（窄屏）→ 退回版心内侧贴边，再不行就贴视口边。
+    const outside = margin - 54;
+    const inside = Math.max(min, margin + 6);
+    tools.style.setProperty('--float-right', `${Math.max(min, outside >= min ? outside : inside)}px`);
+  };
+
+  syncFloatX();
+  // 字体/图片加载完版心宽度可能变，再校准一次
+  window.addEventListener('resize', syncFloatX);
+  window.addEventListener('load', syncFloatX);
 
   const syncThemeLabel = () => {
     themeBtn?.setAttribute('aria-pressed', root.classList.contains('dark') ? 'true' : 'false');

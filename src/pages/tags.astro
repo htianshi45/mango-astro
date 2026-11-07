@@ -1,6 +1,8 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import Sidebar from '@/components/Sidebar.astro';
 import { getCollection } from 'astro:content';
+import { getSidebarData } from '@/utils/sidebar';
 
 const posts = await getCollection('posts', ({ data }) => {
   return data.draft !== true;
@@ -16,39 +18,47 @@ posts.forEach(post => {
 const tags = Array.from(tagCounts.entries())
   .map(([name, count]) => ({ name, count }))
   .sort((a, b) => b.count - a.count);
+
+const sidebar = await getSidebarData();
 ---
 
-<BaseLayout title="标签 - Mango">
-  <div class="max-w-4xl mx-auto">
-    <h1 class="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-8">🏷️ 标签</h1>
+<BaseLayout title="标签 - Mango" wide>
+  <div class="layout-sidebar">
+    <div>
+      <h1 class="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-8">🏷️ 标签</h1>
 
-    <div class="card p-8">
-      <div class="flex flex-wrap gap-4">
-        {tags.map((tag) => {
-          const size = tag.count > 5 ? 'text-2xl' : tag.count > 3 ? 'text-xl' : 'text-lg';
-          const color = tag.count > 5 ? 'bg-mango text-white' : tag.count > 3 ? 'bg-mango/20 dark:bg-mango-light/20 text-mango dark:text-mango-light' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300';
-          
-          return (
-            <a
-              href={`/tags/${tag.name}`}
-              class:list={[
-                'inline-flex items-center px-4 py-2 rounded-full font-semibold transition-all duration-200 hover:scale-105',
-                size,
-                color,
-              ]}
-            >
-              #{tag.name}
-              <span class="ml-2 text-sm opacity-75">({tag.count})</span>
-            </a>
-          );
-        })}
+      <div class="card p-8">
+        <div class="flex flex-wrap gap-4">
+          {tags.map((tag) => {
+            const size = tag.count > 5 ? 'text-2xl' : tag.count > 3 ? 'text-xl' : 'text-lg';
+            const color = tag.count > 5 ? 'bg-mango text-white' : tag.count > 3 ? 'bg-mango/20 dark:bg-mango-light/20 text-mango dark:text-mango-light' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300';
+
+            return (
+              <a
+                href={`/tags/${tag.name}`}
+                class:list={[
+                  'inline-flex items-center px-4 py-2 rounded-full font-semibold transition-all duration-200 hover:scale-105',
+                  size,
+                  color,
+                ]}
+              >
+                #{tag.name}
+                <span class="ml-2 text-sm opacity-75">({tag.count})</span>
+              </a>
+            );
+          })}
+        </div>
+      </div>
+
+      <div class="mt-8 text-center">
+        <p class="text-gray-600 dark:text-gray-400">
+          共有 {tags.length} 个标签，{posts.length} 篇文章
+        </p>
       </div>
     </div>
 
-    <div class="mt-8 text-center">
-      <p class="text-gray-600 dark:text-gray-400">
-        共有 {tags.length} 个标签，{posts.length} 篇文章
-      </p>
+    <div>
+      <Sidebar posts={sidebar.postData} tags={sidebar.tags} />
     </div>
   </div>
 </BaseLayout>

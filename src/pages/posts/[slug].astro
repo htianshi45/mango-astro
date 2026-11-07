@@ -1,7 +1,9 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import Sidebar from '@/components/Sidebar.astro';
 import { getCollection } from 'astro:content';
 import { siteConfig } from '@/config/site';
+import { getSidebarData } from '@/utils/sidebar';
 
 export async function getStaticPaths() {
   const posts = await getCollection('posts');
@@ -48,6 +50,9 @@ const tocItems = headings.filter((h) => h.depth >= 2 && h.depth <= 3);
 const publishedTime = new Date(post.data.pubDate).toISOString();
 const shareUrl = new URL(`/posts/${post.slug}`, siteConfig.url).href;
 const ogImage = post.data.heroImage || post.data.images?.[0];
+
+// 文章页侧栏：目录 + 热门文章 + 标签（作者信息正文下方已有，不再重复）
+const sidebar = await getSidebarData();
 ---
 
 <BaseLayout
@@ -57,154 +62,170 @@ const ogImage = post.data.heroImage || post.data.images?.[0];
   type="article"
   publishedTime={publishedTime}
   tags={post.data.tags}
+  wide
 >
   {siteConfig.features.readingProgress && <div id="reading-progress" aria-hidden="true"></div>}
 
-  <!-- Section 1: Title Card -->
-  <div class="post_container_title">
-    <h1 class="text-xl font-bold text-[#333] dark:text-[#ccc] m-0">
-      {post.data.title}
-    </h1>
-  </div>
+  <div class="layout-sidebar">
+    <!-- 主栏：标题卡 / 正文卡 / 作者区 / 上下篇 / 相关文章 -->
+    <div class="post-main">
+      <!-- Section 1: Title Card -->
+      <div class="post_container_title">
+        <h1 class="text-xl font-bold text-[#333] dark:text-[#ccc] m-0">
+          {post.data.title}
+        </h1>
+      </div>
 
-  <!-- Section 2: Content Card -->
-  <div class="post_container">
-    {siteConfig.features.toc && tocItems.length > 0 && (
-      <details class="post-toc">
-        <summary>
-          <i class="bi bi-list-ul mr-1"></i>目录 · {tocItems.length} 节
-        </summary>
-        <ul>
-          {tocItems.map((h) => (
-            <li class:list={['toc-depth-' + h.depth]}>
-              <a href={`#${h.slug}`}>{h.text}</a>
-            </li>
-          ))}
-        </ul>
-      </details>
-    )}
+      <!-- Section 2: Content Card -->
+      <div class="post_container">
+        {siteConfig.features.toc && tocItems.length > 0 && (
+          <details class="post-toc">
+            <summary>
+              <i class="bi bi-list-ul mr-1"></i>目录 · {tocItems.length} 节
+            </summary>
+            <ul>
+              {tocItems.map((h) => (
+                <li class:list={['toc-depth-' + h.depth]}>
+                  <a href={`#${h.slug}`}>{h.text}</a>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
 
-    <!-- Post Content（图片随正文段落内嵌，不再顶部成组渲染） -->
-    <div class="prose prose-lg dark:prose-invert max-w-none post-content">
-      <Content />
-    </div>
+        <!-- Post Content（图片随正文段落内嵌，不再顶部成组渲染） -->
+        <div class="prose prose-lg dark:prose-invert max-w-none post-content">
+          <Content />
+        </div>
 
-    <!-- Tags -->
-    {post.data.tags.length > 0 && (
-      <div class="mt-8 pt-5 border-t border-[#f0f0f0] dark:border-[#333]">
-        <div class="flex flex-wrap gap-2">
-          {post.data.tags.map((tag: string) => (
-            <a href={`/tags/${tag}`} class="post-tag">
-              <i class="bi bi-hash" style="font-size: 12px;"></i>{tag}
-            </a>
-          ))}
+        <!-- Tags -->
+        {post.data.tags.length > 0 && (
+          <div class="mt-8 pt-5 border-t border-[#f0f0f0] dark:border-[#333]">
+            <div class="flex flex-wrap gap-2">
+              {post.data.tags.map((tag: string) => (
+                <a href={`/tags/${tag}`} class="post-tag">
+                  <i class="bi bi-hash" style="font-size: 12px;"></i>{tag}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <!-- Post Footer Data -->
+        <div class="post-info-footer mt-6">
+          {siteConfig.features.wordCount && (
+            <span class="flex items-center">
+              <i class="bi bi-file-text mr-1"></i>{wordCount.toLocaleString()} 字
+            </span>
+          )}
+          {siteConfig.features.readingTime && (
+            <span class="flex items-center">
+              <i class="bi bi-clock mr-1"></i>约 {readingMinutes} 分钟
+            </span>
+          )}
+          <span class="flex items-center">
+            <i class="bi bi-eye-fill mr-1"></i>
+            {(post.data.views || 0).toLocaleString()} 浏览
+          </span>
+          <span class="flex items-center">
+            <i class="bi bi-heart-fill mr-1"></i>
+            {(post.data.likes || 0).toLocaleString()} 点赞
+          </span>
         </div>
       </div>
-    )}
 
-    <!-- Post Footer Data -->
-    <div class="post-info-footer mt-6">
-      {siteConfig.features.wordCount && (
-        <span class="flex items-center">
-          <i class="bi bi-file-text mr-1"></i>{wordCount.toLocaleString()} 字
-        </span>
-      )}
-      {siteConfig.features.readingTime && (
-        <span class="flex items-center">
-          <i class="bi bi-clock mr-1"></i>约 {readingMinutes} 分钟
-        </span>
-      )}
-      <span class="flex items-center">
-        <i class="bi bi-eye-fill mr-1"></i>
-        {(post.data.views || 0).toLocaleString()} 浏览
-      </span>
-      <span class="flex items-center">
-        <i class="bi bi-heart-fill mr-1"></i>
-        {(post.data.likes || 0).toLocaleString()} 点赞
-      </span>
-    </div>
-  </div>
-
-  <!-- Section 3: Author Card (independent) -->
-  <div class="post_author">
-    <div class="flex items-center space-x-3">
-      <img src={post.data.avatar} alt={post.data.author} class="w-7 h-7 rounded-full object-cover flex-shrink-0" />
-      <div>
-        <div class="text-sm font-medium text-[#333] dark:text-[#ccc]">{post.data.author}</div>
-        <div class="text-xs text-[#999]">
-          {new Date(post.data.pubDate).toLocaleDateString('zh-CN', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-          })}
+      <!-- Section 3: Author Card (independent) -->
+      <div class="post_author">
+        <div class="flex items-center space-x-3">
+          <img src={post.data.avatar} alt={post.data.author} class="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+          <div>
+            <div class="text-sm font-medium text-[#333] dark:text-[#ccc]">{post.data.author}</div>
+            <div class="text-xs text-[#999]">
+              {new Date(post.data.pubDate).toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })}
+            </div>
+          </div>
         </div>
+        {siteConfig.features.share && (
+          <div class="flex items-center space-x-2">
+            <button
+              type="button"
+              id="share-post"
+              class="btn-primary text-xs py-1 px-3"
+              style="background: #4270f5;"
+              data-url={shareUrl}
+              data-title={post.data.title}
+            >
+              <i class="bi bi-share mr-1"></i>分享
+            </button>
+            <button
+              type="button"
+              id="copy-link"
+              class="btn-primary text-xs py-1 px-3"
+              style="background: #4270f5;"
+              data-url={shareUrl}
+            >
+              <i class="bi bi-link-45deg mr-1"></i>复制链接
+            </button>
+          </div>
+        )}
       </div>
-    </div>
-    {siteConfig.features.share && (
-      <div class="flex items-center space-x-2">
-        <button
-          type="button"
-          id="share-post"
-          class="btn-primary text-xs py-1 px-3"
-          style="background: #4270f5;"
-          data-url={shareUrl}
-          data-title={post.data.title}
-        >
-          <i class="bi bi-share mr-1"></i>分享
-        </button>
-        <button
-          type="button"
-          id="copy-link"
-          class="btn-primary text-xs py-1 px-3"
-          style="background: #4270f5;"
-          data-url={shareUrl}
-        >
-          <i class="bi bi-link-45deg mr-1"></i>复制链接
-        </button>
-      </div>
-    )}
-  </div>
 
-  <!-- Section 4: Previous / Next -->
-  {siteConfig.features.postNavigation && (newerPost || olderPost) && (
-    <div class="post-nav-grid">
-      {olderPost ? (
-        <a href={`/posts/${olderPost.slug}`} class="post-nav-item">
-          <span class="post-nav-label"><i class="bi bi-arrow-left mr-1"></i>较早一篇</span>
-          <span class="post-nav-title">{olderPost.data.title}</span>
-        </a>
-      ) : <span></span>}
-      {newerPost ? (
-        <a href={`/posts/${newerPost.slug}`} class="post-nav-item post-nav-right">
-          <span class="post-nav-label">较新一篇<i class="bi bi-arrow-right ml-1"></i></span>
-          <span class="post-nav-title">{newerPost.data.title}</span>
-        </a>
-      ) : <span></span>}
-    </div>
-  )}
-
-  <!-- Section 5: Related Posts Card -->
-  {siteConfig.features.relatedPosts && displayRelated.length > 0 && (
-    <div class="post_related">
-      <h3 class="widget-title mb-4">相关文章</h3>
-      <ul class="space-y-2">
-        {displayRelated.map((rp) => (
-          <li class="text-sm">
-            <a href={`/posts/${rp.slug}`} class="text-[#333] dark:text-[#ccc] hover:text-mango transition-colors duration-200 flex items-center">
-              <span class="w-1.5 h-1.5 rounded-full bg-mango mr-2 flex-shrink-0"></span>
-              {rp.data.title}
+      <!-- Section 4: Previous / Next -->
+      {siteConfig.features.postNavigation && (newerPost || olderPost) && (
+        <div class="post-nav-grid">
+          {olderPost ? (
+            <a href={`/posts/${olderPost.slug}`} class="post-nav-item">
+              <span class="post-nav-label"><i class="bi bi-arrow-left mr-1"></i>较早一篇</span>
+              <span class="post-nav-title">{olderPost.data.title}</span>
             </a>
-          </li>
-        ))}
-      </ul>
-    </div>
-  )}
+          ) : <span></span>}
+          {newerPost ? (
+            <a href={`/posts/${newerPost.slug}`} class="post-nav-item post-nav-right">
+              <span class="post-nav-label">较新一篇<i class="bi bi-arrow-right ml-1"></i></span>
+              <span class="post-nav-title">{newerPost.data.title}</span>
+            </a>
+          ) : <span></span>}
+        </div>
+      )}
 
-  <!-- Navigation -->
-  <div class="mt-5 flex justify-between">
-    <a href="/" class="btn-secondary">
-      <i class="bi bi-arrow-left mr-1"></i>返回首页
-    </a>
+      <!-- Section 5: Related Posts Card -->
+      {siteConfig.features.relatedPosts && displayRelated.length > 0 && (
+        <div class="post_related">
+          <h3 class="widget-title mb-4">相关文章</h3>
+          <ul class="space-y-2">
+            {displayRelated.map((rp) => (
+              <li class="text-sm">
+                <a href={`/posts/${rp.slug}`} class="text-[#333] dark:text-[#ccc] hover:text-mango transition-colors duration-200 flex items-center">
+                  <span class="w-1.5 h-1.5 rounded-full bg-mango mr-2 flex-shrink-0"></span>
+                  {rp.data.title}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <!-- Navigation -->
+      <div class="mt-5 flex justify-between">
+        <a href="/" class="btn-secondary">
+          <i class="bi bi-arrow-left mr-1"></i>返回首页
+        </a>
+      </div>
+    </div>
+
+    <!-- 侧栏：目录 / 热门文章 / 标签 -->
+    <div>
+      <Sidebar
+        posts={sidebar.postData}
+        tags={sidebar.tags}
+        toc={tocItems}
+        showMusic={false}
+      />
+    </div>
   </div>
 </BaseLayout>
 
@@ -386,6 +407,13 @@ const ogImage = post.data.heroImage || post.data.images?.[0];
   .post-toc .toc-depth-3 {
     margin-left: 16px;
     font-size: 12px;
+  }
+
+  /* 宽屏由侧栏目录接管，正文顶部的折叠目录只留窄屏 */
+  @media (min-width: 1024px) {
+    .post-toc {
+      display: none;
+    }
   }
 
   .post-nav-grid {
