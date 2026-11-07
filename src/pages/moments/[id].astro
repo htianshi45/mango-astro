@@ -1,0 +1,139 @@
+---
+/**
+ * 说说详情页（P1-6）
+ *
+ * 之前说说只有归档页，卡片右上角的 ⋯ 只能跳到 /moments/#id，
+ * 单条说说既不能分享、也没有独立 OG 卡和评论区。
+ * 这里按内容集合的 id 生成静态页，卡片结构直接复用 MomentCard，
+ * 保证归档页与详情页视觉完全一致。
+ */
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import MomentCard from '@/components/MomentCard.astro';
+import Comments from '@/components/Comments.astro';
+import { getCollection } from 'astro:content';
+import { extractImages } from '@/utils/post-images';
+import { stripImages, momentSlug } from '@/utils/feed';
+import { siteConfig } from '@/config/site';
+
+export async function getStaticPaths() {
+  const moments = await getCollection('moments', ({ data }) => data.draft !== true);
+  return moments.map((moment) => ({
+    params: { id: momentSlug(moment.id) },
+    props: { moment },
+  }));
+}
+
+const { moment } = Astro.props;
+const slug = momentSlug(moment.id);
+const body = moment.body || '';
+const images = extractImages(body);
+const text = stripImages(body);
+const published = new Date(moment.data.published);
+const p = (n: number) => String(n).padStart(2, '0');
+const dateLabel = `${published.getUTCFullYear()}-${p(published.getUTCMonth() + 1)}-${p(published.getUTCDate())}`;
+const excerpt = text.replace(/[#*`\[\]>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 80) || '一条说说';
+const ogImage = `/og/moments/${slug}.jpg`;
+
+const all = (await getCollection('moments', ({ data }) => data.draft !== true))
+  .sort((a, b) => new Date(b.data.published).getTime() - new Date(a.data.published).getTime());
+const index = all.findIndex((item) => item.id === moment.id);
+const newer = index > 0 ? all[index - 1] : null;
+const older = index >= 0 && index < all.length - 1 ? all[index + 1] : null;
+
+// 前后篇的摘要在 frontmatter 里算好：模板表达式里放含反引号的正则会触发解析错误
+const labelOf = (entry: (typeof all)[number]) =>
+  stripImages(entry.body || '').replace(/[#*`\[\]>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 36) || momentSlug(entry.id);
+const olderLabel = older ? labelOf(older) : '';
+const newerLabel = newer ? labelOf(newer) : '';
+---
+
+<BaseLayout
+  title={`说说 · ${dateLabel} - ${siteConfig.name}`}
+  description={excerpt}
+  image={ogImage}
+>
+  <nav class="md-nav" aria-label="说说导航">
+    <a href="/moments/"><i class="bi bi-arrow-left"></i> 全部说说</a>
+    <span>{dateLabel}</span>
+  </nav>
+
+  <MomentCard
+    id={slug}
+    author={moment.data.author}
+    avatar={moment.data.avatar}
+    published={moment.data.published}
+    pinned={moment.data.pinned}
+    location={moment.data.location}
+    tags={moment.data.tags}
+    images={images}
+    text={text}
+    showTypeBadge={false}
+    showArchiveLink={false}
+  />
+
+  <Comments term={`/moments/${slug}`} />
+
+  {(newer || older) && (
+    <nav class="md-neighbours" aria-label="前后说说">
+      {older ? (
+        <a href={`/moments/${momentSlug(older.id)}/`}>
+          <span><i class="bi bi-arrow-left"></i> 更早一条</span>
+          <strong>{olderLabel}</strong>
+        </a>
+      ) : <span></span>}
+      {newer ? (
+        <a href={`/moments/${momentSlug(newer.id)}/`} class="is-right">
+          <span>更新一条 <i class="bi bi-arrow-right"></i></span>
+          <strong>{newerLabel}</strong>
+        </a>
+      ) : <span></span>}
+    </nav>
+  )}
+</BaseLayout>
+
+<style>
+  .md-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    background: #fff;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+  .md-nav a { color: #4270f5; text-decoration: none; }
+  .md-nav a:hover { text-decoration: underline; }
+  .md-nav span { color: #aaa; font-size: 12px; }
+  :global(.dark) .md-nav { background: #212121; }
+  :global(.dark) .md-nav a { color: #8ab0ff; }
+
+  .md-neighbours {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 20px;
+  }
+  .md-neighbours a {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 16px 20px;
+    background: #fff;
+    border: 1px solid #f0f0f0;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: border-color 0.2s ease;
+  }
+  .md-neighbours a:hover { border-color: #4270f5; }
+  .md-neighbours a.is-right { text-align: right; }
+  .md-neighbours span { font-size: 12px; color: #999; }
+  .md-neighbours strong { font-size: 14px; font-weight: 500; color: #333; line-height: 1.5; }
+  :global(.dark) .md-neighbours a { background: #212121; border-color: #333; }
+  :global(.dark) .md-neighbours strong { color: #ccc; }
+
+  @media (max-width: 640px) {
+    .md-neighbours { grid-template-columns: 1fr; }
+  }
+</style>

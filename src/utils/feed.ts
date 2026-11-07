@@ -98,6 +98,11 @@ function stickyFirst(entries: FeedEntry[]): FeedEntry[] {
   return [...pinned, ...rest];
 }
 
+/** content collection 的 id 对 .md 文件带扩展名，统一去掉后用于 URL / DOM id / OG 文件名 */
+export function momentSlug(id: string): string {
+  return id.replace(/\.mdx?$/i, '');
+}
+
 /** 首页与 /page/N 共用的分页计算 */
 export function paginateFeed(entries: FeedEntry[], page: number) {
   const perPage = siteConfig.postsPerPage;

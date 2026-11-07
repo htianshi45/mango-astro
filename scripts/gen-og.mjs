@@ -16,8 +16,10 @@ import sharp from 'sharp';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const POSTS_DIR = path.join(ROOT, 'src/content/posts');
+const MOMENTS_DIR = path.join(ROOT, 'src/content/moments');
 const OUT_DIR = path.join(ROOT, 'public/og');
 const POST_OUT_DIR = path.join(OUT_DIR, 'posts');
+const MOMENT_OUT_DIR = path.join(OUT_DIR, 'moments');
 const W = 1200;
 const H = 630;
 const FONT = 'PingFang SC, Heiti SC, sans-serif';
@@ -164,4 +166,31 @@ const homeLayer = textLayer({
 });
 await render(path.join(OUT_DIR, 'home.jpg'), homeLayer, null);
 
-console.log(`  OG 卡片：首页 1 张 + 文章 ${count} 张 → public/og/`);
+// 说说详情页的分享卡：标题取正文首行，背景用第一张配图（如果有）
+const firstImage = (body) => body.match(/!\[[^\]]*\]\(\s*([^)\s]+)/)?.[1] || '';
+const plainText = (body) => body
+  .replace(/^---[\s\S]*?---/, '')
+  .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+  .replace(/<img[^>]*>/g, '')
+  .replace(/[#*`\[\]>]/g, '')
+  .replace(/\s+/g, ' ')
+  .trim();
+
+let momentCount = 0;
+for (const file of (await fs.readdir(MOMENTS_DIR)).filter((f) => f.endsWith('.md')).sort()) {
+  const src = await fs.readFile(path.join(MOMENTS_DIR, file), 'utf-8');
+  const data = parseFrontmatter(src);
+  if (data.draft === 'true') continue;
+  const id = file.replace(/\.md$/, '');
+  const text = plainText(src);
+  const layer = textLayer({
+    eyebrow: 'MANGO · 说说',
+    titleLines: wrap(text.slice(0, 60) || '一条说说'),
+    subtitle: [data.location, String(data.published || '').slice(0, 10)].filter(Boolean).join(' · ') || 'Mango',
+    footer: 'mango-astro.pages.dev',
+  });
+  await render(path.join(MOMENT_OUT_DIR, `${id}.jpg`), layer, firstImage(src));
+  momentCount += 1;
+}
+
+console.log(`  OG 卡片：首页 1 张 + 文章 ${count} 张 + 说说 ${momentCount} 张 → public/og/`);

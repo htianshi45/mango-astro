@@ -4,6 +4,7 @@ import Banner from '@/components/Banner.astro';
 import FeedList from '@/components/FeedList.astro';
 import Sidebar from '@/components/Sidebar.astro';
 import Pagination from '@/components/Pagination.astro';
+import LoadMore from '@/components/LoadMore.astro';
 import { getCollection } from 'astro:content';
 import { getMixedFeed, paginateFeed, buildSidebarData } from '@/utils/feed';
 import { siteConfig } from '@/config/site';
@@ -22,7 +23,8 @@ const { tags, postData } = buildSidebarData(posts);
   <div class="layout-sidebar">
     <!-- 混合时间流（主栏 : 边栏 = 3 : 1，边栏 281px 固定） -->
     <div>
-      <FeedList entries={entries} showTypeBadge={siteConfig.home.showTypeBadge && siteConfig.home.includeMoments} />
+      <FeedList id="feed-list" entries={entries} showTypeBadge={siteConfig.home.showTypeBadge && siteConfig.home.includeMoments} />
+      <LoadMore currentPage={currentPage} totalPages={totalPages} />
       {totalPages > 1 && (
         <Pagination currentPage={currentPage} totalPages={totalPages} baseUrl="/" />
       )}

@@ -1,0 +1,164 @@
+---
+/**
+ * 「加载更多」按钮（P1-4 / Mango 官方 ajax 翻页）
+ *
+ * 做法：fetch 下一页静态 HTML → DOMParser 取 #feed-list 的子节点 → append。
+ * 为什么不改成 SPA：站点是纯 SSG，保留 /page/N 的真实 URL 与分页 <a> 链接，
+ * 爬虫和禁用 JS 的浏览器都还能逐页抓取，比前端路由更稳。
+ *
+ * 注意：Astro scoped CSS 的 data-astro-cid 在同一构建里是稳定的，
+ * 从 /page/N 复制过来的卡片带同样的 cid，能命中当前页已加载的样式。
+ */
+interface Props {
+  currentPage: number;
+  totalPages: number;
+}
+
+const { currentPage, totalPages } = Astro.props;
+---
+
+{totalPages > currentPage && (
+  <div
+    class="load-more"
+    data-current-page={currentPage}
+    data-total-pages={totalPages}
+  >
+    <button type="button" class="load-more-btn" aria-label="加载更多文章">
+      <i class="bi bi-arrow-down-circle"></i>
+      <span class="load-more-label">加载更多</span>
+    </button>
+    <p class="load-more-status" role="status" aria-live="polite"></p>
+  </div>
+)}
+
+<script>
+  const root = document.querySelector<HTMLElement>('.load-more');
+  if (root) {
+    const btn = root.querySelector<HTMLButtonElement>('.load-more-btn');
+    const status = root.querySelector<HTMLElement>('.load-more-status');
+    const label = root.querySelector<HTMLElement>('.load-more-label');
+    const list = document.getElementById('feed-list');
+    let page = Number(root.dataset.currentPage || '1');
+    const total = Number(root.dataset.totalPages || '1');
+    let busy = false;
+
+    const finish = () => {
+      busy = false;
+      if (btn) {
+        btn.classList.remove('is-loading');
+        btn.disabled = page >= total;
+      }
+      if (page >= total) {
+        root.classList.add('is-done');
+        if (label) label.textContent = '已经到底啦';
+        if (status) status.textContent = `全部 ${total} 页已加载`;
+      }
+    };
+
+    const load = async () => {
+      if (busy || page >= total) return;
+      busy = true;
+      const next = page + 1;
+      if (btn) {
+        btn.disabled = true;
+        btn.classList.add('is-loading');
+      }
+      if (status) status.textContent = '正在加载…';
+
+      try {
+        const res = await fetch(`/page/${next}/`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+        const nextList = doc.getElementById('feed-list');
+        if (!list || !nextList) throw new Error('列表容器缺失');
+
+        const frag = document.createDocumentFragment();
+        Array.from(nextList.children).forEach((node) => {
+          frag.appendChild(document.importNode(node, true));
+        });
+        list.appendChild(frag);
+
+        page = next;
+        root.dataset.currentPage = String(page);
+        if (status) status.textContent = `已加载 ${page} / ${total} 页`;
+      } catch (err) {
+        if (status) status.textContent = '加载失败，点击按钮重试';
+      } finally {
+        finish();
+      }
+    };
+
+    btn?.addEventListener('click', load);
+  }
+</script>
+
+<style>
+  .load-more {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin: 22px 0 18px;
+  }
+
+  .load-more-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 168px;
+    height: 42px;
+    padding: 0 24px;
+    border: 1px solid #e6e6e6;
+    border-radius: 999px;
+    background: #fff;
+    color: #555;
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  }
+
+  .load-more-btn:hover:not(:disabled) {
+    border-color: #4270f5;
+    color: #4270f5;
+    transform: translateY(-1px);
+  }
+
+  .load-more-btn:focus-visible {
+    outline: 2px solid #4270f5;
+    outline-offset: 3px;
+  }
+
+  .load-more-btn:disabled {
+    cursor: default;
+    opacity: 0.72;
+  }
+
+  .load-more-btn.is-loading i {
+    animation: load-more-spin 0.9s linear infinite;
+  }
+
+  @keyframes load-more-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .load-more-status {
+    margin: 0;
+    min-height: 18px;
+    font-size: 12px;
+    color: #999;
+  }
+
+  :global(.dark) .load-more-btn {
+    background: #212121;
+    border-color: #3a3a3a;
+    color: #bbb;
+  }
+
+  :global(.dark) .load-more-btn:hover:not(:disabled) {
+    border-color: #8ab0ff;
+    color: #8ab0ff;
+  }
+
+  :global(.dark) .load-more-status { color: #777; }
+</style>

@@ -17,6 +17,8 @@ import HotPostsWidget from './HotPostsWidget.astro';
 import TagsWidget from './TagsWidget.astro';
 import MusicWidget from './MusicWidget.astro';
 import TocWidget from './TocWidget.astro';
+import RecentComments from './RecentComments.astro';
+import Subscribe from './Subscribe.astro';
 
 interface Post {
   title: string;
@@ -63,6 +65,9 @@ const hotPosts = [...posts]
   <div class="sidebar-flow">
     {showAuthor && <AuthorCard postCount={posts.length} tagCount={tags.length} />}
     {showMusic && <MusicWidget />}
+    {/* 未配置时这两个组件不输出任何 DOM */}
+    <Subscribe />
+    <RecentComments />
   </div>
 
   <!-- 下半段：吸顶不动（Firefly 的 position: sticky） -->

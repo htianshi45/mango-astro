@@ -1,7 +1,7 @@
 import { getCollection } from 'astro:content';
 import { favoriteCategories } from '@/config/favorites';
 import { pageToggles, siteConfig } from '@/config/site';
-import { getMixedFeed } from '@/utils/feed';
+import { getMixedFeed, momentSlug } from '@/utils/feed';
 
 function esc(value: string): string {
   return value
@@ -18,6 +18,7 @@ export async function GET() {
   }
 
   const posts = await getCollection('posts', ({ data }) => data.draft !== true);
+  const moments = await getCollection('moments', ({ data }) => data.draft !== true);
   const tags = new Set<string>();
   const categories = new Set<string>();
   posts.forEach((post) => {
@@ -68,6 +69,11 @@ export async function GET() {
     }
   });
 
+  // 说说详情页（P1-6）也要进 sitemap，否则新页面只能靠内链被发现
+  moments.forEach((moment) => {
+    lastmodByPath.set(`/moments/${momentSlug(moment.id)}`, day(moment.data.published));
+  });
+
   // 首页、归档、分页与最近文章列表同源，用全站最新一篇文章的日期
   if (posts.length > 0) {
     const latest = posts.reduce(
@@ -82,6 +88,7 @@ export async function GET() {
   const paths = [
     ...staticPaths,
     ...posts.map((post) => `/posts/${post.slug}`),
+    ...moments.map((moment) => `/moments/${momentSlug(moment.id)}`),
     ...Array.from(tags).map((tag) => `/tags/${encodeURIComponent(tag)}`),
     ...Array.from(categories).map((category) => `/categories/${encodeURIComponent(category)}`),
   ];

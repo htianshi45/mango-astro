@@ -29,6 +29,7 @@
 .bi-alarm::before { content: "\f102"; }
 .bi-alipay::before { content: "\f7cf"; }
 .bi-archive::before { content: "\f10d"; }
+.bi-arrow-down-circle::before { content: "\f119"; }
 .bi-arrow-left::before { content: "\f12f"; }
 .bi-arrow-right::before { content: "\f138"; }
 .bi-arrow-right-short::before { content: "\f135"; }

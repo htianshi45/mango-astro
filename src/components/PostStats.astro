@@ -1,0 +1,125 @@
+---
+/**
+ * 文章真实浏览量 / 点赞（P1-2）
+ *
+ * 数字默认取 frontmatter 的静态值，页面加载后异步请求 /api/stats/:slug：
+ *   - API 正常 → 用 KV 里的真实数字覆盖，并计一次浏览
+ *   - API 未绑定 / 网络失败 → 静默保留静态数字，页面不报错、不闪动
+ * 去重：客户端 localStorage 24 小时 + 服务端按 IP 24 小时，双保险。
+ */
+interface Props {
+  slug: string;
+  views: number;
+  likes: number;
+}
+
+const { slug, views, likes } = Astro.props;
+---
+
+<span class="ps-views">
+  <i class="bi bi-eye-fill mr-1"></i><b data-stat-views>{views.toLocaleString()}</b> 浏览
+</span>
+<button
+  type="button"
+  class="ps-like"
+  data-stat-like
+  data-slug={slug}
+  aria-label="为这篇文章点赞"
+  aria-pressed="false"
+>
+  <i class="bi bi-heart"></i><b data-stat-likes>{likes.toLocaleString()}</b> 点赞
+</button>
+
+<script>
+  const likeBtn = document.querySelector<HTMLButtonElement>('[data-stat-like]');
+  const slug = likeBtn?.dataset.slug || '';
+  const viewsEl = document.querySelector<HTMLElement>('[data-stat-views]');
+  const likesEl = document.querySelector<HTMLElement>('[data-stat-likes]');
+
+  const store = {
+    get(key) { try { return localStorage.getItem(key); } catch { return null; } },
+    set(key, value) { try { localStorage.setItem(key, value); } catch { /* 隐私模式 */ } },
+  };
+  const fmt = (n) => Number(n || 0).toLocaleString('zh-CN');
+
+  const apply = (data) => {
+    if (!data || data.error) return;
+    if (typeof data.views === 'number' && viewsEl) viewsEl.textContent = fmt(data.views);
+    if (typeof data.likes === 'number' && likesEl) likesEl.textContent = fmt(data.likes);
+  };
+
+  if (slug && likeBtn) {
+    const endpoint = `/api/stats/${encodeURIComponent(slug)}`;
+    const call = async (options) => {
+      const res = await fetch(endpoint, {
+        ...options,
+        headers: options?.body ? { 'Content-Type': 'application/json' } : undefined,
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    };
+
+    const viewedKey = `mango:viewed:${slug}`;
+    const likedKey = `mango:liked:${slug}`;
+    const lastView = Number(store.get(viewedKey) || 0);
+
+    const sync = async () => {
+      try {
+        if (Date.now() - lastView > 86_400_000) {
+          store.set(viewedKey, String(Date.now()));
+          apply(await call({ method: 'POST', body: JSON.stringify({ views: 1 }) }));
+        } else {
+          apply(await call({ method: 'GET' }));
+        }
+      } catch {
+        // KV 未绑定或离线：保留 frontmatter 的静态数字
+      }
+    };
+    void sync();
+
+    const markLiked = () => {
+      likeBtn.querySelector('i')?.classList.replace('bi-heart', 'bi-heart-fill');
+      likeBtn.classList.add('is-liked');
+      likeBtn.setAttribute('aria-pressed', 'true');
+    };
+
+    if (store.get(likedKey)) markLiked();
+
+    likeBtn.addEventListener('click', async () => {
+      if (store.get(likedKey) || likeBtn.disabled) return;
+      likeBtn.disabled = true;
+      try {
+        apply(await call({ method: 'POST', body: JSON.stringify({ likes: 1 }) }));
+        store.set(likedKey, '1');
+        markLiked();
+      } catch {
+        // 失败时保持原状，用户可稍后再试
+      } finally {
+        likeBtn.disabled = false;
+      }
+    });
+  }
+</script>
+
+<style>
+  .ps-views { display: inline-flex; align-items: center; }
+  .ps-views b { font-weight: inherit; }
+
+  .ps-like {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    transition: color 0.16s ease;
+  }
+  .ps-like b { font-weight: inherit; }
+  .ps-like:hover { color: #e0555d; }
+  .ps-like:focus-visible { outline: 2px solid #4270f5; outline-offset: 3px; border-radius: 3px; }
+  .ps-like.is-liked { color: #e0555d; }
+  .ps-like:disabled { cursor: default; opacity: 0.7; }
+</style>

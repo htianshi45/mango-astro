@@ -3,7 +3,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 // 搜索索引已外置为 /search-index.json endpoint（见 src/pages/search-index.json.ts）
 ---
 
-<BaseLayout title="搜索结果 - Mango">
+<BaseLayout title="搜索结果 - Mango" indexable={false}>
   <div class="search-page">
     <div class="search-header">
       <h1 class="text-lg font-bold text-[#333] dark:text-[#ccc] mb-4">
@@ -58,6 +58,95 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       return indexPromise;
     }
 
+    // Pagefind 全文索引（构建期生成，中文用 --force-language zh）。
+    // 本地 dev 或索引缺失时自动回退到 /search-index.json 的标题索引。
+    let pagefindPromise = null;
+    function loadPagefind() {
+      if (!pagefindPromise) {
+        const url = '/pagefind/pagefind.js';
+        // @vite-ignore：这个文件只在构建后存在于 dist，Vite 打包时不能解析
+        pagefindPromise = import(/* @vite-ignore */ url)
+          .then(async (pf) => {
+            await pf.init();
+            return pf;
+          })
+          .catch(() => null);
+      }
+      return pagefindPromise;
+    }
+
+    // 关键坑：Pagefind 用 --force-language zh 建索引，运行时按 <html lang> 找语言。
+    // 站点的 lang="zh-CN" 找不到 zh 索引，search() 会永久 pending 且不抛错。
+    // 必须让「init + search + 取数据」整个过程都处在 lang="zh" 窗口内；
+    // 用引用计数保证连续输入产生并发查询时不会被提前恢复。
+    const siteLang = document.documentElement.lang || 'zh-CN';
+    let langRefs = 0;
+    async function withSearchLanguage(fn) {
+      if (langRefs++ === 0) document.documentElement.lang = 'zh';
+      try {
+        return await fn();
+      } finally {
+        if (--langRefs === 0) document.documentElement.lang = siteLang;
+      }
+    }
+
+    async function withTimeout(promise, ms) {
+      let timer;
+      const timeout = new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error('search timeout')), ms);
+      });
+      try {
+        return await Promise.race([promise, timeout]);
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    async function queryAll(query) {
+      try {
+        // 4 秒兜底：Pagefind 的 wasm/worker 若加载失败会永久 pending 且不抛错，
+        // 不能让用户一直卡在「正在搜索…」。
+        const pf = await withTimeout(withSearchLanguage(() => loadPagefind()), 4000);
+        if (pf) {
+          return await withTimeout(withSearchLanguage(async () => {
+            const res = await pf.search(query);
+            const data = await Promise.all(
+              (res?.results || []).slice(0, 20).map((item) => item.data())
+            );
+            // 标签/分类/归档页也会被索引，但它们只是聚合页；保持相关度顺序的同时排到内容页后面
+            const isAux = (u = '') => /^\/(tags|categories|archive)\//.test(u) || u === '/archive/';
+            data.sort((a, b) => Number(isAux(a.url)) - Number(isAux(b.url)));
+            return {
+              mode: 'full',
+              items: data.map((d) => ({
+                url: d.url || '/',
+                title: d.meta?.title || d.url || '无标题',
+                // Pagefind 的 excerpt 已对正文做 HTML 转义，只保留 <mark> 高亮标签，可安全插入
+                description: d.excerpt || '',
+                html: true,
+              })),
+            };
+          }), 4000);
+        }
+      } catch (err) {
+        // 全文索引不可用：本次及后续都直接走轻量标题索引，避免每次都等超时
+        pagefindPromise = Promise.resolve(null);
+      }
+
+      await loadIndex();
+      return {
+        mode: 'index',
+        items: searchPosts(query).map((post) => ({
+          url: `/posts/${encodeURIComponent(post.slug)}`,
+          title: post.title,
+          description: post.description,
+          tags: post.tags || [],
+          category: post.category || '',
+          html: false,
+        })),
+      };
+    }
+
     function getQueryParam(name) {
       const params = new URLSearchParams(window.location.search);
       return params.get(name) || '';
@@ -83,7 +172,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       });
     }
 
-    function renderResults(results, query) {
+    function renderResults(results, query, mode) {
       const container = document.getElementById('search-results');
       const status = document.getElementById('search-status');
       const noResults = document.getElementById('no-results');
@@ -96,7 +185,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         return;
       }
 
-      status.innerHTML = `<p class="text-sm text-[#999] mb-4">找到 <strong class="text-[#333] dark:text-[#ccc]">${results.length}</strong> 篇与"${escapeHtml(query)}"相关的文章</p>`;
+      const sourceHint = mode === 'full' ? '全文搜索' : '标题索引';
+      status.innerHTML = `<p class="text-sm text-[#999] mb-4">${sourceHint}找到 <strong class="text-[#333] dark:text-[#ccc]">${results.length}</strong> 条与"${escapeHtml(query)}"相关的内容</p>`;
 
       if (results.length === 0) {
         container.innerHTML = '';
@@ -107,25 +197,29 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       noResults.classList.add('hidden');
 
       container.innerHTML = results.map((post) => {
-        const postUrl = `/posts/${encodeURIComponent(post.slug)}`;
+        const postUrl = post.url || '/';
         const tagLinks = (post.tags || []).map((tag) => `
           <a href="/tags/${encodeURIComponent(tag)}" class="post-tag">
             <i class="bi bi-hash" style="font-size:12px"></i>${escapeHtml(tag)}
           </a>`).join('');
+        // 全文模式下的 excerpt 含 <mark>，只转义标题与标签
+        const description = post.description
+          ? `<p class="text-sm text-[#999] mb-3 search-excerpt">${post.html ? post.description : escapeHtml(post.description)}</p>`
+          : '';
         return `
         <article class="post-loop">
-          <a href="${postUrl}" class="block">
+          <a href="${escapeHtml(postUrl)}" class="block">
             <h2 class="text-base font-bold text-[#333] dark:text-[#ccc] hover:text-mango transition-colors duration-200 mb-2">
               ${escapeHtml(post.title)}
             </h2>
           </a>
-          ${post.description ? `<p class="text-sm text-[#999] mb-3">${escapeHtml(post.description)}</p>` : ''}
+          ${description}
           <div class="flex items-center flex-wrap gap-1">
             ${tagLinks}
             ${post.category ? `<span class="text-xs text-[#999] ml-2"><i class="bi bi-folder mr-1"></i>${escapeHtml(post.category)}</span>` : ''}
           </div>
           <div class="mt-3">
-            <a href="${postUrl}" class="text-xs text-mango hover:underline">
+            <a href="${escapeHtml(postUrl)}" class="text-xs text-mango hover:underline">
               阅读全文 <i class="bi bi-arrow-right"></i>
             </a>
           </div>
@@ -139,9 +233,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     async function runSearch(query, updateUrl) {
       const seq = ++searchSeq;
-      if (status) status.innerHTML = '<p class="text-sm text-[#999] mb-4">正在加载搜索索引…</p>';
+      if (status) status.innerHTML = '<p class="text-sm text-[#999] mb-4">正在搜索…</p>';
+      let result;
       try {
-        await loadIndex();
+        result = await queryAll(query);
       } catch (err) {
         if (seq !== searchSeq) return;
         if (status) status.innerHTML = '<p class="text-sm text-[#b23c34] mb-4">索引加载失败，请刷新页面重试</p>';
@@ -152,7 +247,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       if (updateUrl) {
         window.history.replaceState({}, '', `/search?q=${encodeURIComponent(query)}`);
       }
-      renderResults(searchPosts(query), query);
+      renderResults(result.items, query, result.mode);
     }
 
     const initialQuery = getQueryParam('q');
@@ -160,8 +255,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       input.value = initialQuery;
       runSearch(initialQuery, false);
     } else if (input) {
-      // 没有 ?q 时不占用首屏带宽，聚焦搜索框才预取索引
-      input.addEventListener('focus', () => { loadIndex().catch(() => {}); }, { once: true });
+      // 没有 ?q 时不占用首屏带宽，聚焦搜索框才预加载 Pagefind 运行时
+      input.addEventListener('focus', () => { withSearchLanguage(() => loadPagefind()); }, { once: true });
     }
 
     form?.addEventListener('submit', (e) => {
@@ -247,6 +342,18 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     .search-status {
       margin-bottom: 15px;
+    }
+
+    /* 结果卡片由 innerHTML 动态生成，不带 scoped id，必须用纯全局选择器 */
+    :global(.search-excerpt mark) {
+      background: rgba(66, 112, 245, 0.16);
+      color: inherit;
+      padding: 0 2px;
+      border-radius: 3px;
+    }
+
+    :global(.dark .search-excerpt mark) {
+      background: rgba(138, 176, 255, 0.22);
     }
   </style>
 </BaseLayout>

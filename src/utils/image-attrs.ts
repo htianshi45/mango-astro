@@ -13,6 +13,7 @@ type VariantMap = Record<string, string>;
 interface ImageMeta {
   width: number;
   height: number;
+  blur: string;
   default: string;
   variants: VariantMap;
 }
@@ -23,6 +24,8 @@ export interface ImageAttrsOptions {
   /** 告诉浏览器这个位置实际会显示多宽，用于从 srcset 里挑档 */
   sizes?: string;
   loading?: 'lazy' | 'eager';
+  /** 组件自己的额外内联样式（如 aspect-ratio），会拼接在 LQIP 之后 */
+  style?: string;
   /** 首屏 LCP 图（如轮播第一张）设 high */
   fetchpriority?: 'high' | 'low' | 'auto';
 }
@@ -38,6 +41,7 @@ export function imageAttrs(src: string | undefined | null, options: ImageAttrsOp
       src: original,
       loading: options.loading ?? 'lazy',
       decoding: 'async' as const,
+      ...(options.style ? { style: options.style } : {}),
       ...(options.fetchpriority ? { fetchpriority: options.fetchpriority } : {}),
     };
   }
@@ -46,6 +50,8 @@ export function imageAttrs(src: string | undefined | null, options: ImageAttrsOp
     .map(([width, url]) => `${url} ${width}w`)
     .join(', ');
 
+  const lqip = `background-image:url('${meta.blur}');background-size:cover;background-position:center;`;
+
   return {
     src: meta.default,
     srcset,
@@ -53,6 +59,7 @@ export function imageAttrs(src: string | undefined | null, options: ImageAttrsOp
     // 真实宽高只用于提供宽高比、消除 CLS；显示尺寸仍由组件 CSS 决定
     width: meta.width,
     height: meta.height,
+    style: `${lqip}${options.style || ''}`,
     loading: options.loading ?? 'lazy',
     decoding: 'async' as const,
     ...(options.fetchpriority ? { fetchpriority: options.fetchpriority } : {}),

@@ -74,6 +74,13 @@ for (const file of sources) {
 
   const sourceBuffer = await fs.readFile(file);
   bytesBefore += sourceBuffer.byteLength;
+  // LQIP：20px 极小的 WebP，内联进 HTML 作为 background-image，
+  // 原图到达前先显示模糊轮廓，避免加载过程中出现白块（P1-9）。
+  const blur = await sharp(sourceBuffer)
+    .resize({ width: 20, withoutEnlargement: true })
+    .webp({ quality: 40 })
+    .toBuffer();
+  const blurData = `data:image/webp;base64,${blur.toString('base64')}`;
   const stem = rel.slice(0, -path.extname(rel).length);
   // 内容哈希进文件名：源图一变 URL 就变，才能安全地对变体使用 immutable 长缓存。
   // 旧变体在下面的 sweep() 里自动清理，不会越积越多。
@@ -114,6 +121,7 @@ for (const file of sources) {
   manifest[publicPath] = {
     width,
     height,
+    blur: blurData,
     // 默认取最大档作为 src；浏览器会按 srcset + sizes 自行挑更小的档
     default: variants[String(uniqueWidths[uniqueWidths.length - 1])],
     variants,

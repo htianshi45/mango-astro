@@ -1,0 +1,114 @@
+---
+/**
+ * 最近评论小工具（P1-5）
+ *
+ * giscus 的评论存在 GitHub Discussions 里，公开读取需要 GraphQL token，
+ * 不适合放进静态站。因此这里做成一个通用适配层：
+ * 在 siteConfig.recentComments.apiUrl 填任意返回 JSON 的接口即可启用
+ * （Waline / Twikoo 的评论列表 API，或自己用 Worker 代理 GitHub API 都行）。
+ *
+ * 未配置时不渲染 DOM；接口失败时整块自动隐藏，不影响侧栏其它组件。
+ * 所有文本用 textContent 写入，避免第三方数据造成 XSS。
+ */
+import { siteConfig } from '@/config/site';
+
+const cfg = siteConfig.recentComments;
+---
+
+{cfg.enabled && cfg.apiUrl && (
+  <aside class="widget recent-comments" id="recent-comments" data-api={cfg.apiUrl} data-limit={cfg.limit}>
+    <h3 class="widget-title">最近评论</h3>
+    <ul class="rc-list">
+      <li class="rc-loading">正在加载评论…</li>
+    </ul>
+  </aside>
+)}
+
+<script>
+  const root = document.getElementById('recent-comments');
+  if (root && root.dataset.api) {
+    const limit = Number(root.dataset.limit || 5);
+    const list = root.querySelector<HTMLUListElement>('.rc-list');
+
+    const pick = (obj: Record<string, unknown>, keys: string[]): string => {
+      for (const key of keys) {
+        const value = obj[key];
+        if (typeof value === 'string' && value.trim()) return value.trim();
+      }
+      return '';
+    };
+
+    const render = (items: Record<string, unknown>[]) => {
+      if (!list) return;
+      list.replaceChildren();
+      const shown = items.slice(0, limit);
+      if (shown.length === 0) {
+        root.style.display = 'none';
+        return;
+      }
+      for (const item of shown) {
+        const author = pick(item, ['author', 'nick', 'display_name', 'name']) || '匿名';
+        const content = pick(item, ['content', 'comment', 'text', 'body']) || '';
+        const url = pick(item, ['url', 'link', 'href']);
+        const date = pick(item, ['date', 'createdAt', 'insertedAt', 'time']);
+
+        const li = document.createElement('li');
+        li.className = 'rc-item';
+        const head = document.createElement('div');
+        head.className = 'rc-head';
+        const name = document.createElement('span');
+        name.className = 'rc-author';
+        name.textContent = author;
+        head.appendChild(name);
+        if (date) {
+          const time = document.createElement('time');
+          time.textContent = date.slice(0, 10);
+          head.appendChild(time);
+        }
+        const body = document.createElement('p');
+        body.className = 'rc-content';
+        // 去掉评论里的 Markdown/HTML 标记，只显示纯文本摘要
+        body.textContent = content.replace(/<[^>]*>/g, '').replace(/[#*`>\[\]]/g, '').slice(0, 60);
+        li.append(head, body);
+        if (url.startsWith('/') || url.startsWith('https://')) {
+          const link = document.createElement('a');
+          link.href = url;
+          link.className = 'rc-link';
+          link.textContent = '查看原文';
+          li.appendChild(link);
+        }
+        list.appendChild(li);
+      }
+    };
+
+    fetch(root.dataset.api)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        const items = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+        if (items.length === 0) {
+          root.style.display = 'none';
+          return;
+        }
+        render(items);
+      })
+      .catch(() => { root.style.display = 'none'; });
+  }
+</script>
+
+<style>
+  .rc-list { list-style: none; margin: 0; padding: 0; }
+  .rc-item { padding: 10px 0; border-bottom: 1px dashed #ececec; }
+  .rc-item:last-child { border-bottom: none; }
+  .rc-loading { font-size: 12px; color: #aaa; padding: 8px 0; }
+  .rc-head { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; }
+  .rc-author { color: #4270f5; font-weight: 600; }
+  .rc-head time { color: #aaa; }
+  .rc-content { margin: 4px 0 0; font-size: 12.5px; color: #777; line-height: 1.6; }
+  .rc-link { display: inline-block; margin-top: 4px; font-size: 11.5px; color: #4270f5; text-decoration: none; }
+  :global(.dark) .rc-item { border-bottom-color: #333; }
+  :global(.dark) .rc-content { color: #9a9a9a; }
+  :global(.dark) .rc-author, :global(.dark) .rc-link { color: #8ab0ff; }
+</style>

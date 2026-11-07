@@ -44,6 +44,7 @@ export function rehypeOptimizeImages() {
       props.sizes = '(max-width: 900px) 100vw, 844px';
       props.width = meta.width;
       props.height = meta.height;
+      props.style = `background-image:url('${meta.blur}');background-size:cover;background-position:center;`;
       props.loading = 'lazy';
       props.decoding = 'async';
     });

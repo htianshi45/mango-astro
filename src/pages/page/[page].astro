@@ -3,6 +3,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import FeedList from '@/components/FeedList.astro';
 import Sidebar from '@/components/Sidebar.astro';
 import Pagination from '@/components/Pagination.astro';
+import LoadMore from '@/components/LoadMore.astro';
 import { getCollection } from 'astro:content';
 import { getMixedFeed, paginateFeed, buildSidebarData } from '@/utils/feed';
 import { siteConfig } from '@/config/site';
@@ -24,10 +25,11 @@ const posts = await getCollection('posts', ({ data }) => data.draft !== true);
 const { tags, postData } = buildSidebarData(posts);
 ---
 
-<BaseLayout title={`第 ${currentPage} 页 - ${siteConfig.name}`} wide>
+<BaseLayout title={`第 ${currentPage} 页 - ${siteConfig.name}`} wide indexable={false}>
   <div class="layout-sidebar">
     <div>
-      <FeedList entries={entries} showTypeBadge={siteConfig.home.showTypeBadge && siteConfig.home.includeMoments} />
+      <FeedList id="feed-list" entries={entries} showTypeBadge={siteConfig.home.showTypeBadge && siteConfig.home.includeMoments} />
+      <LoadMore currentPage={currentPage} totalPages={totalPages} />
       <Pagination currentPage={currentPage} totalPages={totalPages} baseUrl="/page" />
     </div>
     <div>

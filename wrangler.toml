@@ -4,3 +4,9 @@
 name = "mango-astro"
 compatibility_date = "2026-11-07"
 pages_build_output_dir = "dist"
+
+# 文章真实浏览量 / 点赞（P1-2）
+# Functions 代码在 functions/api/stats/[slug].js，通过 env.mango_stats 访问。
+[[kv_namespaces]]
+binding = "mango_stats"
+id = "3d55bce045be421e89978a21a8a57b1a"

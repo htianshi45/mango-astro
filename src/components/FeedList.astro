@@ -5,20 +5,23 @@ import MomentCard from './MomentCard.astro';
 import type { FeedEntry } from '@/utils/feed';
 import { isPageEnabled, siteConfig } from '@/config/site';
 import { countWords, readingMinutes } from '@/utils/reading';
+import { momentSlug } from '@/utils/feed';
 
 interface Props {
   entries: FeedEntry[];
   showTypeBadge?: boolean;
+  /** 加载更多组件需要按 id 找到列表容器；不传则不渲染 id 属性 */
+  id?: string;
 }
 
-const { entries, showTypeBadge = true } = Astro.props;
+const { entries, showTypeBadge = true, id } = Astro.props;
 
 // 列表形态：list = 横向图文卡单列；grid = 竖向卡两列（窄屏自动退回单列）
 const isGrid = siteConfig.postListLayout.mode === 'grid';
 const listClass = isGrid ? 'post-grid-2' : 'space-y-5';
 ---
 
-<div class={listClass}>
+<div class={listClass} id={id}>
   {entries.map((entry) => {
     if (entry.type === 'post') {
       const words = countWords(entry.post.body || '');
@@ -44,7 +47,7 @@ const listClass = isGrid ? 'post-grid-2' : 'space-y-5';
 
     return (
       <MomentCard
-        id={entry.moment.id}
+        id={momentSlug(entry.moment.id)}
         author={entry.moment.data.author}
         avatar={entry.moment.data.avatar}
         published={entry.moment.data.published}

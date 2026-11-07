@@ -49,7 +49,8 @@ function formatDate(date: string | Date): string {
 }
 
 const html = renderMomentText(text);
-const permalink = `/moments/#moment-${id}`;
+// 单条说说现在有独立详情页（P1-6），⋯ 直接跳过去而不是归档页锚点
+const permalink = `/moments/${id}/`;
 ---
 
 <article class="post-loop moment-card">

@@ -1,6 +1,8 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Sidebar from '@/components/Sidebar.astro';
+import Comments from '@/components/Comments.astro';
+import PostStats from '@/components/PostStats.astro';
 import { getCollection } from 'astro:content';
 import { siteConfig } from '@/config/site';
 import { getSidebarData } from '@/utils/sidebar';
@@ -138,14 +140,7 @@ const sidebar = await getSidebarData();
               <i class="bi bi-clock mr-1"></i>约 {readingMinutes} 分钟
             </span>
           )}
-          <span class="flex items-center">
-            <i class="bi bi-eye-fill mr-1"></i>
-            {(post.data.views || 0).toLocaleString()} 浏览
-          </span>
-          <span class="flex items-center">
-            <i class="bi bi-heart-fill mr-1"></i>
-            {(post.data.likes || 0).toLocaleString()} 点赞
-          </span>
+          <PostStats slug={post.slug} views={post.data.views || 0} likes={post.data.likes || 0} />
         </div>
       </div>
 
@@ -223,6 +218,9 @@ const sidebar = await getSidebarData();
           </ul>
         </div>
       )}
+
+      <!-- Section 6: 评论区（未配置 giscus 时不渲染） -->
+      <Comments term={`/posts/${post.slug}`} />
 
       <!-- Navigation -->
       <div class="mt-5 flex justify-between">
@@ -305,6 +303,45 @@ const sidebar = await getSidebarData();
       }
     }
     toast(await copyText(url) ? '链接已复制，可粘贴分享' : '复制失败，请手动复制地址栏');
+  });
+
+  // 代码块工具条：语言标签 + 一键复制（P1-8）
+  // Shiki 输出形如 <pre class="astro-code github-dark" data-language="bash">，
+  // 语言信息在 data-language 上，不在 class 里。
+  document.querySelectorAll<HTMLElement>('.post-content pre').forEach((pre) => {
+    if (pre.querySelector('.code-toolbar')) return;
+    const code = pre.querySelector('code');
+    if (!code) return;
+
+    const lang = pre.dataset.language || 'text';
+    const bar = document.createElement('div');
+    bar.className = 'code-toolbar';
+
+    const label = document.createElement('span');
+    label.className = 'code-lang';
+    label.textContent = lang;
+
+    const copyBtn = document.createElement('button');
+    copyBtn.type = 'button';
+    copyBtn.className = 'code-copy';
+    copyBtn.setAttribute('aria-label', `复制 ${lang} 代码`);
+    copyBtn.innerHTML = '<i class="bi bi-files"></i><span>复制</span>';
+
+    bar.append(label, copyBtn);
+    pre.prepend(bar);
+
+    let resetTimer: ReturnType<typeof setTimeout> | undefined;
+    copyBtn.addEventListener('click', async () => {
+      const ok = await copyText(code.textContent || '');
+      const text = copyBtn.querySelector('span');
+      if (text) text.textContent = ok ? '已复制' : '复制失败';
+      copyBtn.classList.toggle('copied', ok);
+      clearTimeout(resetTimer);
+      resetTimer = setTimeout(() => {
+        if (text) text.textContent = '复制';
+        copyBtn.classList.remove('copied');
+      }, 1800);
+    });
   });
 </script>
 
@@ -491,5 +528,64 @@ const sidebar = await getSidebarData();
       flex-wrap: wrap;
       gap: 12px;
     }
+  }
+
+  /* 代码块工具条：由脚本动态插入，必须写成 :global() 才能命中 */
+  :global(.post-content pre) {
+    position: relative;
+    padding-top: 44px;
+  }
+
+  :global(.post-content .code-toolbar) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px 0 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+    background: rgba(0, 0, 0, 0.16);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+  }
+
+  :global(.post-content .code-lang) {
+    color: #8b949e;
+    letter-spacing: 0.04em;
+    text-transform: lowercase;
+    user-select: none;
+  }
+
+  :global(.post-content .code-copy) {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 5px;
+    background: transparent;
+    color: #b9c0c8;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: color 0.16s ease, border-color 0.16s ease;
+  }
+
+  :global(.post-content .code-copy:hover) {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.38);
+  }
+
+  :global(.post-content .code-copy:focus-visible) {
+    outline: 2px solid #8ab0ff;
+    outline-offset: 2px;
+  }
+
+  :global(.post-content .code-copy.copied) {
+    color: #7ee2a8;
+    border-color: rgba(126, 226, 168, 0.5);
   }
 </style>

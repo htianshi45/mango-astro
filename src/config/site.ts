@@ -247,6 +247,47 @@ export const siteConfig = {
     stickyFirst: false,
   },
 
+  /**
+   * 评论（P1-1）：giscus 基于 GitHub Discussions，零后端。
+   * 启用步骤：① 把仓库设为 Public ② 在仓库 Settings 打开 Discussions
+   * ③ 安装 https://github.com/apps/giscus ④ 到 https://giscus.app 生成
+   *    repo / repoId / category / categoryId 四项填到下面 ⑤ enabled: true
+   * 未启用时组件不渲染任何 DOM，也不加载第三方脚本。
+   */
+  comments: {
+    enabled: false,
+    provider: 'giscus' as 'giscus',
+    giscus: {
+      repo: '',
+      repoId: '',
+      category: 'Announcements',
+      categoryId: '',
+      /** pathname = 按页面路径匹配 discussion；也可填 specific + term */
+      mapping: 'pathname' as 'pathname' | 'url' | 'title' | 'og:title' | 'specific',
+      term: '',
+      reactionsEnabled: true,
+    },
+  },
+
+  /** 最近评论小工具（P1-5）：填一个返回 JSON 数组的 API 地址即可启用 */
+  recentComments: {
+    enabled: false,
+    /** 约定返回 [{ author, content, url, date }]；也兼容 Waline 的 {data:[...]} */
+    apiUrl: '',
+    limit: 5,
+  },
+
+  /** 邮件订阅（P1-7）：填 Buttondown / follow.it 等服务的表单 action 即可启用 */
+  subscribe: {
+    enabled: false,
+    action: '',
+    emailField: 'email',
+    placeholder: '你的邮箱地址',
+    note: '有新文章时发一封邮件，不打扰、不发广告。',
+    /** 表单里服务方可能要求额外隐藏字段，例如 Buttondown 的 tag */
+    hiddenFields: {} as Record<string, string>,
+  },
+
   /** 说说归档页每页条数 */
   momentsPerPage: 20,
 

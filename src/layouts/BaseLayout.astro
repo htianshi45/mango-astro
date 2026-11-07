@@ -18,6 +18,8 @@ interface Props {
   noindex?: boolean;
   /** true = 宽版心（主栏 + 边栏，1180px）；单栏阅读页保持 900px */
   wide?: boolean;
+  /** false = 不被 Pagefind 全文索引（后台、分页、搜索页等） */
+  indexable?: boolean;
 }
 
 const {
@@ -29,6 +31,7 @@ const {
   tags = [],
   noindex = false,
   wide = false,
+  indexable = true,
 } = Astro.props;
 
 const pathname = Astro.url.pathname.replace(/index\.html$/, '');
@@ -111,10 +114,16 @@ const jsonLd =
     <title>{title}</title>
     <ThemeScript />
   </head>
-  <body class="antialiased">
+  <body
+    class="antialiased"
+    {...(!indexable ? { 'data-pagefind-ignore': '' } : {})}
+  >
     <div class="min-h-screen flex flex-col">
       <Header />
-      <main class:list={['flex-1 container mx-auto px-4', wide ? 'max-w-mango-wide' : 'max-w-mango']}>
+      <main
+        class:list={['flex-1 container mx-auto px-4', wide ? 'max-w-mango-wide' : 'max-w-mango']}
+        {...(indexable ? { 'data-pagefind-body': '' } : {})}
+      >
         <slot />
       </main>
       <Footer />

@@ -11,7 +11,7 @@ import Sidebar from '@/components/Sidebar.astro';
 import { getCollection } from 'astro:content';
 import { isPageEnabled, siteConfig } from '@/config/site';
 import { extractImages } from '@/utils/post-images';
-import { stripImages } from '@/utils/feed';
+import { stripImages, momentSlug } from '@/utils/feed';
 import { getSidebarData } from '@/utils/sidebar';
 
 if (!isPageEnabled('moments')) return Astro.rewrite('/404');
@@ -25,7 +25,7 @@ const sorted = [...moments].sort(
 const items = sorted.map((moment) => {
   const date = new Date(moment.data.published);
   return {
-    id: moment.id,
+    id: momentSlug(moment.id),
     year: String(date.getUTCFullYear()),
     author: moment.data.author,
     avatar: moment.data.avatar,

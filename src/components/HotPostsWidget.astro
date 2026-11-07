@@ -35,7 +35,7 @@ function formatDay(date?: string | Date): string {
           {index === 0 && post.heroImage ? (
             <!-- First post with large image -->
             <div class="relative rounded overflow-hidden mb-3">
-              <img {...imageAttrs(post.heroImage, { sizes: '(max-width: 1024px) 90vw, 281px' })} alt={post.title} class="w-full object-cover" style="aspect-ratio: 4 / 3;" />
+              <img {...imageAttrs(post.heroImage, { sizes: '(max-width: 1024px) 90vw, 281px', style: 'aspect-ratio: 4 / 3;' })} alt={post.title} class="w-full object-cover" />
               <div class="hot_post_info absolute inset-0 flex flex-col justify-end p-3">
                 <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                 <h4 class="relative text-white text-[14px] font-medium line-clamp-3 group-hover:text-mango transition-colors duration-200 z-10">
