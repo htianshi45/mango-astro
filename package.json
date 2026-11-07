@@ -11,7 +11,8 @@
     "preview": "astro preview",
     "astro": "astro",
     "fav": "node scripts/fav-add.mjs",
-    "fav:ui": "node scripts/fav-ui.mjs"
+    "fav:ui": "node scripts/fav-ui.mjs",
+    "fav:cover": "node scripts/fav-cover.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.0.0",

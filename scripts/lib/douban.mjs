@@ -137,6 +137,82 @@ function extraReferer(url) {
   return { Referer: 'https://m.douban.com/' };
 }
 
+/**
+ * 封面兜底（2026-11-07 新增）
+ *
+ * 起因：电影的 j/subject_abstract 接口返回字段里**根本没有封面**
+ * （keys 只有 title/rate/directors/types…），所以电影条目必然抓到空封面；
+ * 图书/音乐在豆瓣返回安全验证页时同样拿不到 og:image。
+ *
+ * 两条兜底，按可靠性排序：
+ *   1. j/subject_suggest 搜索接口 —— 返回稳定 CDN 图片地址（图书叫 pic、电影叫 img）；
+ *      按 id 精确命中，退化时按标题全等匹配，避免同名片抓错；
+ *   2. m.douban.com 移动版页面的 og:image —— 三个类型都有（音乐没有 suggest 接口）。
+ */
+/**
+ * 豆瓣的搜索接口给小图（s_ratio_poster ≈ 270px），落地前换成同 CDN 的大图路径。
+ * 实测 l_ratio_poster / l/public 都是 200，体积从 29KB 涨到 319KB，卡片放大才不糊。
+ */
+export function upgradeCover(url = '') {
+  if (!url) return url;
+  return url
+    .replace(/\/s_ratio_poster\//, '/l_ratio_poster/')
+    .replace(/\/m_ratio_poster\//, '/l_ratio_poster/')
+    .replace(/\/view\/photo\/p\//, '/view/photo/l/public/') // 兜底：部分接口给 /p/ 短路径
+    .replace(/\/view\/subject\/[sml]\/public\//, '/view/subject/l/public/');
+}
+
+export async function resolveCover(kind, id, title) {
+  const host = `https://${kind}.douban.com`;
+
+  // 1) suggest 搜索接口
+  if (title) {
+    try {
+      const res = await fetch(`${host}/j/subject_suggest?q=${encodeURIComponent(title)}`, {
+        headers: headers({ Referer: `${host}/` }),
+        signal: AbortSignal.timeout(12000),
+      });
+      if (res.ok) {
+        const text = await res.text();
+        const list = JSON.parse(text);
+        if (Array.isArray(list) && list.length) {
+          const norm = (s) => String(s || '').replace(/\s+/g, '').toLowerCase();
+          const hit =
+            list.find((x) => String(x.id) === String(id)) ||
+            list.find((x) => norm(x.title) === norm(title));
+          const img = hit && (hit.pic || hit.img);
+          if (img) return upgradeCover(img);
+        }
+      }
+    } catch {
+      /* 搜索接口不可用就往下走 */
+    }
+  }
+
+  // 2) 移动版页面 og:image
+  try {
+    const res = await fetch(`https://m.douban.com/${kind}/subject/${id}/`, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 ' +
+          '(KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+        'Accept-Language': 'zh-CN,zh;q=0.9',
+      },
+      redirect: 'follow',
+      signal: AbortSignal.timeout(15000),
+    });
+    if (res.ok) {
+      const html = await res.text();
+      const cover = meta(html, 'og:image');
+      if (cover && /doubanio\.com\//.test(cover)) return upgradeCover(decodeEntities(cover));
+    }
+  } catch {
+    /* 兜底失败就留空，不阻塞导入 */
+  }
+
+  return '';
+}
+
 /** 电影专用：豆瓣自己前端在用的摘要接口，字段最全且不需要登录 */
 async function fetchMovieAbstract(id) {
   const cached = readCache(`movie-${id}.json`);
@@ -392,7 +468,7 @@ export async function fetchDoubanItem(text, { forceKind = '' } = {}) {
     html = loaded.html;
     page = kind === 'book' ? parseBook(html) : parseMusic(html);
     if (!page.title) throw new Error('页面里没解析出标题，豆瓣可能改版或返回了验证页。');
-    return finalize(page, kind, found.id, loaded.fromCache);
+    return await finalize(page, kind, found.id, loaded.fromCache);
   }
 
   // 电影：先试摘要接口（快且字段全），失败再退回移动版页面
@@ -407,7 +483,7 @@ export async function fetchDoubanItem(text, { forceKind = '' } = {}) {
     }
     const merged = fromMovieAbstract(data, page);
     if (!merged.title) throw new Error('摘要接口没返回标题');
-    return finalize(merged, kind, found.id, fromCache);
+    return await finalize(merged, kind, found.id, fromCache);
   } catch (abstractError) {
     if (!kind) {
       throw new Error(
@@ -417,13 +493,16 @@ export async function fetchDoubanItem(text, { forceKind = '' } = {}) {
     const loaded = await loadPage(kind, found.id);
     page = parseMoviePage(loaded.html);
     if (!page.title) throw new Error(`${abstractError.message}，页面也没解析出标题。`);
-    return finalize(page, kind, found.id, loaded.fromCache);
+    return await finalize(page, kind, found.id, loaded.fromCache);
   }
 }
 
-function finalize(parsed, kind, id, fromCache) {
+async function finalize(parsed, kind, id, fromCache) {
+  // 解析阶段没拿到封面时补一次（电影摘要接口没有封面字段）
+  const cover = upgradeCover(parsed.cover) || (await resolveCover(kind, id, parsed.title));
   return {
     ...parsed,
+    cover,
     kind,
     id,
     category: KIND_MAP[kind].category,
@@ -435,13 +514,13 @@ function finalize(parsed, kind, id, fromCache) {
 }
 
 /** 下载封面到 public/images/uploads/douban/，返回站内路径 */
-export async function downloadCover(coverUrl, slug) {
+export async function downloadCover(coverUrl, slug, { force = false } = {}) {
   if (!coverUrl) return '';
   const extMatch = coverUrl.match(/\.(jpe?g|png|webp|gif)(?:\?|$)/i);
   const ext = extMatch ? extMatch[1].toLowerCase().replace('jpeg', 'jpg') : 'jpg';
   const rel = `/images/uploads/douban/${slug}.${ext}`;
   const dest = join(ROOT, 'public', rel);
-  if (existsSync(dest)) return rel;
+  if (!force && existsSync(dest)) return rel;
 
   const res = await fetch(coverUrl, {
     headers: {
