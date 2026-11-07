@@ -35,13 +35,6 @@
           "icon": "bi-chat-square-dots",
           "page": "moments",
           "external": false
-        },
-        {
-          "name": "站内搜索",
-          "href": "/search",
-          "icon": "bi-search",
-          "page": "search",
-          "external": false
         }
       ]
     },
