@@ -1,5 +1,5 @@
 ---
-slug: '1321'
+slug: 'coffee-shops'
 title: 城市咖啡馆漫游地图
 description: 三个午后，三家安静的店。
 pubDate: 2024-05-05
@@ -14,7 +14,6 @@ tags:
 category: 旅拍
 sticky: 0
 views: 742
-comments: 9
 likes: 33
 draft: false
 ---

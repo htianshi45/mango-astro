@@ -100,6 +100,7 @@ hr { border:0; border-top:1px solid var(--line); margin:34px 0; }
 </div>
 <div class="layout">
 <aside><h2>目录</h2><div class="toc">
+<div class="toc">
 <ul>
 <li><a href="#mango-astro">Mango Astro 站点管理与设置教程</a><ul>
 <li><a href="#0">0. 先认清这个站由哪几块组成</a></li>
@@ -131,12 +132,17 @@ hr { border:0; border-top:1px solid var(--line); margin:34px 0; }
 </ul>
 </li>
 <li><a href="#7">7. 备份与回滚</a></li>
-<li><a href="#8">8. 故障排查</a></li>
+<li><a href="#8">8. 故障排查</a><ul>
+<li><a href="#81-cms">8.1 CMS 写入的常见坑（重要）</a></li>
+</ul>
+</li>
 <li><a href="#9">9. 命令速查</a></li>
 <li><a href="#10">10. 例行清单</a></li>
 </ul>
 </li>
 </ul>
+</div>
+
 </div>
 </aside>
 <main>
@@ -687,6 +693,16 @@ git checkout &lt;commit-hash&gt; -- src/components/Header.astro
 <td>对照第 2.3 节；<code>tags</code>/<code>images</code> 必须是数组</td>
 </tr>
 <tr>
+<td>构建报「内容体检未通过」</td>
+<td>CMS 把 URL 别名改成了与文件名不同的值</td>
+<td>按报错把 <code>slug</code> 改回文件名，见 8.1</td>
+</tr>
+<tr>
+<td>构建报 <code>updatedDate: Invalid date</code></td>
+<td>旧版 schema 不接受 CMS 写的空字符串</td>
+<td>当前 schema 已容错；若仍报错确认 <code>src/content/config.ts</code> 有 <code>optionalDate</code></td>
+</tr>
+<tr>
 <td>改了没生效</td>
 <td>没重新部署</td>
 <td><code>npm run build</code> + <code>wrangler pages deploy</code>，或开 Git 自动构建</td>
@@ -708,11 +724,40 @@ git checkout &lt;commit-hash&gt; -- src/components/Header.astro
 </tr>
 </tbody>
 </table>
+<h3 id="81-cms">8.1 CMS 写入的常见坑（重要）</h3>
+<p>后台是直接在 GitHub 上写 Markdown 的，不会经过本地校验。实际踩过两个坑，现已分别做了容错和拦截：</p>
+<table>
+<thead>
+<tr>
+<th>坑</th>
+<th>表现</th>
+<th>现在的处理</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>可选「更新日期」留空</td>
+<td>CMS 写出 <code>updatedDate: ''</code>，<code>z.coerce.date()</code> 得到 Invalid Date，<strong>整站构建直接失败</strong></td>
+<td><code>src/content/config.ts</code> 的 <code>optionalDate</code> 用 <code>z.preprocess</code> 把空串归一化为 <code>undefined</code></td>
+</tr>
+<tr>
+<td>「URL 别名 / slug」随手填值</td>
+<td>Astro 把 frontmatter 的 <code>slug</code> 当成路由别名。曾把 <code>coffee-shops.md</code> 填成 <code>1321</code>，文章网址静默变成 <code>/posts/1321/</code>，旧链接全部 404</td>
+<td><code>scripts/check-content.mjs</code> 在每次 <code>npm run build</code> 前体检，别名与文件名不一致就以非零码阻断构建</td>
+</tr>
+</tbody>
+</table>
+<p><strong>因此编辑已有文章时</strong>：「URL 别名」字段请保持与文件名一致（如 <code>coffee-shops</code>），不要改动它；只有新建文章时才需要填一个英文短名，它同时决定文件名和网址。后台该字段下方也写了同样的提示。</p>
+<p>体检脚本覆盖：URL 别名一致性、别名重复、<code>title</code> / <code>pubDate</code> 必填、日期合法性、frontmatter 是否闭合。单独运行：</p>
+<button class="copy" type="button">复制</button><pre><code class="language-bash">npm run check:content
+</code></pre>
+<p>它会列出问题文件并给出改法。<code>npm run build</code> 已把它串在 <code>astro build</code> 之前，所以构建通过就代表这些内容层面是干净的。</p>
 <hr />
 <h2 id="9">9. 命令速查</h2>
 <button class="copy" type="button">复制</button><pre><code class="language-bash">cd /Users/ming/mango-astro        # 进入工程
 npm run dev                       # 本地开发（http://localhost:4321）
-npm run build                     # 构建到 dist/
+npm run check:content             # 构建前内容体检（URL 别名 / 日期 / 必填字段）
+npm run build                     # 先体检，再构建到 dist/
 npm run preview                   # 预览构建产物
 wrangler pages deploy dist --project-name mango-astro --branch main --commit-dirty=true   # 部署
 
@@ -724,23 +769,23 @@ git log --oneline -10                             # 看最近提交
 <h2 id="10">10. 例行清单</h2>
 <p><strong>每次发文后</strong></p>
 <ul>
-<li>[ ] 线上是否已更新（没接 Git 构建的话要手动部署）</li>
-<li>[ ] 封面图、九宫格是否正常显示</li>
-<li>[ ] 标签 / 分类链接是否可点</li>
+<li class="task">☐ 线上是否已更新（没接 Git 构建的话要手动部署）</li>
+<li class="task">☐ 封面图、九宫格是否正常显示</li>
+<li class="task">☐ 标签 / 分类链接是否可点</li>
 </ul>
 <p><strong>每月</strong></p>
 <ul>
-<li>[ ] <code>curl https://auth.840428.xyz/health</code> 两个 <code>configured</code> 为 true</li>
-<li>[ ] GitHub 令牌 / OAuth secret 是否需要轮换</li>
-<li>[ ] <code>public/images/</code> 体积是否过大（建议总量 &lt; 200 MB）</li>
+<li class="task">☐ <code>curl https://auth.840428.xyz/health</code> 两个 <code>configured</code> 为 true</li>
+<li class="task">☐ GitHub 令牌 / OAuth secret 是否需要轮换</li>
+<li class="task">☐ <code>public/images/</code> 体积是否过大（建议总量 &lt; 200 MB）</li>
 </ul>
 <p><strong>上线前建议做的两处</strong></p>
 <ul>
-<li>[ ] <code>src/pages/about.astro</code> 的模板文案（特性列表还是主题默认内容，建议换成你自己的介绍）</li>
-<li>[ ] 若绑定了 <code>mango.840428.xyz</code>，同步改 <code>src/config/site.ts</code> 的 <code>url</code> 与 <code>astro.config.mjs</code> 的 <code>site</code></li>
+<li class="task">☐ <code>src/pages/about.astro</code> 的模板文案（特性列表还是主题默认内容，建议换成你自己的介绍）</li>
+<li class="task">☐ 若绑定了 <code>mango.840428.xyz</code>，同步改 <code>src/config/site.ts</code> 的 <code>url</code> 与 <code>astro.config.mjs</code> 的 <code>site</code></li>
 </ul>
 <p><strong>已自动处理（不用再管）</strong>：备案号占位改为「留空不显示」（<code>siteConfig.icp</code>）；<code>site</code> 已改为实际域名 <code>https://mango-astro.pages.dev</code>；站名 / 导航 / 页脚 / 每页文章数已收进 <code>src/config/site.ts</code>。</p>
-<div class="footer">Mango Astro · 站点管理与设置教程 v2.0 · 2026-11-07 · 支持日间 / 夜间 / 系统三态切换 · 对照图以正文为准</div>
+<div class="footer">Mango Astro · 站点管理与设置教程 v2.1 · 2026-11-07 · 新增 8.1「CMS 写入的常见坑」与构建前内容体检 · 支持日间 / 夜间 / 系统三态切换</div>
 </main>
 </div>
 <script>

@@ -1,11 +1,11 @@
-# Decap CMS · Mango Astro
-# 文档：https://decapcms.org/docs/github-backend/
+# Sveltia CMS · Mango Astro
+# 文档：https://sveltia-cms.netlify.app/
 #
-# ⚠️ 上线前必须替换下面 3 处 REPLACE / 确认域名：
-#   1. backend.repo          → 你的 GitHub 仓库，格式 owner/name
-#   2. backend.base_url      → OAuth 网关根地址（默认 https://auth.840428.xyz）
-#   3. backend.site_domain   → CMS 页面所在域名（本地 localhost 也可，见操作清单）
-# 详细步骤见工程根目录《后台接入-操作清单.md》
+# 当前为已上线的生产配置（无需再替换占位符）：
+#   backend.repo        = htianshi45/mango-astro
+#   backend.base_url    = 自建 Cloudflare Worker OAuth 网关 https://auth.840428.xyz
+#   backend.site_domain = 站点标识，用于 OAuth site_id；网关白名单需包含它
+# 详细步骤见工程根目录《后台接入-操作清单.md》与《站点管理与设置教程》
 
 backend:
   name: github
@@ -36,6 +36,7 @@ collections:
         name: "slug"
         widget: "string"
         pattern: ["^[a-z0-9-]+$", "只能用小写字母、数字和连字符"]
+        hint: "这个字段会直接成为文章网址 /posts/<别名>/。编辑已有文章时请保持与文件名一致，改动会让旧链接失效；新建文章时填英文短名即可。"
       - { label: "标题", name: "title", widget: "string" }
       - { label: "摘要", name: "description", widget: "text", required: false }
       - { label: "发布日期", name: "pubDate", widget: "datetime" }
@@ -51,7 +52,6 @@ collections:
       - { label: "分类", name: "category", widget: "string", required: false }
       - { label: "置顶权重", name: "sticky", widget: "number", default: 0, required: false }
       - { label: "浏览量", name: "views", widget: "number", default: 0, required: false }
-      - { label: "评论数", name: "comments", widget: "number", default: 0, required: false }
       - { label: "点赞数", name: "likes", widget: "number", default: 0, required: false }
       - { label: "草稿", name: "draft", widget: "boolean", default: false, required: false }
       - { label: "正文", name: "body", widget: "markdown", hint: "在正文中按段落插入图片；首页九宫格会自动取正文前 9 张，超出部分显示 +N" }

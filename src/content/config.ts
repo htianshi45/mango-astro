@@ -1,12 +1,18 @@
 import { z, defineCollection } from 'astro:content';
 
+// CMS 未填日期时会写成空字符串，空串不能直接 coerce 成 Date。
+const optionalDate = z.preprocess(
+  (value) => (value === '' ? undefined : value),
+  z.coerce.date().optional()
+);
+
 const postsCollection = defineCollection({
   type: 'content',
   schema: z.object({
     title: z.string(),
     description: z.string().optional(),
     pubDate: z.coerce.date(),
-    updatedDate: z.coerce.date().optional(),
+    updatedDate: optionalDate,
     heroImage: z.string().optional(),
     images: z.array(z.string()).optional().default([]),
     author: z.string().default('Mango'),
