@@ -2,7 +2,7 @@
 slug: 'douban-movie-36882191'
 title: '八仙！'
 category: movies
-cover: ''
+cover: '/images/uploads/douban/douban-movie-36882191.jpg'
 description: '突然想到，其他几个人泡澡，但是吕洞宾不泡澡，帮他们洗衣服的时候，是不是怕背上的谢谢被发现哈哈哈…'
 status: done
 rating: 8.2

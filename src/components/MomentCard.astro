@@ -52,7 +52,7 @@ const html = renderMomentText(text);
 const permalink = `/moments/#moment-${id}`;
 ---
 
-<article class="post-loop moment-card" id={`moment-${id}`}>
+<article class="post-loop moment-card">
   <!-- 头部：头像 + 昵称/时间 + 右上操作 -->
   <div class="moment-head">
     <div class="moment-author">
@@ -229,5 +229,15 @@ const permalink = `/moments/#moment-${id}`;
   @media (max-width: 640px) {
     .moment-card { padding: 20px; }
     .moment-conter { margin-left: 0; }
+  }
+
+  /* ===== 宽屏：卡片内「内容」只占卡片宽度的 2/3，右边留白 =====
+     头像行也跟着收窄，⋯ 与内容右边缘对齐，避免右侧空出一大块却只有图标 */
+  @media (min-width: 1024px) {
+    /* 正文占卡片内宽 2/3；头像行多出 60px 缩进，右边缘与正文对齐 */
+    .moment-conter { width: 66.6667%; }
+    .moment-head { width: calc(66.6667% + 60px); }
+    /* 图片撑满这 2/3 的内容区（原版 88% 是相对整卡算的，这里会显得过窄） */
+    .moment-images :global(.post-images--mango) { width: 100% !important; }
   }
 </style>
