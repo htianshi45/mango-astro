@@ -105,52 +105,53 @@ const navItems = visibleNavItems(siteConfig.navItems);
         </div>
       </div>
     )}
-
-    <!-- 移动端侧滑抽屉 -->
-    <div id="nav-overlay" class="nav-overlay"></div>
-    <aside id="nav-drawer" class="nav-drawer" aria-hidden="true" aria-label="移动端导航">
-      <div class="drawer-head">
-        <span><i class="bi bi-grid-3x3-gap"></i> 导航</span>
-        <button id="drawer-close" class="drawer-close" aria-label="关闭菜单"><i class="bi bi-x-lg"></i></button>
-      </div>
-      <nav class="drawer-nav">
-        {navItems.map((item) => {
-          const active = isNavActive(item, currentPath);
-          const hasChildren = !!item.children?.length;
-          return hasChildren ? (
-            <details class:list={['drawer-group', active && 'active']} open={active}>
-              <summary>
-                {item.icon && <i class={item.icon}></i>}
-                <span>{item.name}</span>
-                <i class="bi bi-chevron-down drawer-caret"></i>
-              </summary>
-              <ul>
-                {item.children!.map((child) => (
-                  <li>
-                    <a
-                      href={child.href}
-                      class:list={[currentPath.replace(/\/+$/, '') === child.href && 'current']}
-                      {...(child.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                    >
-                      {child.icon && <i class={child.icon}></i>}
-                      {child.name}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </details>
-          ) : (
-            <a href={item.href} class:list={['drawer-link', active && 'current']}>
-              {item.icon && <i class={item.icon}></i>}
-              <span>{item.name}</span>
-            </a>
-          );
-        })}
-      </nav>
-      <div class="drawer-foot">{siteConfig.name} · {siteConfig.description}</div>
-    </aside>
   </div>
 </header>
+
+    <!-- 移动端侧滑抽屉 -->
+<div id="nav-overlay" class="nav-overlay"></div>
+<aside id="nav-drawer" class="nav-drawer" aria-hidden="true" aria-label="移动端导航">
+  <div class="drawer-head">
+    <span><i class="bi bi-grid-3x3-gap"></i> 导航</span>
+    <button id="drawer-close" class="drawer-close" aria-label="关闭菜单"><i class="bi bi-x-lg"></i></button>
+  </div>
+  <nav class="drawer-nav">
+    {navItems.map((item) => {
+      const active = isNavActive(item, currentPath);
+      const hasChildren = !!item.children?.length;
+      return hasChildren ? (
+        <details class:list={['drawer-group', active && 'active']} open={active}>
+          <summary>
+            {item.icon && <i class={item.icon}></i>}
+            <span>{item.name}</span>
+            <i class="bi bi-chevron-down drawer-caret"></i>
+          </summary>
+          <ul>
+            {item.children!.map((child) => (
+              <li>
+                <a
+                  href={child.href}
+                  class:list={[currentPath.replace(/\/+$/, '') === child.href && 'current']}
+                  {...(child.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                >
+                  {child.icon && <i class={child.icon}></i>}
+                  {child.name}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : (
+        <a href={item.href} class:list={['drawer-link', active && 'current']}>
+          {item.icon && <i class={item.icon}></i>}
+          <span>{item.name}</span>
+        </a>
+      );
+    })}
+  </nav>
+  <div class="drawer-foot">{siteConfig.name} · {siteConfig.description}</div>
+</aside>
+
 
 <script>
   // 展开式搜索条
@@ -250,7 +251,8 @@ const navItems = visibleNavItems(siteConfig.navItems);
   /* 下滑收起 / 上滑展开 */
   :global(.site-header) {
     transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
-    will-change: transform;
+    /* 不要加 will-change: transform —— 它会让 header 成为 fixed 子元素的包含块，
+       曾导致移动端抽屉/遮罩按 header 定位并把页面撑宽（2026-11-07 修复） */
   }
   :global(.site-header.nav-hidden) {
     transform: translateY(-130%);
