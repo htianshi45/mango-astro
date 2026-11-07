@@ -11,11 +11,23 @@
     <meta name="robots" content="noindex, nofollow" />
     <title>内容管理 · Mango</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <!-- 自托管，避免 unpkg CDN 在国内不可达。
-         必须加 defer：Decap CMS 初始化时会直接 document.body.appendChild，
-         同步执行时 body 还没解析出来（null），会抛
-         "Cannot read properties of null (reading 'appendChild')" 导致整页白屏。 -->
-    <script is:inline defer src="/admin/decap-cms.js"></script>
+    <!--
+      Sveltia CMS：自托管 ESM bundle（2.56 MB，自包含、无 chunk 依赖）。
+
+      为什么用 type="module" + import 而不是 <script src>：
+      官方 dist 里的 sveltia-cms.js 是 IIFE，只把 API 挂到一个空对象、不暴露全局，
+      直接 src 引入无法调用；sveltia-cms.mjs 才是 ESM 版，导出了 init()。
+
+      type="module" 天然 defer，会等 DOM 解析完再执行 —— 顺便避开了
+      Decap CMS 时代那个 "document.body 为 null 导致整页白屏" 的坑。
+
+      升级方法：npm i @sveltia/cms@latest，再把
+      node_modules/@sveltia/cms/dist/sveltia-cms.mjs 复制到 public/admin/ 覆盖。
+    -->
+    <script is:inline type="module">
+      import { init } from '/admin/sveltia-cms.mjs';
+      init();
+    </script>
   </head>
   <body></body>
 </html>
