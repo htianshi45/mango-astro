@@ -50,7 +50,7 @@ draft: false
 
 ## 内容管理
 
-本主题集成了 Decap CMS，可以通过 `/admin` 路径访问后台管理界面。
+本主题集成了 Sveltia CMS（中文界面），可以通过 `/admin` 路径访问后台管理界面。
 
 ```bash
 # 构建生产版本
