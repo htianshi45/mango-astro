@@ -14,6 +14,7 @@
  */
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 
@@ -67,8 +68,12 @@ for (const file of sources) {
     continue;
   }
 
-  bytesBefore += (await fs.stat(file)).size;
+  const sourceBuffer = await fs.readFile(file);
+  bytesBefore += sourceBuffer.byteLength;
   const stem = rel.slice(0, -path.extname(rel).length);
+  // 内容哈希进文件名：源图一变 URL 就变，才能安全地对变体使用 immutable 长缓存。
+  // 旧变体在下面的 sweep() 里自动清理，不会越积越多。
+  const stamp = crypto.createHash('sha1').update(sourceBuffer).digest('hex').slice(0, 8);
   const variants = {};
 
   // 不放大：只生成不超过原图宽度的档位；小图至少留一档原宽
@@ -77,7 +82,7 @@ for (const file of sources) {
   const uniqueWidths = [...new Set(widths)].sort((a, b) => a - b);
 
   for (const w of uniqueWidths) {
-    const outName = `${stem}-${w}.webp`;
+    const outName = `${stem}-${w}.${stamp}.webp`;
     const outFile = path.join(OUT_DIR, outName);
     const outPublic = `/images/opt/${outName.split(path.sep).join('/')}`;
     expected.add(outFile);
