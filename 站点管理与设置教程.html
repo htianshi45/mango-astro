@@ -1,0 +1,772 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mango Astro · 站点管理与设置教程</title>
+<style>
+:root {
+  --bg:#ffffff; --panel:#ffffff; --ink:#1f2328; --muted:#5f6b7a; --line:#e3e8ef;
+  --accent:#4270f5; --accent-soft:#e6efff; --code:#f6f8fa; --code-ink:#0c447c;
+  --quote:#2a3b4d; --zebra:#fbfcfe; --th-ink:#0c447c; --on-accent:#ffffff;
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --bg:#14161a; --panel:#1b1f25; --ink:#e6e9ee; --muted:#a2acba; --line:#303742;
+  --accent:#8ab0ff; --accent-soft:#1d2b45; --code:#1b2129; --code-ink:#a8c7ff;
+  --quote:#d3ddec; --zebra:#191d23; --th-ink:#bcd2ff; --on-accent:#10151d;
+  color-scheme: dark;
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:15px; line-height:1.75; transition:background-color .18s ease,color .18s ease; }
+.theme-switch { position:fixed; top:14px; right:18px; z-index:60; display:flex; gap:2px;
+  background:var(--panel); border:1px solid var(--line); border-radius:999px; padding:4px;
+  box-shadow:0 4px 18px rgba(0,0,0,.14); }
+.theme-switch button { border:0; background:transparent; color:var(--muted); font:inherit;
+  font-size:12px; line-height:1.4; padding:5px 12px; border-radius:999px; cursor:pointer; }
+.theme-switch button:hover { color:var(--accent); }
+.theme-switch button[aria-pressed="true"] { background:var(--accent); color:var(--on-accent); }
+.layout { max-width:1220px; margin:0 auto; padding:0 28px; display:grid; grid-template-columns:250px minmax(0,1fr); gap:44px; }
+aside { position:sticky; top:0; align-self:start; max-height:100vh; overflow:auto; padding:38px 0 30px; border-right:1px solid var(--line); }
+aside h2 { font-size:13px; font-weight:600; letter-spacing:.08em; color:var(--muted); margin:0 0 12px; }
+.toc ul { list-style:none; margin:0; padding:0; }
+.toc ul ul { padding-left:14px; }
+.toc li { margin:3px 0; }
+.toc a { color:var(--muted); text-decoration:none; font-size:13px; display:block; padding:2px 8px; border-radius:6px; }
+.toc a:hover { color:var(--accent); background:var(--accent-soft); }
+main { padding:56px 0 80px; min-width:0; }
+h1 { font-size:30px; line-height:1.3; margin:0 0 22px; padding-bottom:16px; border-bottom:2px solid var(--accent); }
+h2 { font-size:21px; margin:44px 0 14px; padding-top:10px; border-top:1px solid var(--line); }
+h3 { font-size:17px; margin:28px 0 10px; }
+p { margin:10px 0; }
+a { color:var(--accent); }
+img { max-width:100%; height:auto; }
+img.shot { background:#fff; border:1px solid var(--line); border-radius:8px; }
+blockquote { margin:16px 0; padding:10px 16px; background:var(--accent-soft); border-left:3px solid var(--accent); border-radius:0 8px 8px 0; color:var(--quote); }
+blockquote p { margin:4px 0; }
+ul, ol { padding-left:24px; }
+li { margin:4px 0; }
+code { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.9em;
+  background:var(--code); padding:2px 5px; border-radius:4px; color:var(--code-ink); }
+pre { background:var(--code); border:1px solid var(--line); border-radius:10px; padding:14px 16px;
+  overflow-x:auto; white-space:pre-wrap; word-break:break-word; margin:12px 0; }
+pre code { background:none; padding:0; color:var(--ink); font-size:13px; line-height:1.6; }
+.copy { float:right; position:relative; top:6px; z-index:1; border:1px solid var(--line); background:var(--panel);
+  color:var(--muted); font-size:12px; padding:3px 9px; border-radius:6px; cursor:pointer; }
+.copy:hover { color:var(--accent); border-color:var(--accent); }
+table { border-collapse:collapse; width:100%; margin:16px 0; font-size:14px; }
+th, td { border:1px solid var(--line); padding:8px 11px; text-align:left; vertical-align:top; }
+th { background:var(--accent-soft); color:var(--th-ink); font-weight:600; }
+tr:nth-child(even) td { background:var(--zebra); }
+hr { border:0; border-top:1px solid var(--line); margin:34px 0; }
+.footer { margin-top:56px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:13px; }
+@media (max-width:900px) { .layout { grid-template-columns:1fr; gap:0; } aside { position:static; max-height:none; border-right:0; border-bottom:1px solid var(--line); padding:24px 0 12px; } main { padding-top:52px; } }
+@media print {
+  :root, :root[data-theme="dark"] {
+    --bg:#ffffff; --panel:#ffffff; --ink:#1f2328; --muted:#5f6b7a; --line:#e3e8ef;
+    --accent:#4270f5; --accent-soft:#e6efff; --code:#f6f8fa; --code-ink:#0c447c;
+    --quote:#2a3b4d; --zebra:#fbfcfe; --th-ink:#0c447c; --on-accent:#ffffff;
+    color-scheme: light;
+  }
+  body { font-size:11pt; } .layout { display:block; max-width:none; padding:0; }
+  aside,.copy,.theme-switch { display:none; } main { padding:0; }
+  h2 { page-break-after:avoid; } pre,table,blockquote,img { page-break-inside:avoid; }
+  a { color:inherit; text-decoration:none; }
+}
+</style>
+<script>
+/* 防闪烁：在 body 渲染前确定主题。
+   优先级 = 手动选择(localStorage) > URL 参数 > 跟随系统。 */
+(function () {
+  var saved = null, q = null;
+  try { saved = localStorage.getItem('report-theme'); } catch (e) {}
+  try { q = new URLSearchParams(location.search).get('theme'); } catch (e) {}
+  var mode = (saved === 'light' || saved === 'dark' || saved === 'system') ? saved
+           : (q === 'light' || q === 'dark') ? q : 'system';
+  var dark = mode === 'dark' || (mode === 'system' && window.matchMedia &&
+             window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-mode', mode);
+})();
+</script>
+</head>
+<body>
+<div class="theme-switch" role="group" aria-label="报告配色模式">
+  <button type="button" data-mode="light" aria-pressed="false">日间</button>
+  <button type="button" data-mode="dark" aria-pressed="false">夜间</button>
+  <button type="button" data-mode="system" aria-pressed="true">系统</button>
+</div>
+<div class="layout">
+<aside><h2>目录</h2><div class="toc">
+<ul>
+<li><a href="#mango-astro">Mango Astro 站点管理与设置教程</a><ul>
+<li><a href="#0">0. 先认清这个站由哪几块组成</a></li>
+<li><a href="#1">1. 三种操作，先分清</a></li>
+<li><a href="#2">2. 写文章（最常用）</a><ul>
+<li><a href="#21">2.1 用后台（推荐）</a></li>
+<li><a href="#22-markdown">2.2 手动写 Markdown</a></li>
+<li><a href="#23-srccontentconfigts">2.3 字段说明（对应 src/content/config.ts）</a></li>
+<li><a href="#24">2.4 图片怎么放</a></li>
+</ul>
+</li>
+<li><a href="#3">3. 改站点信息（对照表）</a><ul>
+<li><a href="#31">3.1 改导航菜单的具体写法</a></li>
+<li><a href="#32">3.2 改轮播的具体写法</a></li>
+</ul>
+</li>
+<li><a href="#4">4. 主题色怎么改（三处要一起改）</a></li>
+<li><a href="#5">5. 发布上线</a><ul>
+<li><a href="#51">5.1 手动部署（当前方式）</a></li>
+<li><a href="#52">5.2 自动部署（推荐开启）</a></li>
+</ul>
+</li>
+<li><a href="#6">6. 后台维护</a><ul>
+<li><a href="#61">6.1 两种登录方式</a></li>
+<li><a href="#62">6.2 网关自检</a></li>
+<li><a href="#63-oauth">6.3 换 OAuth 密钥</a></li>
+<li><a href="#64">6.4 网关重新部署</a></li>
+</ul>
+</li>
+<li><a href="#7">7. 备份与回滚</a></li>
+<li><a href="#8">8. 故障排查</a></li>
+<li><a href="#9">9. 命令速查</a></li>
+<li><a href="#10">10. 例行清单</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</aside>
+<main>
+<h1 id="mango-astro">Mango Astro 站点管理与设置教程</h1>
+<blockquote>
+<p>适用站点：<code>https://mango-astro.pages.dev</code>（mango-astro 工程）
+最后更新：2026-11-07</p>
+</blockquote>
+<hr />
+<h2 id="0">0. 先认清这个站由哪几块组成</h2>
+<table>
+<thead>
+<tr>
+<th>组成部分</th>
+<th>是什么</th>
+<th>在哪</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Astro</strong></td>
+<td>静态站点生成器，把 Markdown 和组件编译成 HTML</td>
+<td>本机 <code>/Users/ming/mango-astro</code></td>
+</tr>
+<tr>
+<td><strong>GitHub 仓库</strong></td>
+<td>存放源码，也是 CMS 写入文章的地方</td>
+<td><code>github.com/htianshi45/mango-astro</code>（Private）</td>
+</tr>
+<tr>
+<td><strong>Cloudflare Pages</strong></td>
+<td>托管编译后的静态文件</td>
+<td><code>mango-astro.pages.dev</code></td>
+</tr>
+<tr>
+<td><strong>Sveltia CMS</strong></td>
+<td>浏览器里的写文章后台（中文界面）</td>
+<td><code>/admin/</code></td>
+</tr>
+<tr>
+<td><strong>OAuth 网关</strong></td>
+<td>让 CMS 能安全登录 GitHub 的中间层</td>
+<td><code>auth.840428.xyz</code>（Cloudflare Worker）</td>
+</tr>
+</tbody>
+</table>
+<p>数据流是这样的：</p>
+<button class="copy" type="button">复制</button><pre><code>你在 /admin/ 写文章
+   → Sveltia 调 GitHub API，把 Markdown 提交进仓库
+   → 仓库出现新 commit
+   → （若接了 Git 构建）Pages 自动重新编译 → 线上更新
+</code></pre>
+<p><strong>关键认知</strong>：这是<strong>静态站点</strong>，没有「后台设置面板」。除了文章内容，所有站点设置（站名、导航、Banner、备案号、主题色）都写在源码文件里。改完必须重新构建 + 部署才生效。</p>
+<hr />
+<h2 id="1">1. 三种操作，先分清</h2>
+<table>
+<thead>
+<tr>
+<th>你想做的事</th>
+<th>用什么</th>
+<th>要改代码吗</th>
+<th>要重新部署吗</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>写文章、改文章、传图</td>
+<td><code>/admin/</code> 后台</td>
+<td>不用</td>
+<td>看是否接了 Git 构建</td>
+</tr>
+<tr>
+<td>改站名、导航、Banner、备案号、颜色</td>
+<td>改源码文件</td>
+<td><strong>要</strong></td>
+<td><strong>要</strong></td>
+</tr>
+<tr>
+<td>让改动上线</td>
+<td><code>npm run build</code> + 部署</td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="2">2. 写文章（最常用）</h2>
+<h3 id="21">2.1 用后台（推荐）</h3>
+<ol>
+<li>打开 <strong>https://mango-astro.pages.dev/admin/</strong></li>
+<li>点 <strong>「使用 GitHub 登录」</strong> → 授权（第一次需要，之后长期有效）</li>
+<li>左侧 <strong>文章</strong> → 右上角 <strong>新建</strong></li>
+<li>按下面第 2.3 节填字段</li>
+<li>右上角 <strong>保存</strong>（会直接提交到 GitHub）</li>
+</ol>
+<blockquote>
+<p>如果不想走 OAuth 弹窗，登录页还有 <strong>「使用访问令牌登录」</strong>，粘贴一个 <code>ghp_</code> 开头的令牌即可。</p>
+</blockquote>
+<p><strong>注意</strong>：后台保存 = 直接 commit 到 GitHub，<strong>不会写你本地硬盘</strong>。本地要 <code>git pull</code> 才能看到。</p>
+<h3 id="22-markdown">2.2 手动写 Markdown</h3>
+<p>在 <code>src/content/posts/</code> 新建 <code>你的文件名.md</code>，开头必须有 frontmatter：</p>
+<button class="copy" type="button">复制</button><pre><code class="language-markdown">---
+title: 文章标题
+description: 一句话摘要（会显示在卡片上）
+pubDate: 2026-11-07
+heroImage: /images/test-1.jpg
+images:
+  - /images/test-1.jpg
+  - /images/test-2.jpg
+  - /images/test-3.jpg
+author: 大明白
+avatar: /images/avatar-1.svg
+tags:
+  - 摄影
+  - 风景
+category: 风景
+sticky: 0
+views: 0
+comments: 0
+likes: 0
+draft: false
+---
+
+正文从这里开始，支持标准 Markdown。
+</code></pre>
+<h3 id="23-srccontentconfigts">2.3 字段说明（对应 <code>src/content/config.ts</code>）</h3>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>类型</th>
+<th>必填</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>title</code></td>
+<td>字符串</td>
+<td>✅</td>
+<td>文章标题</td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>字符串</td>
+<td>—</td>
+<td>卡片摘要，<strong>不填则卡片不显示摘要行</strong></td>
+</tr>
+<tr>
+<td><code>pubDate</code></td>
+<td>日期</td>
+<td>✅</td>
+<td>发布日期，决定排序</td>
+</tr>
+<tr>
+<td><code>updatedDate</code></td>
+<td>日期</td>
+<td>—</td>
+<td>更新日期</td>
+</tr>
+<tr>
+<td><code>heroImage</code></td>
+<td>路径</td>
+<td>—</td>
+<td>封面图，用于热门文章小工具</td>
+</tr>
+<tr>
+<td><code>images</code></td>
+<td>字符串数组</td>
+<td>—</td>
+<td>九宫格图片，最多展示 9 张</td>
+</tr>
+<tr>
+<td><code>author</code></td>
+<td>字符串</td>
+<td>—</td>
+<td>默认 <code>Mango</code>，建议改成你的名字</td>
+</tr>
+<tr>
+<td><code>avatar</code></td>
+<td>路径</td>
+<td>—</td>
+<td>作者头像</td>
+</tr>
+<tr>
+<td><code>tags</code></td>
+<td>字符串数组</td>
+<td>—</td>
+<td>标签，会生成 <code>/tags/标签名</code> 页面</td>
+</tr>
+<tr>
+<td><code>category</code></td>
+<td>字符串</td>
+<td>—</td>
+<td>分类，会生成 <code>/categories/分类名</code> 页面</td>
+</tr>
+<tr>
+<td><code>sticky</code></td>
+<td>数字</td>
+<td>—</td>
+<td>置顶权重，<strong>越大越靠前</strong>，0 表示不置顶</td>
+</tr>
+<tr>
+<td><code>views</code> / <code>comments</code> / <code>likes</code></td>
+<td>数字</td>
+<td>—</td>
+<td>静态展示数字（不是真实统计）</td>
+</tr>
+<tr>
+<td><code>draft</code></td>
+<td>布尔</td>
+<td>—</td>
+<td><code>true</code> 则不发布</td>
+</tr>
+</tbody>
+</table>
+<h3 id="24">2.4 图片怎么放</h3>
+<ul>
+<li>图片统一放 <code>public/images/</code>，引用时写 <code>/images/文件名.jpg</code></li>
+<li>文件名建议英文/数字，中文也能用但 URL 会被编码</li>
+<li>九宫格规则（<code>src/components/PostImages.astro</code>）：</li>
+<li><strong>1 张</strong> → 单张大图（16:9）</li>
+<li><strong>2 张</strong> → 两列</li>
+<li><strong>3–9 张</strong> → 三列方形</li>
+<li><strong>超过 9 张</strong> → 只显示前 9 张，第 9 张盖一层 <code>+N</code> 角标，点开可翻看全部</li>
+<li>建议单张压缩到 300 KB 以内，宽度 1200–1600 px 足够</li>
+<li>点击图片会全屏放大（从缩略图原位放大，支持左右滑、双击缩放）</li>
+</ul>
+<hr />
+<h2 id="3">3. 改站点信息（对照表）</h2>
+<p>这一节是「改哪里」的字典。全部是改源码 → 重新构建 → 部署。</p>
+<table>
+<thead>
+<tr>
+<th>想改什么</th>
+<th>文件</th>
+<th>具体位置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>站名 + Logo</strong></td>
+<td><code>src/components/Header.astro</code></td>
+<td>第 20–23 行，<code>&lt;b&gt;Mango&lt;/b&gt;</code> 和 <code>/images/logo.svg</code></td>
+</tr>
+<tr>
+<td><strong>顶部导航菜单</strong></td>
+<td><code>src/components/Header.astro</code></td>
+<td>第 4–13 行的 <code>navItems</code> 数组</td>
+</tr>
+<tr>
+<td><strong>页脚链接</strong></td>
+<td><code>src/components/Footer.astro</code></td>
+<td>第 8–16 行 <code>关于我们 / 标签云 / 文章归档 / 主题下载 / 旅游地图</code></td>
+</tr>
+<tr>
+<td><strong>页脚版权</strong></td>
+<td><code>src/components/Footer.astro</code></td>
+<td>第 22 行 <code>© {currentYear} Mango Theme</code></td>
+</tr>
+<tr>
+<td><strong>ICP 备案号</strong></td>
+<td><code>src/components/Footer.astro</code></td>
+<td>第 28 行，现在是占位 <code>京ICP备00000000号</code>，<strong>上线前必须改或删</strong></td>
+</tr>
+<tr>
+<td><strong>首页轮播</strong></td>
+<td><code>src/config/banner.ts</code></td>
+<td><code>banners</code> 数组</td>
+</tr>
+<tr>
+<td><strong>主题主色</strong></td>
+<td><code>tailwind.config.mjs</code></td>
+<td>第 8–13 行 <code>colors.mango</code></td>
+</tr>
+<tr>
+<td><strong>深色模式色值</strong></td>
+<td><code>tailwind.config.mjs</code></td>
+<td>第 14–19 行 <code>colors.dark</code></td>
+</tr>
+<tr>
+<td><strong>每页文章数</strong></td>
+<td><code>src/pages/index.astro</code></td>
+<td><code>POSTS_PER_PAGE = 8</code>（<code>page/[page].astro</code> 同步改）</td>
+</tr>
+<tr>
+<td><strong>站点域名</strong></td>
+<td><code>astro.config.mjs</code></td>
+<td><code>site: 'https://mango.840428.xyz'</code></td>
+</tr>
+<tr>
+<td><strong>浏览器标题后缀</strong></td>
+<td>各页面文件</td>
+<td><code>&lt;BaseLayout title="首页 - Mango"&gt;</code> 里的 <code>- Mango</code></td>
+</tr>
+<tr>
+<td><strong>默认 meta 描述</strong></td>
+<td><code>src/layouts/BaseLayout.astro</code></td>
+<td><code>description = 'Mango - 微信朋友圈风格图片博客'</code></td>
+</tr>
+<tr>
+<td><strong>关于页内容</strong></td>
+<td><code>src/pages/about.astro</code></td>
+<td>整页正文，目前还是模板文案</td>
+</tr>
+<tr>
+<td><strong>评论功能</strong></td>
+<td><code>src/config/comment.ts</code></td>
+<td><code>giscusConfig</code>，<code>enabled: false</code> 表示关闭</td>
+</tr>
+<tr>
+<td><strong>后台字段</strong></td>
+<td><code>public/admin/config.yml</code></td>
+<td>增删字段、改默认值</td>
+</tr>
+</tbody>
+</table>
+<h3 id="31">3.1 改导航菜单的具体写法</h3>
+<p><code>src/components/Header.astro</code> 第 4 行开始：</p>
+<button class="copy" type="button">复制</button><pre><code class="language-ts">const navItems = [
+  { name: '风景', href: '/categories/风景' },
+  { name: '旅拍', href: '/categories/旅拍', icon: 'bi-palette' },
+  { name: '科技', href: '/categories/科技', hasDropdown: true, children: [
+    { name: '数码', href: '/categories/数码' },
+    { name: '软件', href: '/categories/软件' },
+  ]},
+  { name: '主题下载', href: '/download' },
+  { name: '旅游地图', href: '/map' },
+];
+</code></pre>
+<ul>
+<li><code>name</code> 显示文字，<code>href</code> 链接</li>
+<li><code>icon</code> 可选，用 Bootstrap Icons 类名（如 <code>bi-palette</code>）</li>
+<li><code>hasDropdown: true</code> + <code>children</code> 生成二级菜单</li>
+<li>加一项就复制一行，删一项就删一行</li>
+</ul>
+<h3 id="32">3.2 改轮播的具体写法</h3>
+<p><code>src/config/banner.ts</code>：</p>
+<button class="copy" type="button">复制</button><pre><code class="language-ts">export const banners: BannerItem[] = [
+  {
+    title: '干净通透的沉浸式工作台[文章分页效果]',
+    image: '/images/banner-1.jpg',   // 图片放 public/images/
+    url: '/posts/welcome',           // 点击跳转
+    sticky: true,
+  },
+  // 想加就继续往下写
+];
+</code></pre>
+<ul>
+<li>图片建议 <strong>900×350</strong> 或 16:9 横图（<code>aspect-ratio: 900/350</code>，宽屏变 <code>21/9</code>）</li>
+<li>用方图会被裁切，只剩中间一条</li>
+<li>不要填网页链接当图片，必须是图片文件</li>
+</ul>
+<hr />
+<h2 id="4">4. 主题色怎么改（三处要一起改）</h2>
+<p>主色不是只改一个地方，目前有三处硬编码：</p>
+<table>
+<thead>
+<tr>
+<th>位置</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tailwind.config.mjs</code> 第 8–13 行</td>
+<td><code>mango: { light, DEFAULT, dark, hover }</code></td>
+</tr>
+<tr>
+<td><code>src/components/Header.astro</code></td>
+<td>搜索按钮 hover 色 <code>#4270f5</code></td>
+</tr>
+<tr>
+<td><code>src/components/Footer.astro</code></td>
+<td>Powered by 链接 <code>#4270f5</code></td>
+</tr>
+</tbody>
+</table>
+<p>改色建议：选定一个主色（如 <code>#e8590c</code> 橙），然后：</p>
+<button class="copy" type="button">复制</button><pre><code class="language-js">mango: {
+  light: '#ff8a4c',    // 浅一档，用于深色模式下的链接
+  DEFAULT: '#e8590c',  // 主色
+  dark: '#b8440a',     // 深一档
+  hover: '#a33d08',    // hover 态
+},
+</code></pre>
+<p>再把 <code>Header.astro</code> / <code>Footer.astro</code> 里的 <code>#4270f5</code> 一起换成 <code>#e8590c</code>，否则会有颜色不一致。</p>
+<hr />
+<h2 id="5">5. 发布上线</h2>
+<h3 id="51">5.1 手动部署（当前方式）</h3>
+<button class="copy" type="button">复制</button><pre><code class="language-bash">cd /Users/ming/mango-astro
+npm run build
+wrangler pages deploy dist --project-name mango-astro --branch main --commit-dirty=true
+</code></pre>
+<p>如果提示 <code>command not found: wrangler</code>，先执行：</p>
+<button class="copy" type="button">复制</button><pre><code class="language-bash">export PATH=&quot;$HOME/.local/bin:$PATH&quot;
+</code></pre>
+<p>成功标志：最后出现 <code>✨ Deployment complete!</code> 和一个 <code>https://xxxxx.mango-astro.pages.dev</code> 链接。</p>
+<h3 id="52">5.2 自动部署（推荐开启）</h3>
+<p>现在后台写完文章，线上<strong>不会自动更新</strong>。开启 Git 构建后就能闭环：</p>
+<ol>
+<li>https://dash.cloudflare.com/ → <code>Workers &amp; Pages</code> → <code>mango-astro</code></li>
+<li>顶部 <code>Settings</code> → 左侧 <code>Builds &amp; deployments</code></li>
+<li><code>Git repository</code> 那一行点 <code>Connect</code>（或 <code>Connect to Git</code>）</li>
+<li>授权 GitHub → 选 <code>htianshi45/mango-astro</code> → <code>Begin setup</code></li>
+<li>构建配置：
+   - <code>Production branch</code> → <code>main</code>
+   - <code>Framework preset</code> → <code>Astro</code>
+   - <code>Build command</code> → <code>npm run build</code>
+   - <code>Build output directory</code> → <code>dist</code></li>
+<li><code>Save and Deploy</code></li>
+</ol>
+<p>之后：后台保存文章 → GitHub commit → Pages 自动重编译 → 线上更新。</p>
+<hr />
+<h2 id="6">6. 后台维护</h2>
+<h3 id="61">6.1 两种登录方式</h3>
+<table>
+<thead>
+<tr>
+<th>方式</th>
+<th>操作</th>
+<th>适合</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GitHub OAuth</td>
+<td>点「使用 GitHub 登录」→ 授权</td>
+<td>日常用，一次授权长期有效</td>
+</tr>
+<tr>
+<td>访问令牌</td>
+<td>点「使用访问令牌登录」→ 粘 <code>ghp_</code> 令牌</td>
+<td>OAuth 出问题时的备用通道</td>
+</tr>
+</tbody>
+</table>
+<h3 id="62">6.2 网关自检</h3>
+<p>后台登录不了，先查网关是否健康：</p>
+<button class="copy" type="button">复制</button><pre><code class="language-bash">curl https://auth.840428.xyz/health
+</code></pre>
+<p>正常应返回：</p>
+<button class="copy" type="button">复制</button><pre><code class="language-json">{ &quot;ok&quot;: true, &quot;client_id_configured&quot;: true, &quot;client_secret_configured&quot;: true,
+  &quot;allowed_origins&quot;: [&quot;...&quot;, &quot;https://mango-astro.pages.dev&quot;, &quot;https://mango.840428.xyz&quot;],
+  &quot;callback_url&quot;: &quot;https://auth.840428.xyz/callback&quot; }
+</code></pre>
+<p>两个 <code>configured</code> 必须都是 <code>true</code>，否则去 <code>oauth-gateway/</code> 重新 <code>wrangler secret put</code>。</p>
+<h3 id="63-oauth">6.3 换 OAuth 密钥</h3>
+<button class="copy" type="button">复制</button><pre><code class="language-bash"># 1. GitHub → Settings → Developer settings → OAuth Apps → Mango CMS
+#    点 Generate a new client secret，复制新的，旧的 Delete
+# 2. 填进网关
+cd /Users/ming/mango-astro/oauth-gateway
+wrangler secret put GITHUB_CLIENT_SECRET
+</code></pre>
+<p>换完不影响已登录状态。</p>
+<h3 id="64">6.4 网关重新部署</h3>
+<p>改过 <code>oauth-gateway/worker.js</code> 或 <code>wrangler.toml</code> 后：</p>
+<button class="copy" type="button">复制</button><pre><code class="language-bash">cd /Users/ming/mango-astro/oauth-gateway
+wrangler deploy
+</code></pre>
+<hr />
+<h2 id="7">7. 备份与回滚</h2>
+<p>这个工程是 git 仓库，<strong>每次改动前先提交</strong>，出问题能一键回退。</p>
+<button class="copy" type="button">复制</button><pre><code class="language-bash">cd /Users/ming/mango-astro
+git add -A
+git commit -m &quot;改了什么&quot;
+git push
+</code></pre>
+<p>回滚：</p>
+<button class="copy" type="button">复制</button><pre><code class="language-bash"># 看历史
+git log --oneline
+
+# 撤销某一次提交（生成一个反向提交，安全）
+git revert &lt;commit-hash&gt;
+git push
+
+# 只恢复某个文件到某个版本
+git checkout &lt;commit-hash&gt; -- src/components/Header.astro
+</code></pre>
+<p><strong>CMS 与本地的关系</strong>：后台改文章是提交到 GitHub，本地要 <code>git pull</code> 才同步。如果本地也改了同一篇，pull 会冲突，先提交本地改动再 pull。</p>
+<hr />
+<h2 id="8">8. 故障排查</h2>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>原因</th>
+<th>处理</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>后台白屏</td>
+<td>脚本加载失败或初始化报错</td>
+<td>打开浏览器控制台看红色报错；确认 <code>/admin/sveltia-cms.mjs</code> 返回 200</td>
+</tr>
+<tr>
+<td>点登录没反应</td>
+<td>弹窗被拦截</td>
+<td>地址栏右侧允许弹窗</td>
+</tr>
+<tr>
+<td>弹窗停在「正在跳转」</td>
+<td>网关握手失败</td>
+<td>查 <code>/health</code>；确认 <code>base_url</code> 是 <code>https://auth.840428.xyz</code></td>
+</tr>
+<tr>
+<td><code>redirect_uri mismatch</code></td>
+<td>OAuth App 回调地址不对</td>
+<td>必须是 <code>https://auth.840428.xyz/callback</code></td>
+</tr>
+<tr>
+<td>登录后看不到文章</td>
+<td>仓库名/分支错</td>
+<td><code>config.yml</code> 的 <code>repo</code> 应为 <code>htianshi45/mango-astro</code>，<code>branch</code> 为 <code>main</code></td>
+</tr>
+<tr>
+<td>保存文章报 403</td>
+<td>令牌权限不足</td>
+<td>用 classic 令牌，勾整块 <code>repo</code></td>
+</tr>
+<tr>
+<td>图片不显示</td>
+<td>路径写错</td>
+<td>必须是 <code>/images/xxx.jpg</code>（以 <code>/</code> 开头），文件在 <code>public/images/</code></td>
+</tr>
+<tr>
+<td>构建失败</td>
+<td>frontmatter 字段类型错</td>
+<td>对照第 2.3 节；<code>tags</code>/<code>images</code> 必须是数组</td>
+</tr>
+<tr>
+<td>改了没生效</td>
+<td>没重新部署</td>
+<td><code>npm run build</code> + <code>wrangler pages deploy</code>，或开 Git 自动构建</td>
+</tr>
+<tr>
+<td><code>command not found: wrangler</code></td>
+<td>PATH 里没有</td>
+<td><code>export PATH="$HOME/.local/bin:$PATH"</code></td>
+</tr>
+<tr>
+<td><code>Failed to connect 127.0.0.1:7890</code></td>
+<td>全局 git 代理指向死端口</td>
+<td><code>git config --global --unset http.proxy</code></td>
+</tr>
+<tr>
+<td>终端连不上 <code>auth.840428.xyz</code></td>
+<td>本机 DNS 缓存没更新</td>
+<td><code>sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder</code>，或直接用浏览器访问</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="9">9. 命令速查</h2>
+<button class="copy" type="button">复制</button><pre><code class="language-bash">cd /Users/ming/mango-astro        # 进入工程
+npm run dev                       # 本地开发（http://localhost:4321）
+npm run build                     # 构建到 dist/
+npm run preview                   # 预览构建产物
+wrangler pages deploy dist --project-name mango-astro --branch main --commit-dirty=true   # 部署
+
+git add -A &amp;&amp; git commit -m &quot;说明&quot; &amp;&amp; git push    # 提交并推送
+git pull                                          # 拉取后台改的文章
+git log --oneline -10                             # 看最近提交
+</code></pre>
+<hr />
+<h2 id="10">10. 例行清单</h2>
+<p><strong>每次发文后</strong></p>
+<ul>
+<li>[ ] 线上是否已更新（没接 Git 构建的话要手动部署）</li>
+<li>[ ] 封面图、九宫格是否正常显示</li>
+<li>[ ] 标签 / 分类链接是否可点</li>
+</ul>
+<p><strong>每月</strong></p>
+<ul>
+<li>[ ] <code>curl https://auth.840428.xyz/health</code> 两个 <code>configured</code> 为 true</li>
+<li>[ ] GitHub 令牌 / OAuth secret 是否需要轮换</li>
+<li>[ ] <code>public/images/</code> 体积是否过大（建议总量 &lt; 200 MB）</li>
+</ul>
+<p><strong>上线前必改的三处</strong></p>
+<ul>
+<li>[ ] <code>src/components/Footer.astro</code> 第 28 行备案号（现在还是 <code>京ICP备00000000号</code>）</li>
+<li>[ ] <code>src/pages/about.astro</code> 的模板文案（里面还写着「通过 Decap CMS 管理」）</li>
+<li>[ ] <code>astro.config.mjs</code> 的 <code>site</code>（当前是 <code>https://mango.840428.xyz</code>，与实际的 <code>pages.dev</code> 不一致）</li>
+</ul>
+<div class="footer">Mango Astro · 站点管理与设置教程 v1.0 · 2026-11-07 · 支持日间 / 夜间 / 系统三态切换 · 对照图以正文为准</div>
+</main>
+</div>
+<script>
+document.querySelectorAll('.copy').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var pre = b.nextElementSibling;
+    if (!pre || pre.tagName !== 'PRE') return;
+    navigator.clipboard.writeText(pre.innerText).then(function () {
+      b.textContent = '已复制'; setTimeout(function () { b.textContent = '复制'; }, 1500);
+    });
+  });
+});
+(function () {
+  var root = document.documentElement;
+  var btns = Array.prototype.slice.call(document.querySelectorAll('.theme-switch button'));
+  function apply(mode, persist) {
+    if (persist) {
+      try { localStorage.setItem('report-theme', mode); } catch (e) {}
+      try {
+        var u = new URL(location.href);
+        u.searchParams.delete('theme');
+        history.replaceState(null, '', u.href);
+      } catch (e) {}
+    }
+    var dark = mode === 'dark' || (mode === 'system' && window.matchMedia &&
+               window.matchMedia('(prefers-color-scheme: dark)').matches);
+    root.setAttribute('data-theme', dark ? 'dark' : 'light');
+    root.setAttribute('data-mode', mode);
+    btns.forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.getAttribute('data-mode') === mode));
+    });
+  }
+  btns.forEach(function (b) {
+    b.addEventListener('click', function () { apply(b.getAttribute('data-mode'), true); });
+  });
+  apply(root.getAttribute('data-mode') || 'system', false);
+  if (window.matchMedia) {
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    var onChange = function () {
+      if (root.getAttribute('data-mode') === 'system') apply('system', false);
+    };
+    if (mq.addEventListener) mq.addEventListener('change', onChange);
+    else if (mq.addListener) mq.addListener(onChange);
+  }
+})();
+</script>
+</body>
+</html>
