@@ -1,0 +1,43 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="主题下载 - Mango">
+  <div class="post-loop">
+    <h1 class="text-xl font-bold text-[#333] dark:text-[#ccc] mb-6">
+      <i class="bi bi-download mr-2 text-mango"></i>主题下载
+    </h1>
+    <div class="text-[#333] dark:text-[#ccc] leading-[1.8]">
+      <p class="mb-4">Mango 主题是一款微信朋友圈风格的摄影博客主题，基于 Astro 构建，支持暗黑模式、响应式布局和 Decap CMS 内容管理。</p>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-8">
+        <div class="p-5 rounded-[10px] border border-gray-200 dark:border-[#333]">
+          <h3 class="font-bold mb-2"><i class="bi bi-github mr-2"></i>GitHub 下载</h3>
+          <p class="text-sm text-[#999] mb-3">从 GitHub 仓库获取最新源码</p>
+          <a href="https://github.com" class="btn-primary inline-block text-sm" target="_blank" rel="noopener">
+            <i class="bi bi-box-arrow-up-right mr-1"></i>前往下载
+          </a>
+        </div>
+        <div class="p-5 rounded-[10px] border border-gray-200 dark:border-[#333]">
+          <h3 class="font-bold mb-2"><i class="bi bi-cloud-download mr-2"></i>部署指南</h3>
+          <p class="text-sm text-[#999] mb-3">一键部署到 Cloudflare Pages</p>
+          <a href="https://pages.cloudflare.com" class="btn-primary inline-block text-sm" target="_blank" rel="noopener">
+            <i class="bi bi-box-arrow-up-right mr-1"></i>查看文档
+          </a>
+        </div>
+      </div>
+
+      <h2 class="text-lg font-bold mt-8 mb-4">功能特性</h2>
+      <ul class="list-disc pl-5 space-y-2 text-sm">
+        <li>微信朋友圈风格卡片布局</li>
+        <li>支持 1-9+ 张图片自适应网格</li>
+        <li>暗黑模式切换</li>
+        <li>响应式设计，完美适配移动端</li>
+        <li>Decap CMS 内容管理</li>
+        <li>Cloudflare Pages 部署</li>
+        <li>Cloudflare R2 图床支持</li>
+        <li>Bootstrap Icons 图标库</li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>

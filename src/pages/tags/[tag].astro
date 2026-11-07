@@ -1,0 +1,71 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import PostCard from '@/components/PostCard.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts');
+  const tags = new Set<string>();
+  
+  posts.forEach(post => {
+    post.data.tags.forEach(tag => tags.add(tag));
+  });
+
+  return Array.from(tags).map(tag => ({
+    params: { tag },
+  }));
+}
+
+const { tag } = Astro.params;
+
+const allPosts = await getCollection('posts', ({ data }) => {
+  return data.draft !== true;
+});
+
+const posts = allPosts
+  .filter(post => post.data.tags.includes(tag!))
+  .sort((a, b) => new Date(b.data.pubDate).getTime() - new Date(a.data.pubDate).getTime());
+---
+
+<BaseLayout title={`#${tag} - Mango`}>
+  <div class="max-w-4xl mx-auto">
+    <div class="mb-8">
+      <h1 class="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+        #{tag}
+      </h1>
+      <p class="text-gray-600 dark:text-gray-400">
+        共有 {posts.length} 篇文章
+      </p>
+    </div>
+
+    <div class="space-y-4">
+      {posts.map((post) => (
+        <PostCard
+          title={post.data.title}
+          slug={post.slug}
+          author={post.data.author}
+          avatar={post.data.avatar}
+          excerpt={post.data.description || ''}
+          images={post.data.images || []}
+          timestamp={post.data.pubDate}
+          sticky={false}
+          tags={post.data.tags}
+          likes={post.data.views || 0}
+          comments={0}
+        />
+      ))}
+    </div>
+
+    {posts.length === 0 && (
+      <div class="card p-12 text-center">
+        <p class="text-gray-500 dark:text-gray-400">暂无文章</p>
+      </div>
+    )}
+
+    <div class="mt-8">
+      <a href="/tags" class="btn-secondary">
+        ← 返回所有标签
+      </a>
+    </div>
+  </div>
+</BaseLayout>

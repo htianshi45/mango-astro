@@ -1,0 +1,296 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import PostImages from '@/components/PostImages.astro';
+import { getCollection } from 'astro:content';
+import { giscusConfig, isGiscusConfigured } from '@/config/comment';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts');
+  return posts.map((post) => ({
+    params: { slug: post.slug },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await post.render();
+
+const allPosts = await getCollection('posts', ({ data }) => data.draft !== true);
+const relatedPosts = allPosts
+  .filter(p => p.slug !== post.slug && p.data.category === post.data.category)
+  .slice(0, 5);
+const fallbackRelated = relatedPosts.length < 2
+  ? allPosts.filter(p => p.slug !== post.slug).slice(0, 5 - relatedPosts.length)
+  : [];
+const displayRelated = [...relatedPosts, ...fallbackRelated].slice(0, 5);
+---
+
+<BaseLayout title={`${post.data.title} - Mango`}>
+  <!-- Section 1: Title Card -->
+  <div class="post_container_title">
+    <h1 class="text-xl font-bold text-[#333] dark:text-[#ccc] m-0">
+      {post.data.title}
+    </h1>
+  </div>
+
+  <!-- Section 2: Content Card -->
+  <div class="post_container">
+    <!-- Post Images -->
+    {post.data.images && post.data.images.length > 0 && (
+      <div class="mb-6">
+        <PostImages images={post.data.images} slug={post.slug} />
+      </div>
+    )}
+
+    <!-- Post Content -->
+    <div class="prose prose-lg dark:prose-invert max-w-none post-content">
+      <Content />
+    </div>
+
+    <!-- Tags -->
+    {post.data.tags.length > 0 && (
+      <div class="mt-8 pt-5 border-t border-[#f0f0f0] dark:border-[#333]">
+        <div class="flex flex-wrap gap-2">
+          {post.data.tags.map((tag: string) => (
+            <a href={`/tags/${tag}`} class="post-tag">
+              <i class="bi bi-hash" style="font-size: 12px;"></i>{tag}
+            </a>
+          ))}
+        </div>
+      </div>
+    )}
+
+    <!-- Post Footer Data -->
+    <div class="post-info-footer mt-6">
+      <span class="flex items-center">
+        <i class="bi bi-chat-square-text-fill mr-1"></i>
+        {(post.data.comments || 0).toLocaleString()} 评论
+      </span>
+      <span class="flex items-center">
+        <i class="bi bi-eye-fill mr-1"></i>
+        {(post.data.views || 0).toLocaleString()} 浏览
+      </span>
+      <span class="flex items-center">
+        <i class="bi bi-heart-fill mr-1"></i>
+        {(post.data.likes || 0).toLocaleString()} 点赞
+      </span>
+    </div>
+  </div>
+
+  <!-- Section 3: Author Card (independent) -->
+  <div class="post_author">
+    <div class="flex items-center space-x-3">
+      <img src={post.data.avatar} alt={post.data.author} class="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+      <div>
+        <div class="text-sm font-medium text-[#333] dark:text-[#ccc]">{post.data.author}</div>
+        <div class="text-xs text-[#999]">
+          {new Date(post.data.pubDate).toLocaleDateString('zh-CN', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          })}
+        </div>
+      </div>
+    </div>
+    <div class="flex space-x-2">
+      <button class="btn-primary text-xs py-1 px-3" style="background: #4270f5;">
+        <i class="bi bi-share mr-1"></i>分享
+      </button>
+      <button class="btn-primary text-xs py-1 px-3" style="background: #4270f5;">
+        <i class="bi bi-heart mr-1"></i>打赏
+      </button>
+    </div>
+  </div>
+
+  <!-- Section 4: Related Posts Card -->
+  {displayRelated.length > 0 && (
+    <div class="post_related">
+      <h3 class="widget-title mb-4">相关文章</h3>
+      <ul class="space-y-2">
+        {displayRelated.map((rp) => (
+          <li class="text-sm">
+            <a href={`/posts/${rp.slug}`} class="text-[#333] dark:text-[#ccc] hover:text-mango transition-colors duration-200 flex items-center">
+              <span class="w-1.5 h-1.5 rounded-full bg-mango mr-2 flex-shrink-0"></span>
+              {rp.data.title}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )}
+
+  <!-- Section 5: Comments (Giscus) -->
+  <div class="post_comments">
+    <h3 class="widget-title mb-4">评论</h3>
+    {isGiscusConfigured ? (
+      <div
+        id="giscus-container"
+        data-repo={giscusConfig.repo}
+        data-repo-id={giscusConfig.repoId}
+        data-category={giscusConfig.category}
+        data-category-id={giscusConfig.categoryId}
+        data-mapping={giscusConfig.mapping}
+        data-lang={giscusConfig.lang}
+      ></div>
+    ) : (
+      <div class="comment-disabled">
+        <i class="bi bi-chat-square-dots"></i>
+        <p class="comment-disabled-title">评论未启用</p>
+        <span class="comment-disabled-hint">在 src/config/comment.ts 中配置 Giscus 的 repo / repoId / categoryId 后即可开启评论。</span>
+      </div>
+    )}
+  </div>
+
+  <!-- Navigation -->
+  <div class="mt-5 flex justify-between">
+    <a href="/" class="btn-secondary">
+      <i class="bi bi-arrow-left mr-1"></i>返回首页
+    </a>
+  </div>
+</BaseLayout>
+
+{isGiscusConfigured && (
+  <script is:inline>
+    (function () {
+      function initGiscus() {
+        var container = document.getElementById('giscus-container');
+        if (!container || container.querySelector('script')) return;
+
+        var isDark = document.documentElement.classList.contains('dark');
+        var script = document.createElement('script');
+        script.src = 'https://giscus.app/client.js';
+        script.setAttribute('data-repo', container.dataset.repo || '');
+        script.setAttribute('data-repo-id', container.dataset.repoId || '');
+        script.setAttribute('data-category', container.dataset.category || '');
+        script.setAttribute('data-category-id', container.dataset.categoryId || '');
+        script.setAttribute('data-mapping', container.dataset.mapping || 'pathname');
+        script.setAttribute('data-strict', '0');
+        script.setAttribute('data-reactions-enabled', '1');
+        script.setAttribute('data-emit-metadata', '0');
+        script.setAttribute('data-input-position', 'bottom');
+        script.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        script.setAttribute('data-lang', container.dataset.lang || 'zh-CN');
+        script.crossOrigin = 'anonymous';
+        script.async = true;
+        container.appendChild(script);
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initGiscus);
+      } else {
+        initGiscus();
+      }
+
+      var observer = new MutationObserver(function () {
+        var iframe = document.querySelector('#giscus-container iframe');
+        if (!iframe) return;
+        var isDark = document.documentElement.classList.contains('dark');
+        iframe.contentWindow.postMessage(
+          { giscus: { setTheme: isDark ? 'dark' : 'light' } },
+          'https://giscus.app'
+        );
+      });
+      observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    })();
+  </script>
+)}
+
+<style>
+  .post_container_title {
+    background: #fff;
+    padding: 25px 30px 20px;
+    border-bottom: 2px solid #f0f0f0;
+    border-radius: 4px 4px 0 0;
+    margin-bottom: 0;
+  }
+
+  :global(.dark) .post_container_title {
+    background: #212121;
+    border-bottom-color: #333;
+  }
+
+  .post_container {
+    background: #fff;
+    padding: 30px 32px 20px;
+    margin-bottom: 0;
+  }
+
+  :global(.dark) .post_container {
+    background: #212121;
+  }
+
+  .post_author {
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 30px;
+    border-top: 3px solid #f7f7f7;
+    border-radius: 0 0 4px 4px;
+    margin-bottom: 20px;
+    margin-top: 0;
+  }
+
+  :global(.dark) .post_author {
+    background: #212121;
+    border-top-color: #333;
+  }
+
+  .post_related {
+    background: #fff;
+    padding: 25px 30px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+  }
+
+  :global(.dark) .post_related {
+    background: #212121;
+  }
+
+  .post_comments {
+    background: #fff;
+    padding: 25px 30px;
+    border-radius: 4px;
+  }
+
+  :global(.dark) .post_comments {
+    background: #212121;
+  }
+
+  .comment-disabled {
+    text-align: center;
+    padding: 40px 20px;
+    color: #999;
+  }
+
+  .comment-disabled i {
+    font-size: 28px;
+    display: block;
+    margin-bottom: 12px;
+    color: #c6c6c6;
+  }
+
+  .comment-disabled-title {
+    font-size: 14px;
+    color: #666;
+    margin: 0 0 6px;
+  }
+
+  .comment-disabled-hint {
+    font-size: 12px;
+    color: #9b9b9b;
+    line-height: 1.6;
+  }
+
+  :global(.dark) .comment-disabled i {
+    color: #444;
+  }
+
+  :global(.dark) .comment-disabled-title {
+    color: #aaa;
+  }
+
+  :global(.dark) .comment-disabled-hint {
+    color: #777;
+  }
+</style>

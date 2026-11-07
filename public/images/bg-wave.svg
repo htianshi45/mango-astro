@@ -1,0 +1,6 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'>
+  <path d='M0 40 Q30 18 60 40 T120 40' fill='none' stroke='#d8d8d8' stroke-width='1'/>
+  <path d='M0 60 Q30 38 60 60 T120 60' fill='none' stroke='#dcdcdc' stroke-width='1.1'/>
+  <path d='M0 80 Q30 58 60 80 T120 80' fill='none' stroke='#d8d8d8' stroke-width='1'/>
+  <path d='M0 100 Q30 78 60 100 T120 100' fill='none' stroke='#dcdcdc' stroke-width='1.1'/>
+</svg>

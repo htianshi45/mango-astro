@@ -1,0 +1,18 @@
+---
+// Decap CMS 需要独占整个 document，不能套 BaseLayout / 站点样式。
+// 用 Astro 页面（而不是 public/admin/index.html）是为了让 /admin/ 也有路由，
+// 否则 Astro dev / preview 不做目录索引，/admin/ 会 404。
+---
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>内容管理 · Mango</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- 自托管，避免 unpkg CDN 在国内不可达 -->
+    <script is:inline src="/admin/decap-cms.js"></script>
+  </head>
+  <body></body>
+</html>

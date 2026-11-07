@@ -1,0 +1,218 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import PostCard from '@/components/PostCard.astro';
+import { getCollection } from 'astro:content';
+
+const allPosts = await getCollection('posts', ({ data }) => data.draft !== true);
+
+const searchData = allPosts.map(post => ({
+  title: post.data.title,
+  slug: post.slug,
+  description: post.data.description || '',
+  tags: post.data.tags || [],
+  category: post.data.category || '',
+}));
+---
+
+<BaseLayout title="搜索结果 - Mango">
+  <div class="search-page">
+    <div class="search-header">
+      <h1 class="text-lg font-bold text-[#333] dark:text-[#ccc] mb-4">
+        <i class="bi bi-search mr-2"></i>搜索
+      </h1>
+      <form id="search-form" class="search-form-large">
+        <input
+          type="text"
+          id="search-input"
+          placeholder="输入关键词搜索文章..."
+          class="search-large-input"
+          autocomplete="off"
+        />
+        <button type="submit" class="search-large-btn">
+          <i class="bi bi-search mr-1"></i>搜索
+        </button>
+      </form>
+    </div>
+
+    <div id="search-status" class="search-status"></div>
+
+    <div id="search-results" class="space-y-5"></div>
+
+    <div id="no-results" class="hidden text-center py-12">
+      <i class="bi bi-emoji-frown text-4xl text-[#999] block mb-3"></i>
+      <p class="text-[#999]">没有找到相关文章</p>
+    </div>
+  </div>
+
+  <script define:vars={{ searchData }}>
+    const posts = searchData;
+
+    function getQueryParam(name) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(name) || '';
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function searchPosts(query) {
+      const q = query.toLowerCase().trim();
+      if (!q) return [];
+      return posts.filter(post => {
+        return post.title.toLowerCase().includes(q)
+          || post.description.toLowerCase().includes(q)
+          || post.tags.some(tag => tag.toLowerCase().includes(q))
+          || post.category.toLowerCase().includes(q);
+      });
+    }
+
+    function renderResults(results, query) {
+      const container = document.getElementById('search-results');
+      const status = document.getElementById('search-status');
+      const noResults = document.getElementById('no-results');
+
+      if (!query.trim()) {
+        container.innerHTML = '';
+        status.innerHTML = '';
+        noResults.classList.add('hidden');
+        return;
+      }
+
+      status.innerHTML = `<p class="text-sm text-[#999] mb-4">找到 <strong class="text-[#333] dark:text-[#ccc]">${results.length}</strong> 篇与"${escapeHtml(query)}"相关的文章</p>`;
+
+      if (results.length === 0) {
+        container.innerHTML = '';
+        noResults.classList.remove('hidden');
+        return;
+      }
+
+      noResults.classList.add('hidden');
+
+      container.innerHTML = results.map(post => `
+        <article class="post-loop">
+          <a href="/posts/${post.slug}" class="block">
+            <h2 class="text-base font-bold text-[#333] dark:text-[#ccc] hover:text-mango transition-colors duration-200 mb-2">
+              ${escapeHtml(post.title)}
+            </h2>
+          </a>
+          ${post.description ? `<p class="text-sm text-[#999] mb-3">${escapeHtml(post.description)}</p>` : ''}
+          <div class="flex items-center flex-wrap gap-1">
+            ${post.tags.map(tag => `
+              <a href="/tags/${tag}" class="post-tag">
+                <i class="bi bi-hash" style="font-size:12px"></i>${escapeHtml(tag)}
+              </a>
+            `).join('')}
+            ${post.category ? `<span class="text-xs text-[#999] ml-2"><i class="bi bi-folder mr-1"></i>${escapeHtml(post.category)}</span>` : ''}
+          </div>
+          <div class="mt-3">
+            <a href="/posts/${post.slug}" class="text-xs text-mango hover:underline">
+              阅读全文 <i class="bi bi-arrow-right"></i>
+            </a>
+          </div>
+        </article>
+      `).join('');
+    }
+
+    const input = document.getElementById('search-input');
+    const form = document.getElementById('search-form');
+    const initialQuery = getQueryParam('q');
+
+    if (initialQuery) {
+      input.value = initialQuery;
+      const results = searchPosts(initialQuery);
+      renderResults(results, initialQuery);
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const query = input.value;
+      const results = searchPosts(query);
+      window.history.replaceState({}, '', `/search?q=${encodeURIComponent(query)}`);
+      renderResults(results, query);
+    });
+
+    input.addEventListener('input', () => {
+      const query = input.value;
+      const results = searchPosts(query);
+      window.history.replaceState({}, '', `/search?q=${encodeURIComponent(query)}`);
+      renderResults(results, query);
+    });
+  </script>
+
+  <style>
+    .search-page {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .search-header {
+      background: #fff;
+      padding: 25px 30px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+
+    :global(.dark) .search-header {
+      background: #212121;
+    }
+
+    .search-form-large {
+      display: flex;
+      gap: 0;
+    }
+
+    .search-large-input {
+      flex: 1;
+      border: 3px solid #ddd;
+      border-right: none;
+      padding: 0 15px;
+      font-size: 14px;
+      line-height: 40px;
+      height: 40px;
+      background: #fff;
+      color: #333;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-large-input:focus {
+      border-color: #4270f5;
+    }
+
+    .search-large-input::placeholder {
+      color: #999;
+    }
+
+    :global(.dark) .search-large-input {
+      background: #191919;
+      border-color: #333;
+      color: #ccc;
+    }
+
+    :global(.dark) .search-large-input:focus {
+      border-color: #4270f5;
+    }
+
+    .search-large-btn {
+      height: 40px;
+      padding: 0 25px;
+      background: #4270f5;
+      border: 3px solid #4270f5;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+
+    .search-large-btn:hover {
+      background: #0a59f8;
+      border-color: #0a59f8;
+    }
+
+    .search-status {
+      margin-bottom: 15px;
+    }
+  </style>
+</BaseLayout>

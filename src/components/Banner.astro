@@ -1,0 +1,280 @@
+---
+import { banners } from '@/config/banner';
+
+interface Props {
+  banners?: typeof banners;
+}
+
+const { banners: bannerList = banners } = Astro.props;
+---
+
+<div class="index_banner" style="margin-bottom: 25px;">
+  <div id="banner" class="carousel slide relative overflow-hidden" style="border-radius: 4px;">
+    <div class="carousel-inner relative">
+      {bannerList.map((banner, index) => (
+        <a href={banner.url || '#'} class:list={['banlist relative block', { active: index === 0 }]}>
+          <img
+            src={banner.image}
+            alt={banner.title}
+            class="w-full object-cover"
+          />
+          <div class="banlist-overlay"></div>
+          {banner.sticky && (
+            <i class="banlist-tag">
+              置顶精彩
+            </i>
+          )}
+          <h2 class="banlist-title">
+            {banner.title}
+          </h2>
+        </a>
+      ))}
+    </div>
+
+    <!-- Carousel indicators -->
+    <div class="carousel-indicators">
+      {bannerList.map((_, index) => (
+        <button
+          type="button"
+          class:list={['indicator', { active: index === 0 }]}
+          aria-label={`Slide ${index + 1}`}
+        ></button>
+      ))}
+    </div>
+
+    <!-- Carousel controls -->
+    <button class="carousel-control-prev" type="button" aria-label="Previous">
+      <i class="bi bi-chevron-left"></i>
+    </button>
+    <button class="carousel-control-next" type="button" aria-label="Next">
+      <i class="bi bi-chevron-right"></i>
+    </button>
+  </div>
+</div>
+
+<script>
+  // Simple carousel implementation
+  const banner = document.getElementById('banner');
+  if (banner) {
+    const slides = banner.querySelectorAll('.banlist');
+    const indicators = banner.querySelectorAll('.carousel-indicators .indicator');
+    let current = 0;
+
+    const showSlide = (index: number) => {
+      slides.forEach((slide, i) => {
+        slide.classList.toggle('active', i === index);
+      });
+      indicators.forEach((ind, i) => {
+        ind.classList.toggle('active', i === index);
+      });
+      current = index;
+    };
+
+    // Initialize
+    showSlide(0);
+
+    // Auto-advance
+    const interval = setInterval(() => {
+      showSlide((current + 1) % slides.length);
+    }, 5000);
+
+    // Indicator clicks
+    indicators.forEach((ind, i) => {
+      ind.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        clearInterval(interval);
+        showSlide(i);
+      });
+    });
+
+    // Prev/Next clicks
+    const prevBtn = banner.querySelector('.carousel-control-prev');
+    const nextBtn = banner.querySelector('.carousel-control-next');
+    
+    prevBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      clearInterval(interval);
+      showSlide((current - 1 + slides.length) % slides.length);
+    });
+
+    nextBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      clearInterval(interval);
+      showSlide((current + 1) % slides.length);
+    });
+  }
+</script>
+
+<style>
+  .index_banner {
+    margin-bottom: 25px;
+  }
+
+  #banner {
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .banlist {
+    display: none;
+    position: relative;
+  }
+
+  .banlist.active {
+    display: block;
+  }
+
+  /* Halo 优化：用比例代替固定高度，宽屏切 21/9 并封顶 380px */
+  .banlist img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 900 / 350;
+    max-height: 380px;
+    object-fit: cover;
+    background: #e8e8e8;
+    transition: transform 0.5s ease;
+  }
+
+  @media (min-width: 1200px) {
+    .banlist img {
+      aspect-ratio: 21 / 9;
+      max-height: 380px;
+    }
+  }
+
+  #banner:hover .banlist.active img {
+    transform: scale(1.1);
+  }
+
+  .banlist-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, #000, transparent);
+    opacity: 0.6;
+    z-index: 1;
+  }
+
+  .banlist-tag {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: #4270f5;
+    color: #fff;
+    font-size: 12px;
+    padding: 3px 7px;
+    z-index: 2;
+  }
+
+  .banlist-title {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    color: #fff;
+    font-size: 16px;
+    padding: 20px 25px;
+    z-index: 2;
+    margin: 0;
+  }
+
+  .carousel-indicators {
+    position: absolute;
+    right: 20px;
+    bottom: 14px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    z-index: 3;
+  }
+
+  .carousel-indicators .indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 0;
+    background: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+
+  .carousel-indicators .indicator.active {
+    background: #fff;
+  }
+
+  .carousel-control-prev,
+  .carousel-control-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #242424;
+    border: 0;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 3;
+  }
+
+  .carousel-control-prev {
+    left: 20px;
+  }
+
+  .carousel-control-next {
+    right: 20px;
+  }
+
+  #banner:hover .carousel-control-prev,
+  #banner:hover .carousel-control-next {
+    opacity: 1;
+  }
+
+  .carousel-control-prev:hover,
+  .carousel-control-next:hover {
+    background: #4270f6;
+  }
+
+  .carousel-control-prev i,
+  .carousel-control-next i {
+    font-size: 20px;
+  }
+
+  /* Dark mode */
+  :global(.dark) #banner {
+    background: #212121;
+  }
+
+  :global(.dark) .banlist-overlay {
+    opacity: 0.7;
+  }
+
+  :global(.dark) .banlist-tag {
+    background: #3a6df0;
+  }
+
+  :global(.dark) .carousel-control-prev,
+  :global(.dark) .carousel-control-next {
+    background: #141414;
+  }
+
+  :global(.dark) .carousel-control-prev:hover,
+  :global(.dark) .carousel-control-next:hover {
+    background: #4270f6;
+  }
+
+  :global(.dark) .carousel-indicators .indicator {
+    background: rgba(255, 255, 255, 0.4);
+  }
+
+  :global(.dark) .carousel-indicators .indicator.active {
+    background: #fff;
+  }
+</style>

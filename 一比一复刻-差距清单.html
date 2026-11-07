@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mango 主题一比一复刻 · 差距清单与改造规格</title>
+<style>
+:root { --ink:#1f2328; --muted:#5f6b7a; --line:#e3e8ef; --accent:#4270f5; --accent-soft:#e6efff; --code:#f6f8fa; }
+* { box-sizing:border-box; }
+body { margin:0; background:#fff; color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:15px; line-height:1.75; }
+.layout { max-width:1220px; margin:0 auto; padding:0 28px; display:grid; grid-template-columns:250px minmax(0,1fr); gap:44px; }
+aside { position:sticky; top:0; align-self:start; max-height:100vh; overflow:auto; padding:38px 0 30px; border-right:1px solid var(--line); }
+aside h2 { font-size:13px; font-weight:600; letter-spacing:.08em; color:var(--muted); margin:0 0 12px; }
+.toc ul { list-style:none; margin:0; padding:0; }
+.toc ul ul { padding-left:14px; }
+.toc li { margin:3px 0; }
+.toc a { color:var(--muted); text-decoration:none; font-size:13px; display:block; padding:2px 8px; border-radius:6px; }
+.toc a:hover { color:var(--accent); background:var(--accent-soft); }
+main { padding:38px 0 80px; min-width:0; }
+h1 { font-size:30px; line-height:1.3; margin:0 0 22px; padding-bottom:16px; border-bottom:2px solid var(--accent); }
+h2 { font-size:21px; margin:44px 0 14px; padding-top:10px; border-top:1px solid var(--line); }
+h3 { font-size:17px; margin:28px 0 10px; }
+p { margin:10px 0; }
+a { color:var(--accent); }
+blockquote { margin:16px 0; padding:10px 16px; background:var(--accent-soft); border-left:3px solid var(--accent); border-radius:0 8px 8px 0; color:#2a3b4d; }
+blockquote p { margin:4px 0; }
+ul, ol { padding-left:24px; }
+li { margin:4px 0; }
+li.task { list-style:none; margin-left:-20px; }
+code { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.9em;
+  background:var(--code); padding:2px 5px; border-radius:4px; color:#0c447c; }
+pre { background:var(--code); border:1px solid var(--line); border-radius:10px; padding:14px 16px;
+  overflow-x:auto; white-space:pre-wrap; word-break:break-word; margin:12px 0; }
+pre code { background:none; padding:0; color:var(--ink); font-size:13px; line-height:1.6; }
+.copy { float:right; position:relative; top:6px; z-index:1; border:1px solid var(--line); background:#fff;
+  color:var(--muted); font-size:12px; padding:3px 9px; border-radius:6px; cursor:pointer; }
+.copy:hover { color:var(--accent); border-color:var(--accent); }
+table { border-collapse:collapse; width:100%; margin:16px 0; font-size:14px; }
+th, td { border:1px solid var(--line); padding:8px 11px; text-align:left; vertical-align:top; }
+th { background:var(--accent-soft); color:#0c447c; font-weight:600; }
+tr:nth-child(even) td { background:#fbfcfe; }
+hr { border:0; border-top:1px solid var(--line); margin:34px 0; }
+.footer { margin-top:56px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:13px; }
+@media (max-width:900px) { .layout { grid-template-columns:1fr; gap:0; } aside { position:static; max-height:none; border-right:0; border-bottom:1px solid var(--line); padding:24px 0 12px; } main { padding-top:24px; } }
+@media print { body { font-size:11pt; } .layout { display:block; max-width:none; padding:0; } aside,.copy { display:none; } main { padding:0; } h2 { page-break-after:avoid; } pre,table,blockquote { page-break-inside:avoid; } a { color:inherit; text-decoration:none; } }
+</style>
+</head>
+<body>
+<div class="layout">
+<aside><h2>目录</h2><div class="toc">
+<ul>
+<li><a href="#mango">Mango 主题一比一复刻：差距清单与改造规格</a><ul>
+<li><a href="#0">0. 结论先说</a></li>
+<li><a href="#1-p0">1. 全局基线：数值对照（P0，必须先改）</a></li>
+<li><a href="#2-p1">2. 首屏结构（P1）</a></li>
+<li><a href="#3-p2">3. 文章卡片逐项对齐（P2）</a></li>
+<li><a href="#4-p3">4. 侧栏组件（P3）</a></li>
+<li><a href="#5">5. 页面与功能矩阵</a></li>
+<li><a href="#6">6. 改造路线（按优先级，文件级映射）</a></li>
+<li><a href="#7">7. 验收清单（改完逐项打勾）</a></li>
+<li><a href="#8-qoder">8. 可直接复制给 Qoder 的指令</a></li>
+<li><a href="#_1">附：合规提示</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</aside>
+<main>
+<h1 id="mango">Mango 主题一比一复刻：差距清单与改造规格</h1>
+<blockquote>
+<p><strong>对比基准</strong>：原版演示站 <code>https://mango.huitheme.cn/</code>（不是介绍页 <code>huitheme.com/mango-theme.html</code>）
+<strong>被评对象</strong>：<code>/Users/ming/mango-astro</code>，本地 <code>http://localhost:4321/</code>
+<strong>分析日期</strong>：2026-11-06 ｜ 版本 v1.0
+<strong>证据</strong>：原版 <code>style.css</code>（31KB，Theme Version 1.6.20241202）、原版首页 HTML（57KB）、两边 1440px 截图</p>
+</blockquote>
+<h2 id="0">0. 结论先说</h2>
+<p><strong>这不是「细节没调好」，是骨架级偏差</strong>：Qoder 做的是「一个朋友圈风格的通用博客」，而不是 Mango 的复刻。最影响观感的 6 个根因：</p>
+<ol>
+<li><strong>主题色错了</strong>：原版整站是蓝色 <code>#4270f5</code>，本地 <code>tailwind.config.mjs</code> 把 <code>mango</code> 定义成红色 <code>#ff5252</code> → 标签、置顶、序号、hover 全红。</li>
+<li><strong>容器宽度错了</strong>：原版 <code>.container{max-width:900px}</code>，本地 <code>max-w-6xl</code>（1152px）→ 所有元素被放大约 28%，窄版双栏的「精致感」消失。</li>
+<li><strong>首屏轮播整个缺失</strong>：原版首屏是 2 帧大图 carousel（带「置顶精彩」蓝标、渐变标题、右下指示点），本地直接从文章列表开始。</li>
+<li><strong>导航结构错了</strong>：原版是分类菜单（风景/旅拍/科技⌄/主题下载/旅游地图）+ 搜索 + 深色切换，本地是 首页/归档/标签/关于。</li>
+<li><strong>文章卡片内部版式错了</strong>：原版正文/图片/标签/数据行从头像右侧<strong>缩进 60px</strong>，图片区只占<strong>内容宽 66%</strong>，且按图片数量 2–9 自动布局；本地全部贴左、图片占满宽、等分 grid。</li>
+<li><strong>侧栏组件错配</strong>：原版是「热门文章（首条大图）/ 热门标签 / 最近评论」，本地是「最新文章 / 热门文章（红序号）/ 标签云（粉 pill）」。</li>
+</ol>
+<p>其余：背景纹理、页脚深色、搜索、灯箱、分页、详情页结构、暗色色板、Bootstrap Icons 图标体系也都未对齐。</p>
+<hr />
+<h2 id="1-p0">1. 全局基线：数值对照（P0，必须先改）</h2>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>原版（<code>style.css</code> 实测）</th>
+<th>本地现状</th>
+<th>改哪个文件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>容器宽度</td>
+<td><code>@media(min-width:1200px){.container{max-width:900px}}</code></td>
+<td><code>max-w-6xl</code> = 1152px</td>
+<td><code>BaseLayout.astro</code>、<code>Header.astro</code>、<code>Footer.astro</code></td>
+</tr>
+<tr>
+<td>栅格</td>
+<td>Bootstrap <code>col-lg-8</code> / <code>col-lg-4</code>（含 gutter）</td>
+<td><code>grid-cols-12</code> 8/4 <code>gap-6</code></td>
+<td><code>pages/index.astro</code></td>
+</tr>
+<tr>
+<td>主色</td>
+<td><code>#4270f5</code> / <code>#4270f6</code> / <code>#0a59f8</code>（渐变）</td>
+<td><code>#ff5252</code> / <code>#ff6b6b</code></td>
+<td><code>tailwind.config.mjs</code></td>
+</tr>
+<tr>
+<td>链接 hover</td>
+<td><code>#0056b3</code></td>
+<td>red</td>
+<td><code>global.css</code></td>
+</tr>
+<tr>
+<td>body</td>
+<td><code>PingFang SC, Microsoft YaHei...</code>；<code>color:#333</code>；<code>font-size:14px</code></td>
+<td><code>-apple-system...</code> + Tailwind 默认 16px、gray-900</td>
+<td><code>global.css</code></td>
+</tr>
+<tr>
+<td>背景</td>
+<td><code>#f7f7f7</code> + <code>background-image:var(--ds_background)</code>（波浪 SVG）+ <code>background-attachment:fixed</code></td>
+<td><code>#f5f5f5</code> 纯色</td>
+<td><code>global.css</code> + <code>public/</code></td>
+</tr>
+<tr>
+<td>header</td>
+<td><code>background:#fff; padding:15px 0; margin-bottom:1.5rem; box-shadow:0 1px 20px 12px #0808080f</code></td>
+<td><code>bg-white/90 backdrop-blur border-b</code></td>
+<td><code>Header.astro</code></td>
+</tr>
+<tr>
+<td>logo</td>
+<td>30px 高 PNG 芒果图 + <code>b</code> 粗体 <code>Mango</code>（20px, letter-spacing .5px）</td>
+<td>emoji <code>🥭</code> + 红字</td>
+<td><code>Header.astro</code> + <code>public/images</code></td>
+</tr>
+<tr>
+<td>菜单项</td>
+<td><code>padding:10px 18px; font-size:14px</code>，支持下拉 <code>sub-menu</code>（160px 宽、圆角 10px、阴影）</td>
+<td><code>space-x-6</code> 的 4 个平铺项</td>
+<td><code>Header.astro</code></td>
+</tr>
+<tr>
+<td>卡片</td>
+<td><code>.post_loop{background:#fff;padding:30px;margin-bottom:20px;border-radius:10px}</code></td>
+<td><code>card p-5</code>（20px）+ <code>rounded-xl</code>(12px) + border + shadow</td>
+<td><code>global.css</code> / <code>MomentCard.astro</code></td>
+</tr>
+<tr>
+<td>文章卡片内容缩进</td>
+<td><code>.post_loop_conter{margin-left:60px}</code></td>
+<td>0（全部贴左）</td>
+<td><code>MomentCard.astro</code></td>
+</tr>
+<tr>
+<td>组件圆角</td>
+<td>widget <code>4px</code>、图片 <code>8px</code>、标签 <code>5px</code>、搜索框 <code>8px</code></td>
+<td>普遍 <code>rounded-xl</code> / <code>rounded-full</code></td>
+<td>各组件</td>
+</tr>
+<tr>
+<td>页脚</td>
+<td><code>.footbox{background:#1f2327;padding:25px 0;font-size:12px}</code>（深色 + 备案/友链）</td>
+<td>白底三栏 + GitHub/Twitter 图标</td>
+<td><code>Footer.astro</code></td>
+</tr>
+<tr>
+<td>滚动条</td>
+<td><code>width:5px; thumb:#222</code>（暗色 <code>#212121/#333</code>）</td>
+<td>系统默认</td>
+<td><code>global.css</code></td>
+</tr>
+<tr>
+<td>暗色色板</td>
+<td>背景 <code>#191919</code>、卡片 <code>#212121</code>、header <code>#151516</code>、强调 <code>#4270f5</code>、灯泡 <code>#ffc008</code></td>
+<td>Tailwind <code>gray-900/800</code> + 红</td>
+<td><code>global.css</code></td>
+</tr>
+<tr>
+<td>图标体系</td>
+<td>Bootstrap Icons（<code>bi bi-heart-fill</code> / <code>bi-eye-fill</code> / <code>bi-chat-square-text-fill</code> / <code>bi-three-dots</code> …）</td>
+<td>手写 inline SVG + emoji</td>
+<td>全组件</td>
+</tr>
+</tbody>
+</table>
+<p><strong>建议</strong>：这类「逐像素」对齐，用 Tailwind 近似会永远差一点。最省事的做法是<strong>保留原版的 DOM class 命名 + 用等价 CSS 重写数值</strong>，并引入 MIT 许可的 Bootstrap 5 与 Bootstrap Icons 提供栅格/轮播/offcanvas 行为。</p>
+<hr />
+<h2 id="2-p1">2. 首屏结构（P1）</h2>
+<p>原版首页 DOM 顺序（来自首页 HTML）：</p>
+<button class="copy" type="button">复制</button><pre><code>header.sticky-top &gt; .container &gt; .top(.top_l.logo + nav.header-menu + .top_r[搜索/主题])
+main .container &gt; .row
+  ├─ .col-lg-8
+  │    ├─ .index_banner &gt; #banner.carousel.slide &gt; .carousel-inner &gt; .banlist ×2
+  │    │     └─ 左上蓝标「置顶精彩」/ 底部白字标题 / 右下 10px 圆点 / hover 左右 40px 圆按钮
+  │    └─ .post_loop ×8（每页 8 条）
+  └─ .col-lg-4
+       └─ .widget ×3：热门文章 / 热门标签 / 最近评论
+footer.footbox（深色）
+</code></pre>
+<p>本地：<code>header → grid(文章列表 / 3 个 widget) → footer</code>，<strong>没有 <code>.index_banner</code>、没有搜索、没有分页</strong>。</p>
+<p>轮播关键数值（原版 CSS 原文）：</p>
+<ul>
+<li><code>.index_banner{margin-bottom:25px}</code></li>
+<li><code>.banlist:before{background:linear-gradient(to top,black,#ffffff00);opacity:.6}</code></li>
+<li><code>.banlist h2{position:absolute;bottom:0;color:#fff;font-size:16px;padding:20px 25px}</code></li>
+<li><code>.banlist i{background:#4270f5;font-size:12px;padding:3px 7px}</code>（左上角标签）</li>
+<li><code>#banner .carousel-indicators{right:20px;bottom:14px;justify-content:flex-end}</code>；<code>button{width:10px;height:10px;border-radius:50%}</code></li>
+<li><code>#banner:hover .banlist img{transform:scale(1.1)}</code>；左右控制 <code>i</code> 40×40 圆形 <code>#242424</code>，hover <code>#4270f6</code></li>
+</ul>
+<blockquote>
+<p>轮播数据可放 <code>src/config/banner.ts</code>，2–3 帧；用 Bootstrap Carousel（MIT）或原生 JS 都行，静态站完全可实现。</p>
+</blockquote>
+<hr />
+<h2 id="3-p2">3. 文章卡片逐项对齐（P2）</h2>
+<table>
+<thead>
+<tr>
+<th>部位</th>
+<th>原版规则</th>
+<th>本地现状</th>
+<th>差距</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>作者行</td>
+<td>头像 40×40 圆形；名字 <code>h3</code> 14px；时间 12px <code>#C6C6C6</code>；右侧 <code>bi-three-dots</code> 蓝色 24px</td>
+<td>红底白字 M 圆 avatar、无「…」按钮、相对时间「x天前」</td>
+<td>头像素材、时间格式、更多菜单</td>
+</tr>
+<tr>
+<td>标题</td>
+<td><code>.post_loop_title{font-size:18px;margin-bottom:15px}</code>，正文 14px <code>line-height:1.8</code> <code>font-weight:300</code></td>
+<td>把 <code>title + description</code> 拼成一段纯文本，无标题层级</td>
+<td><strong>结构错误</strong>，需拆成 <code>&lt;h2 class="post_loop_title"&gt;</code> + <code>&lt;p&gt;</code></td>
+</tr>
+<tr>
+<td>正文区</td>
+<td><code>.post_loop_conter{margin-left:60px}</code></td>
+<td>无缩进</td>
+<td>版式核心差异</td>
+</tr>
+<tr>
+<td>图片容器</td>
+<td><code>.post_images{width:66%;display:table;margin:0 -1%}</code></td>
+<td>100% 宽 grid</td>
+<td>宽度差 34%</td>
+</tr>
+<tr>
+<td>图片布局</td>
+<td><code>post_img_2</code>…<code>post_img_9</code> 共 8 套规则，首图 62.67%、其余 29.33%/46%/21%，<code>margin:2%</code>，<code>border-radius:8px</code></td>
+<td>只有 grid-1/2/3/4/9，&gt;4 一律三列等分</td>
+<td><strong>介绍页明确写的核心特性「自动识别图片数量并预设布局」没实现</strong></td>
+</tr>
+<tr>
+<td>超出张数</td>
+<td>最后一张 <code>&lt;b&gt;</code> 黑色半透明遮罩 <code>+23</code>（<code>font-size:20px</code>）</td>
+<td>无</td>
+<td>缺失</td>
+</tr>
+<tr>
+<td>灯箱</td>
+<td><code>assets/js/fancybox.js</code> + <code>fancybox.css</code>，点击放大</td>
+<td>无，纯 <code>&lt;img&gt;</code></td>
+<td>缺失（可用 GLightbox / PhotoSwipe 等 MIT 方案替代）</td>
+</tr>
+<tr>
+<td>标签</td>
+<td><code>.post_loop_tag{margin-top:30px}</code>；<code>em{background:#F5F7F9;color:#9BC2D9;border-radius:5px;padding:3px 10px;font-size:12px}</code></td>
+<td>灰/粉 pill、圆角 full、在图片正下方</td>
+<td>颜色/圆角/间距全不同</td>
+</tr>
+<tr>
+<td>数据行</td>
+<td><code>.post_info_footer{margin-top:20px}</code>；<code>span{color:#a8c2d2;font-size:12px;margin-right:25px}</code>；三项为 <strong>评论数 / 浏览量 / 点赞数</strong>（<code>bi-chat-square-text-fill</code> <code>bi-eye-fill</code> <code>bi-heart-fill</code>）</td>
+<td>顶部 <code>border-t</code> + 点赞/评论/分享按钮，评论数恒为 0，点赞数取 <code>views</code></td>
+<td>数据语义错位：把浏览量当点赞</td>
+</tr>
+<tr>
+<td>置顶</td>
+<td>由轮播 + 排序体现，卡片上无「置顶」胶囊</td>
+<td>右上角红色「置顶」胶囊</td>
+<td>多余元素</td>
+</tr>
+<tr>
+<td>卡片点击</td>
+<td>原版卡片本身不是整块 <code>&lt;a&gt;</code>，标题/图片各自可点</td>
+<td><code>PostCard.astro</code> 把整卡片包在 <code>&lt;a&gt;</code> 里</td>
+<td>交互语义不同（图片需留给灯箱）</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="4-p3">4. 侧栏组件（P3）</h2>
+<p>原版 widget 通用样式：<code>.widget{background:#FFF;padding:20px 22px;border-radius:4px;margin-bottom:20px}</code>；<code>.widget-title{font-size:16px;text-transform:uppercase;padding-left:1.25rem;margin-bottom:35px}</code>，<code>::before</code> 是 8×8 蓝色渐变圆点，<code>::after</code> 是通栏 1px <code>#f7f7f7</code> 分隔线（<code>left:-22px;right:-22px;bottom:-15px</code>）。</p>
+<table>
+<thead>
+<tr>
+<th>原版 widget</th>
+<th>关键样式</th>
+<th>本地对应</th>
+<th>差距</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>热门文章</strong> <code>widget_hot_posts</code></td>
+<td>首条 <code>img{width:100%}</code> + 渐变遮罩 + 白字标题/留言数浮在图上；其余 <code>img{width:75px;border-radius:4px}</code> + 13px 标题 + 12px 灰色留言数</td>
+<td><code>HotPostsWidget.astro</code>：红色数字方块列表，无缩略图</td>
+<td>结构与样式都不对</td>
+</tr>
+<tr>
+<td><strong>热门标签</strong> <code>widget_hot_tags</code></td>
+<td><code>a{font-size:13px;padding:5px 13px;border-radius:3px;background:#f5f5f5;margin:0 6px 6px 0}</code>；hover <code>background:#4270f5;color:#fff</code>；<code>.hot:before</code> 12px 蓝点带白边</td>
+<td><code>TagsWidget.astro</code>：粉色 pill + <code>(n)</code> 计数 + 按热度放大字号</td>
+<td>形状、颜色、计数、热点标记都不对</td>
+</tr>
+<tr>
+<td><strong>最近评论</strong> <code>widget_comments</code></td>
+<td><code>li</code> flex + 24px 圆头像 + 两行截断的评论摘要 + 时间</td>
+<td><strong>完全没有</strong></td>
+<td>缺一个组件</td>
+</tr>
+<tr>
+<td>最新文章（时间轴）</td>
+<td>CSS 里有 <code>.widget_recent_entries</code>（左边框 2px + 圆点，hover 变黄）但演示站首页未挂载</td>
+<td><code>RecentPostsWidget.astro</code> 普通列表</td>
+<td>本地多挂了一个原版首页没有的组件</td>
+</tr>
+<tr>
+<td>搜索</td>
+<td>顶部 <code>#c_sousuo</code> offcanvas + <code>widget_search</code>（36px 输入框 + 60px 蓝色按钮 <code>#4270f6</code>）</td>
+<td>无</td>
+<td>缺失</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5">5. 页面与功能矩阵</h2>
+<table>
+<thead>
+<tr>
+<th>功能</th>
+<th>原版</th>
+<th>本地</th>
+<th>能否一比一复刻</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>首页轮播</td>
+<td>✅ Bootstrap Carousel 2 帧</td>
+<td>❌</td>
+<td>✅ 可实现</td>
+</tr>
+<tr>
+<td>自动图片布局 2–9 张 + <code>+N</code></td>
+<td>✅</td>
+<td>部分</td>
+<td>✅ 可实现</td>
+</tr>
+<tr>
+<td>图片灯箱</td>
+<td>✅ Fancybox</td>
+<td>❌</td>
+<td>✅ 可实现（换 MIT 的 GLightbox/PhotoSwipe）</td>
+</tr>
+<tr>
+<td>分类导航 + 下拉子菜单</td>
+<td>✅</td>
+<td>❌（是功能页导航）</td>
+<td>✅ 可实现</td>
+</tr>
+<tr>
+<td>搜索（offcanvas + widget）</td>
+<td>✅ WP 搜索</td>
+<td>❌</td>
+<td>✅ 可实现（Pagefind / 本地 JSON 索引）</td>
+</tr>
+<tr>
+<td>移动端 offcanvas 菜单</td>
+<td>✅ Bootstrap offcanvas</td>
+<td>折叠 ul</td>
+<td>✅ 可实现</td>
+</tr>
+<tr>
+<td>暗黑模式（无闪烁）</td>
+<td>✅ <code>isDarkMode</code> + head 内联脚本</td>
+<td>✅ <code>theme</code> + 内联脚本</td>
+<td>✅ 已实现，但色板/默认值需对齐</td>
+</tr>
+<tr>
+<td>响应式</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 已有</td>
+</tr>
+<tr>
+<td>传统分页 / AJAX 翻页</td>
+<td>✅ <code>.posts-nav</code></td>
+<td>❌ 全量列表无分页</td>
+<td>✅ 传统分页可实现；AJAX 可用客户端 JS 取预生成 JSON</td>
+</tr>
+<tr>
+<td>文章详情页</td>
+<td><code>.post_container_title</code> / <code>.post_container</code> / <code>.post_author</code>（分享打赏蓝按钮）/ <code>.post_related</code> / <code>#comments</code></td>
+<td>朋友圈卡片 + prose + 返回按钮</td>
+<td>✅ 结构可重写对齐</td>
+</tr>
+<tr>
+<td>分类页 / <code>/map</code> 旅游地图</td>
+<td>✅</td>
+<td>部分（无 map）</td>
+<td>✅ 可实现</td>
+</tr>
+<tr>
+<td>相关文章</td>
+<td>✅ 圆点列表</td>
+<td>❌</td>
+<td>✅ 可实现</td>
+</tr>
+<tr>
+<td>返回顶部、备案/友链页脚</td>
+<td>✅</td>
+<td>❌</td>
+<td>✅ 可实现</td>
+</tr>
+<tr>
+<td><strong>WP 后台可视化自定义</strong>（外观→自定义实时预览）</td>
+<td>✅</td>
+<td>❌</td>
+<td>⚠️ <strong>静态站无此概念</strong>：改成 <code>src/config/site.ts</code> + 重新构建；或接 Sveltia/Decap CMS</td>
+</tr>
+<tr>
+<td><strong>AJAX 评论 + 最近评论 widget</strong></td>
+<td>✅ 数据库</td>
+<td>❌</td>
+<td>⚠️ <strong>需服务端</strong>：接 Giscus / Twikoo，再自行渲染「最近评论」列表</td>
+</tr>
+<tr>
+<td><strong>真实点赞数 / 浏览量</strong></td>
+<td>✅ 数据库计数</td>
+<td>写死在 frontmatter</td>
+<td>⚠️ <strong>需服务端</strong>：Cloudflare Workers + KV / 不蒜子等计数服务；纯静态只能显示静态值</td>
+</tr>
+<tr>
+<td>登录、会员、短代码、WP 插件</td>
+<td>✅</td>
+<td>❌</td>
+<td>❌ 不适用静态架构，属于「无法实现」</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>结论：视觉与交互能复刻到 95% 以上；真正需要让步的只有「服务端动态数据」这一类，都能用第三方服务等价替代。</p>
+</blockquote>
+<hr />
+<h2 id="6">6. 改造路线（按优先级，文件级映射）</h2>
+<table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>任务</th>
+<th>涉及文件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>P0</strong> 全局基线</td>
+<td>容器改 900px、主色换蓝、字体/背景纹理/滚动条/暗色色板、卡片 padding 30px + radius 10px、widget radius 4px</td>
+<td><code>global.css</code>、<code>tailwind.config.mjs</code>、<code>BaseLayout.astro</code></td>
+</tr>
+<tr>
+<td><strong>P1</strong> 首屏</td>
+<td>新增轮播组件 + banner 数据、header 换成「logo PNG + 分类菜单（含下拉）+ 搜索 + 主题切换」、页脚换深色</td>
+<td>新增 <code>components/Banner.astro</code>、<code>config/banner.ts</code>；改 <code>Header.astro</code>、<code>Footer.astro</code>、<code>index.astro</code></td>
+</tr>
+<tr>
+<td><strong>P2</strong> 文章卡片</td>
+<td>拆分标题/正文、加 60px 缩进、重写图片布局（2–9 各自规则 + <code>+N</code> 遮罩 + 灯箱）、标签样式、底部三元数据、换 Bootstrap Icons、去掉整卡 <code>&lt;a&gt;</code> 和红色置顶胶囊</td>
+<td><code>MomentCard.astro</code>、<code>MomentImages.astro</code>、<code>PostCard.astro</code>、<code>content/config.ts</code>（新增 comments/views/likes 字段）</td>
+</tr>
+<tr>
+<td><strong>P3</strong> 侧栏</td>
+<td>热门文章改「首条大图 + 缩略图列表」、热门标签改方块 + hot 蓝点、新增最近评论、时间轴样式、搜索 widget</td>
+<td>改 <code>HotPostsWidget.astro</code>、<code>TagsWidget.astro</code>；新增 <code>RecentCommentsWidget.astro</code>、<code>SearchWidget.astro</code>；改 <code>Sidebar.astro</code></td>
+</tr>
+<tr>
+<td><strong>P4</strong> 页面与功能</td>
+<td>详情页按 post_container 系列重写、分页、分类页、相关文章、返回顶部、移动端 offcanvas</td>
+<td><code>pages/posts/[slug].astro</code>、新增 <code>pages/categories/[slug].astro</code>、<code>components/Pagination.astro</code> 等</td>
+</tr>
+</tbody>
+</table>
+<p><strong>依赖建议</strong>：Bootstrap 5（MIT）提供栅格/轮播/offcanvas；Bootstrap Icons（MIT）提供图标；灯箱用 GLightbox 或 PhotoSwipe（MIT）替代有许可限制的 Fancybox；搜索用 Pagefind（MIT）。</p>
+<hr />
+<h2 id="7">7. 验收清单（改完逐项打勾）</h2>
+<ul>
+<li class="task">☐ 1440px 截图：内容区总宽约 900px 且居中，左栏 600 / 右栏 300</li>
+<li class="task">☐ 首屏有轮播：蓝标、白字标题、右下圆点、hover 箭头与图片缩放</li>
+<li class="task">☐ 导航为分类项 + 下拉 + 搜索图标 + 深色切换；logo 是芒果 PNG + 黑色粗体 Mango</li>
+<li class="task">☐ 页面背景可见淡波浪纹理且不随滚动移动</li>
+<li class="task">☐ 卡片：30px 内边距、10px 圆角、正文从头像右侧 60px 起、无红色元素</li>
+<li class="task">☐ 3 张/5 张/9 张图片三种文章的排布与原版一致，&gt;9 张显示 <code>+N</code> 遮罩，点击可放大</li>
+<li class="task">☐ 标签淡蓝方块、底部三项数据（评论/浏览/点赞）带 bi 图标</li>
+<li class="task">☐ 侧栏顺序与样式：热门文章（大图）→ 热门标签 → 最近评论</li>
+<li class="task">☐ 页脚深色 <code>#1f2327</code>，含备案/版权/友链</li>
+<li class="task">☐ 深色模式切到 <code>#191919</code> 背景、<code>#212121</code> 卡片，主题色仍为蓝</li>
+<li class="task">☐ 375px 宽度：汉堡 → offcanvas 菜单，卡片单栏</li>
+</ul>
+<hr />
+<h2 id="8-qoder">8. 可直接复制给 Qoder 的指令</h2>
+<button class="copy" type="button">复制</button><pre><code>请以 https://mango.huitheme.cn/ 为唯一视觉基准，对 /Users/ming/mango-astro 做一比一复刻，
+不要用「朋友圈风格」的通用实现去近似。
+
+依据同目录《一比一复刻-差距清单与改造规格.md》逐项执行，优先级 P0→P4：
+1. 先把容器宽度改到 900px、主题色从 #ff5252 改为 #4270f5、字体/背景纹理/暗色色板对齐；
+2. 补首屏轮播，header 改成分类菜单 + 搜索 + 主题切换，页脚改深色；
+3. 文章卡片按 .post_loop 结构重写：60px 缩进、.post_images 宽度 66%、
+   post_img_2..9 八套布局 + &quot;+N&quot; 遮罩 + 灯箱、标签与底部三项数据；
+4. 侧栏改为「热门文章（首条大图）/ 热门标签 / 最近评论」，widget-title 蓝点 + 通栏分隔线；
+5. 详情页、分页、分类页、搜索、移动端 offcanvas 补齐。
+
+原版 CSS 精确数值见规格文档第 1–4 节；请用等价 CSS 重写，不要直接复制商业主题的
+CSS/图片/字体文件。每完成一个阶段，用 1440px 和 375px 截图与原版对比后再继续。
+确实需要服务端的功能（评论计数、点赞、浏览量、WP 后台）按规格文档第 5 节用
+Giscus/Twikoo/Workers KV 等价替代，并在 README 说明差异。
+</code></pre>
+<hr />
+<h2 id="_1">附：合规提示</h2>
+<p>Mango 是绘主题发布的<strong>免费 WordPress 主题</strong>，介绍页明确写着「免费主题请保留底部版权信息」。本次分析只读取了公开演示页的 HTML/CSS 用于视觉比对。若要公开发布复刻版：</p>
+<ul>
+<li><strong>不要</strong>直接拷贝原主题的 CSS、图片、字体、JS 文件；按数值重写等价实现（本规格已给出全部关键数值）。</li>
+<li>保留或替换成你自己的版权信息，遵守原主题授权条款。</li>
+<li>Bootstrap / Bootstrap Icons / Pagefind / GLightbox / PhotoSwipe 均为 MIT，可自由使用；Fancybox 有单独许可，建议替换。</li>
+</ul>
+<div class="footer">Mango 主题一比一复刻 · 差距清单与改造规格 v1.0 · 2026-11-06</div>
+</main>
+</div>
+<script>
+document.querySelectorAll('.copy').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var pre = b.nextElementSibling;
+    if (!pre || pre.tagName !== 'PRE') return;
+    navigator.clipboard.writeText(pre.innerText).then(function () {
+      b.textContent = '已复制'; setTimeout(function () { b.textContent = '复制'; }, 1500);
+    });
+  });
+});
+</script>
+</body>
+</html>

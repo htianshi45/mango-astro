@@ -1,0 +1,40 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="旅游地图 - Mango">
+  <div class="post-loop">
+    <h1 class="text-xl font-bold text-[#333] dark:text-[#ccc] mb-6">
+      <i class="bi bi-geo-alt mr-2 text-mango"></i>旅游地图
+    </h1>
+    <div class="text-[#333] dark:text-[#ccc] leading-[1.8]">
+      <p class="mb-4">探索我们的旅行足迹，点击标记查看对应地点的摄影作品。</p>
+      
+      <div class="rounded-[10px] overflow-hidden border border-gray-200 dark:border-[#333] bg-gray-100 dark:bg-[#191919]" style="height: 400px;">
+        <div class="flex items-center justify-center h-full text-[#999]">
+          <div class="text-center">
+            <i class="bi bi-map text-5xl block mb-3"></i>
+            <p class="text-sm">地图功能开发中...</p>
+            <p class="text-xs mt-2">将集成高德/百度地图展示旅行路线</p>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="text-lg font-bold mt-8 mb-4">旅行足迹</h2>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div class="p-3 rounded-lg bg-gray-50 dark:bg-[#191919] text-center">
+          <i class="bi bi-geo-alt-fill text-mango text-lg"></i>
+          <p class="text-sm mt-1">风景</p>
+        </div>
+        <div class="p-3 rounded-lg bg-gray-50 dark:bg-[#191919] text-center">
+          <i class="bi bi-geo-alt-fill text-mango text-lg"></i>
+          <p class="text-sm mt-1">旅拍</p>
+        </div>
+        <div class="p-3 rounded-lg bg-gray-50 dark:bg-[#191919] text-center">
+          <i class="bi bi-geo-alt-fill text-mango text-lg"></i>
+          <p class="text-sm mt-1">科技</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

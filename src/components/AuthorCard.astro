@@ -1,0 +1,33 @@
+---
+/* Halo 优化：首页侧栏顶部的站点作者卡
+   对应 /themes/theme-mango/assets/css/style.css:324-332 的 .author_show_box。
+   静态站没有实时评论库，commentCount 由调用方按可用数据传入。 */
+interface Props {
+  name?: string;
+  avatar?: string;
+  link?: string;
+  postCount?: number;
+  commentCount?: number;
+}
+
+const {
+  name = 'Mango',
+  avatar = '/images/avatar-1.svg',
+  link = '/about',
+  postCount = 0,
+  commentCount = 0,
+} = Astro.props;
+---
+
+<div class="author-show-box">
+  <div class="author-show-head">
+    <a href={link} aria-label={name}>
+      <img src={avatar} alt={name} width="70" height="70" />
+    </a>
+    <h3><a href={link}>{name}</a></h3>
+  </div>
+  <div class="author-show-info">
+    <span><i class="bi bi-book"></i><b>文章</b>{postCount}</span>
+    <span><i class="bi bi-chat-square-dots"></i><b>评论</b>{commentCount}</span>
+  </div>
+</div>

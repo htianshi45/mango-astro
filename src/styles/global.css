@@ -1,0 +1,666 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Halo 优化：改用 Halo 站原生 600×600 波纹 SVG；bg-wave.svg 保留便于回滚 */
+  :root {
+    --ds_background: url("/images/bg-halo.svg");
+  }
+
+  .dark {
+    --ds_background: url("/images/bg-halo.svg");
+  }
+
+  html {
+    font-family: 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply min-h-screen text-[#333] dark:text-[#c9c9c9];
+    background-color: #f7f7f7;
+    background-image: var(--ds_background);
+    background-attachment: fixed;
+    background-size: 600px auto;
+  }
+
+  .dark body {
+    background-color: #191919;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #222;
+    border-radius: 3px;
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    background: #333;
+  }
+}
+
+/* Centralized dark mode rules */
+.dark .post-loop,
+.dark .widget,
+.dark .post_container_title,
+.dark .post_container,
+.dark .post_author,
+.dark .post_related {
+  background: #212121;
+}
+
+.dark .site-header,
+.dark .site-footer {
+  background: #151516;
+}
+
+.dark .widget-title::after {
+  background: #191919;
+}
+
+.dark .post-tag {
+  background: #343435;
+}
+
+.dark .comment-item {
+  border-bottom-color: #252525;
+}
+
+.dark .links {
+  background: #1d1d1d;
+}
+
+.dark .pagination-item {
+  background: #2a2a2b;
+}
+
+.dark .hot-dot {
+  border-color: #212121;
+}
+
+@layer components {
+  /* Card styles - matching .post_loop */
+  .post-loop {
+    @apply bg-white dark:bg-[#212121] rounded-[10px] mb-5 overflow-hidden;
+    padding: 30px;
+  }
+
+  /* Widget styles */
+  .widget {
+    @apply bg-white dark:bg-[#212121] rounded-[10px] mb-5;
+    padding: 20px 22px;
+  }
+
+  .widget-title {
+    @apply text-base font-bold uppercase mb-8 relative text-[#333] dark:text-[#ccc];
+    padding-left: 1.25rem;
+  }
+
+  .widget-title::before {
+    content: '';
+    @apply absolute left-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full;
+    background: linear-gradient(135deg, #4270f5, #0a59f8);
+  }
+
+  .widget-title::after {
+    content: '';
+    @apply absolute left-0 bottom-[-15px] w-full h-px bg-[#f7f7f7] dark:bg-[#333];
+    margin-left: -22px;
+    margin-right: -22px;
+    width: calc(100% + 44px);
+  }
+
+  /* Tag styles */
+  .post-loop-tag {
+    margin-top: 30px;
+  }
+
+  .post-tag {
+    @apply inline-block text-xs mb-2;
+    margin-right: 6px;
+    background: #F5F7F9;
+    color: #9BC2D9;
+    border-radius: 3px;
+    padding: 5px 13px;
+  }
+
+  .post-tag:hover {
+    background: #4270f5;
+    color: #fff;
+  }
+
+  .post-tag i {
+    margin-right: 2px;
+  }
+
+  /* Button styles */
+  .btn-primary {
+    @apply text-white font-medium rounded transition-colors duration-200;
+    background: #4270f5;
+    padding: 8px 20px;
+  }
+
+  .btn-primary:hover {
+    background: #0a59f8;
+  }
+
+  .btn-secondary {
+    @apply font-medium rounded transition-colors duration-200;
+    background: #f0f0f0;
+    color: #333;
+    padding: 8px 20px;
+  }
+
+  .btn-secondary:hover {
+    background: #e0e0e0;
+  }
+
+  .dark .btn-secondary {
+    background: #333;
+    color: #ccc;
+  }
+
+  .dark .btn-secondary:hover {
+    background: #444;
+  }
+
+  /* Link styles */
+  .link {
+    @apply transition-colors duration-200;
+    color: #4270f5;
+  }
+
+  .link:hover {
+    color: #0056b3;
+  }
+
+  /* Nav link styles */
+  .nav-link {
+    @apply text-[#333] dark:text-[#ccc] hover:text-mango transition-colors duration-200 font-medium text-sm;
+    padding: 10px 18px;
+  }
+
+  .nav-link-active {
+    @apply text-mango;
+  }
+
+  /* Halo 优化：取消原版 60px 缩进，标题/摘要/图片与头像左对齐 */
+  .moment-content-area {
+    margin-left: 0;
+    min-width: 0;
+  }
+
+  /* +N overlay */
+  .img-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 20px;
+    font-weight: bold;
+    background: #0000006e;
+    z-index: 1;
+  }
+
+  /* Post footer data */
+  .post-info-footer {
+    @apply flex items-center mt-5;
+  }
+
+  .post-info-footer span {
+    @apply text-xs mr-6;
+    color: #a8c2d2;
+  }
+
+  /* Sidebar widget items */
+  .widget-hot-post {
+    @apply flex mb-3;
+  }
+
+  .widget-hot-post img {
+    @apply rounded flex-shrink-0;
+    width: 75px;
+  }
+
+  .widget-hot-post:first-child img {
+    width: 100%;
+  }
+
+  /* Header styles */
+  .site-header {
+    @apply bg-white dark:bg-[#151516] sticky top-0 z-50;
+    padding: 15px 0;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 20px 12px rgba(8, 8, 8, 0.06);
+  }
+
+  /* Footer styles */
+  .site-footer {
+    @apply text-xs;
+    background: #1f2327;
+    padding: 25px 0;
+    color: #999;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* ==========================================================================
+   Halo 优化移植（2026-11-07）
+   来源：/themes/theme-mango/assets/css/mango.css 的 742-896 行及模板层改动
+   刻意放在 @layer 之外：Tailwind 3 不会 purge，且优先级高于 utilities。
+   ========================================================================== */
+
+/* ---- 卡片：圆角、hover 阴影、标题左对齐、标签长词换行 ---- */
+.post-loop {
+  transition: box-shadow 0.3s ease;
+}
+.post-loop:hover {
+  box-shadow: 0 6px 26px -8px rgba(0, 0, 0, 0.14);
+}
+.post-loop-title {
+  line-height: 1.5;
+  text-align: left;
+}
+.post-tag {
+  word-break: break-all;
+}
+
+/* ---- 摘要：最多三行、弱化颜色，与标题形成层次 ---- */
+.post-excerpt {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: #8c8989;
+  font-size: 13.5px;
+  line-height: 1.75;
+  margin-bottom: 14px;
+}
+.dark .post-excerpt {
+  color: #9a9a9a;
+}
+
+/* ---- 九宫格：全档位统一满宽 3 列栅格（原版 66% 宽、900 下过小） ---- */
+.post-images {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+  margin: 6px 0 0;
+  font-size: 0;
+}
+.post-images > a.post-img {
+  display: block;
+  float: none;
+  width: auto !important;
+  margin: 0 !important;
+  position: relative;
+  z-index: 2;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f0f1f3;
+  aspect-ratio: 1 / 1;
+}
+.dark .post-images > a.post-img {
+  background: #2a2a2c;
+}
+.post-images > a.post-img img {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s ease;
+}
+.post-images > a.post-img:hover img {
+  transform: scale(1.05);
+}
+.post-images .img-overlay {
+  font-size: 22px;
+}
+.post-images.post-img-1 {
+  grid-template-columns: 1fr;
+}
+.post-images.post-img-1 > a.post-img {
+  aspect-ratio: 16 / 9;
+  max-height: 400px;
+}
+.post-images.post-img-2,
+.post-images.post-img-4 {
+  grid-template-columns: repeat(2, 1fr);
+}
+.post-images.post-img-2 > a.post-img {
+  aspect-ratio: 4 / 3;
+}
+
+/* ---- 响应式：窄版紧凑、宽版放大 ---- */
+@media (min-width: 1400px) {
+  .post-loop {
+    padding: 32px 36px;
+  }
+  .post-loop-title {
+    font-size: 20px;
+  }
+  .post-images {
+    gap: 8px;
+  }
+  .post-images.post-img-1 > a.post-img {
+    aspect-ratio: 16 / 8;
+    max-height: 470px;
+  }
+}
+@media (max-width: 768px) {
+  .post-loop-title {
+    font-size: 17px;
+    margin-bottom: 10px;
+  }
+  .post-excerpt {
+    line-height: 1.7;
+    margin-bottom: 12px;
+  }
+  .post-images {
+    gap: 4px;
+  }
+}
+
+/* ---- 文章正文：超宽屏限制行长 + Halo 编辑器元素兜底 ---- */
+@media (min-width: 1400px) {
+  .post-content {
+    max-width: 880px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+.post-content img {
+  max-width: 100%;
+  height: auto;
+}
+.post-content pre {
+  position: relative;
+  background: #282922;
+  color: #e6e6e6;
+  padding: 34px 18px 16px;
+  border-radius: 8px;
+  overflow: auto;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.post-content pre::before {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  background: #fc625d;
+  width: 12px;
+  height: 12px;
+  left: 14px;
+  top: 12px;
+  box-shadow: 20px 0 #fdbc40, 40px 0 #35cd4b;
+}
+.post-content pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+  font-size: 13px;
+}
+.post-content :not(pre) > code {
+  background: #f2f3f5;
+  color: #e0498a;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.92em;
+}
+.dark .post-content :not(pre) > code {
+  background: #2c2c2e;
+}
+.post-content table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.post-content th,
+.post-content td {
+  border: 1px solid #e7e7e7;
+  padding: 10px 14px;
+}
+.dark .post-content th,
+.dark .post-content td {
+  border-color: #333;
+}
+
+/* ---- 侧栏作者卡（对齐 Halo .author_show_box） ---- */
+.author-show-box {
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  text-align: center;
+}
+.dark .author-show-box {
+  background: #212121;
+}
+.author-show-head {
+  padding: 30px 30px 0;
+}
+.author-show-head img {
+  border-radius: 50%;
+  margin: 0 auto 15px;
+  display: block;
+  object-fit: cover;
+  background: #f0f1f3;
+}
+.dark .author-show-head img {
+  background: #2a2a2c;
+}
+.author-show-head h3 {
+  font-size: 16px;
+  margin: 0 0 15px;
+  color: #333;
+}
+.dark .author-show-head h3 {
+  color: #ccc;
+}
+.author-show-info {
+  padding: 5px 0 20px;
+  color: #6a6a6a;
+  font-size: 12px;
+}
+.dark .author-show-info {
+  color: #9a9a9a;
+}
+.author-show-info span {
+  margin: 0 10px;
+  white-space: nowrap;
+}
+.author-show-info span i {
+  margin-right: 8px;
+}
+.author-show-info span b {
+  font-weight: inherit;
+  margin-right: 4px;
+}
+
+/* ---- 侧栏热门文章缩略图：88px / 4:3 ---- */
+.hot-post-thumb {
+  width: 88px;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 4px;
+  background: #f0f1f3;
+  flex-shrink: 0;
+}
+.dark .hot-post-thumb {
+  background: #2a2a2c;
+}
+
+/* ---- 全站图片灯箱（微信朋友圈式，零依赖） ----
+   ⚠️ 必须写在全局 CSS，不能写进 .astro 组件的 <style>：
+      浮层由 public/js/lightbox.js 运行时 createElement 生成，不带 data-astro-cid-xxx，
+      Astro 的 scoped 选择器（.lightbox-overlay[data-astro-cid-...]）会全部落空。
+   ⚠️ 也不要写进 @layer components：Tailwind 3 的 purge 会删掉扫描不到的自定义类。 */
+.post-images > a.post-img,
+.post-content img:not([data-no-lightbox]),
+img[data-lightbox] {
+  cursor: zoom-in;
+}
+
+.mango-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 背景单独渐黑，不淡化整层，保证 FLIP 中的图片始终清晰 */
+  background-color: rgba(0, 0, 0, 0);
+  transition: background-color 0.3s ease;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.mango-lightbox.is-solid { background-color: #000; }
+.mango-lightbox.is-closing { pointer-events: none; }
+/* 无对应缩略图时退回淡出；有缩略图时走 FLIP 缩回，不淡出 */
+.mango-lightbox.is-closing:not(.is-flipping) .mango-lightbox-img {
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+.mango-lightbox.is-closing .mango-lightbox-btn,
+.mango-lightbox.is-closing .mango-lightbox-counter,
+.mango-lightbox.is-closing .mango-lightbox-hint,
+.mango-lightbox.is-animating .mango-lightbox-btn,
+.mango-lightbox.is-animating .mango-lightbox-counter,
+.mango-lightbox.is-animating .mango-lightbox-hint {
+  opacity: 0;
+}
+.mango-lightbox-counter,
+.mango-lightbox-hint { transition: opacity 0.22s ease; }
+/* 动画期间隐藏原缩略图，避免放大时出现重影；visibility 不改变布局 */
+.mango-origin-hidden { visibility: hidden !important; }
+@media (prefers-reduced-motion: reduce) {
+  .mango-lightbox { transition: none; }
+  .mango-lightbox-img.is-fade { animation: none; }
+}
+html.lightbox-open,
+html.lightbox-open body {
+  overflow: hidden;
+}
+
+.mango-lightbox-stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 72px;
+  overflow: hidden;
+  touch-action: none;
+}
+.mango-lightbox-img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  cursor: zoom-in;
+  -webkit-user-drag: none;
+  transform-origin: center center;
+  will-change: transform;
+}
+.mango-lightbox-img.is-zoomed {
+  cursor: grab;
+}
+/* 切换图片只淡入；打开 / 关闭的位移与缩放全部由 JS 的 FLIP 控制，避免争抢 transform */
+.mango-lightbox-img.is-fade { animation: mlb-fade 0.2s ease; }
+@keyframes mlb-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.mango-lightbox-btn {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: #fff;
+  font-size: 30px;
+  line-height: 1;
+  background: rgba(255, 255, 255, 0.1);
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.2s ease, opacity 0.22s ease;
+}
+.mango-lightbox-btn:hover { background: rgba(255, 255, 255, 0.24); }
+.mango-lightbox-btn:focus-visible { outline: 2px solid #6b8ff7; outline-offset: 2px; }
+.mlb-close { top: 18px; right: 20px; font-size: 32px; }
+.mlb-prev  { left: 20px;  top: 50%; transform: translateY(-50%); font-size: 42px; }
+.mlb-next  { right: 20px; top: 50%; transform: translateY(-50%); font-size: 42px; }
+
+.mango-lightbox-counter {
+  position: absolute;
+  z-index: 2;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #fff;
+  font-size: 14px;
+  letter-spacing: 1px;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+.mango-lightbox-hint {
+  position: absolute;
+  z-index: 2;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.mango-lightbox-spinner {
+  position: absolute;
+  z-index: 1;
+  display: none;
+  width: 34px;
+  height: 34px;
+  border: 3px solid rgba(255, 255, 255, 0.25);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: mlb-spin 0.8s linear infinite;
+}
+.mango-lightbox.is-loading .mango-lightbox-spinner { display: block; }
+@keyframes mlb-spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 768px) {
+  .mango-lightbox-stage { padding: 56px 12px; }
+  .mango-lightbox-btn { width: 40px; height: 40px; background: rgba(0, 0, 0, 0.28); }
+  .mlb-prev { left: 8px; font-size: 34px; }
+  .mlb-next { right: 8px; font-size: 34px; }
+  .mlb-close { top: 12px; right: 12px; }
+  .mango-lightbox-counter { top: 20px; }
+  .mango-lightbox-hint { display: none; }
+}

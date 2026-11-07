@@ -1,0 +1,26 @@
+---
+// Halo 优化移植：暗色默认跟随系统，防闪烁脚本在 <head> 最先执行。
+// 状态键沿用 Halo 的 isDarkMode（'1' 暗 / '0' 浅），并兼容旧 theme 键。
+---
+
+<script is:inline>
+  (function () {
+    var saved = null;
+    var legacy = null;
+    try {
+      saved = localStorage.getItem('isDarkMode');
+      legacy = localStorage.getItem('theme');
+    } catch (e) {}
+
+    var dark;
+    if (saved === '1' || (saved === null && legacy === 'dark')) {
+      dark = true;
+    } else if (saved === '0' || (saved === null && legacy === 'light')) {
+      dark = false;
+    } else {
+      dark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    }
+
+    if (dark) document.documentElement.classList.add('dark');
+  })();
+</script>

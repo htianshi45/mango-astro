@@ -1,0 +1,81 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Banner from '@/components/Banner.astro';
+import PostCard from '@/components/PostCard.astro';
+import Sidebar from '@/components/Sidebar.astro';
+import Pagination from '@/components/Pagination.astro';
+import { getCollection } from 'astro:content';
+
+const allPosts = await getCollection('posts', ({ data }) => {
+  return data.draft !== true;
+});
+
+const sortedPosts = allPosts.sort((a, b) => {
+  if (a.data.sticky !== b.data.sticky) {
+    return b.data.sticky - a.data.sticky;
+  }
+  return new Date(b.data.pubDate).getTime() - new Date(a.data.pubDate).getTime();
+});
+
+const POSTS_PER_PAGE = 8;
+const currentPage = 1;
+const totalPages = Math.ceil(sortedPosts.length / POSTS_PER_PAGE);
+const paginatedPosts = sortedPosts.slice(0, POSTS_PER_PAGE);
+
+const tagCounts = new Map<string, number>();
+allPosts.forEach(post => {
+  post.data.tags.forEach(tag => {
+    tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+  });
+});
+
+const tags = Array.from(tagCounts.entries()).map(([name, count]) => ({
+  name,
+  count,
+}));
+
+const postData = allPosts.map(post => ({
+  title: post.data.title,
+  slug: post.slug,
+  timestamp: post.data.pubDate,
+  views: post.data.views,
+  comments: post.data.comments,
+  heroImage: post.data.heroImage ?? post.data.images?.[0],
+  excerpt: post.data.description,
+}));
+---
+
+<BaseLayout title="首页 - Mango">
+  <Banner />
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <!-- Main Content -->
+    <div class="lg:col-span-8">
+      <div class="space-y-5">
+        {paginatedPosts.map((post) => (
+          <PostCard
+            title={post.data.title}
+            slug={post.slug}
+            author={post.data.author}
+            avatar={post.data.avatar}
+            content={post.data.description || ''}
+            images={post.data.images || []}
+            timestamp={post.data.pubDate}
+            sticky={post.data.sticky > 0}
+            tags={post.data.tags}
+            likes={post.data.likes || 0}
+            comments={post.data.comments || 0}
+            views={post.data.views || 0}
+          />
+        ))}
+      </div>
+      {totalPages > 1 && (
+        <Pagination currentPage={currentPage} totalPages={totalPages} baseUrl="/" />
+      )}
+    </div>
+
+    <!-- Sidebar -->
+    <div class="lg:col-span-4">
+      <Sidebar posts={postData} tags={tags} />
+    </div>
+  </div>
+</BaseLayout>

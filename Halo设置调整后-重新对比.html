@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Halo 设置调整后 · 重新对比（原版 / Halo / Astro）</title>
+<style>
+:root {
+  --bg:#ffffff; --panel:#ffffff; --ink:#1f2328; --muted:#5f6b7a; --line:#e3e8ef;
+  --accent:#4270f5; --accent-soft:#e6efff; --code:#f6f8fa; --code-ink:#0c447c;
+  --quote:#2a3b4d; --zebra:#fbfcfe; --th-ink:#0c447c; --on-accent:#ffffff;
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --bg:#14161a; --panel:#1b1f25; --ink:#e6e9ee; --muted:#a2acba; --line:#303742;
+  --accent:#8ab0ff; --accent-soft:#1d2b45; --code:#1b2129; --code-ink:#a8c7ff;
+  --quote:#d3ddec; --zebra:#191d23; --th-ink:#bcd2ff; --on-accent:#10151d;
+  color-scheme: dark;
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:15px; line-height:1.75; transition:background-color .18s ease,color .18s ease; }
+.theme-switch { position:fixed; top:14px; right:18px; z-index:60; display:flex; gap:2px;
+  background:var(--panel); border:1px solid var(--line); border-radius:999px; padding:4px;
+  box-shadow:0 4px 18px rgba(0,0,0,.14); }
+.theme-switch button { border:0; background:transparent; color:var(--muted); font:inherit;
+  font-size:12px; line-height:1.4; padding:5px 12px; border-radius:999px; cursor:pointer; }
+.theme-switch button:hover { color:var(--accent); }
+.theme-switch button[aria-pressed="true"] { background:var(--accent); color:var(--on-accent); }
+.layout { max-width:1220px; margin:0 auto; padding:0 28px; display:grid; grid-template-columns:250px minmax(0,1fr); gap:44px; }
+aside { position:sticky; top:0; align-self:start; max-height:100vh; overflow:auto; padding:38px 0 30px; border-right:1px solid var(--line); }
+aside h2 { font-size:13px; font-weight:600; letter-spacing:.08em; color:var(--muted); margin:0 0 12px; }
+.toc ul { list-style:none; margin:0; padding:0; }
+.toc ul ul { padding-left:14px; }
+.toc li { margin:3px 0; }
+.toc a { color:var(--muted); text-decoration:none; font-size:13px; display:block; padding:2px 8px; border-radius:6px; }
+.toc a:hover { color:var(--accent); background:var(--accent-soft); }
+main { padding:56px 0 80px; min-width:0; }
+h1 { font-size:30px; line-height:1.3; margin:0 0 22px; padding-bottom:16px; border-bottom:2px solid var(--accent); }
+h2 { font-size:21px; margin:44px 0 14px; padding-top:10px; border-top:1px solid var(--line); }
+h3 { font-size:17px; margin:28px 0 10px; }
+p { margin:10px 0; }
+a { color:var(--accent); }
+img { max-width:100%; height:auto; }
+img.shot { background:#fff; border:1px solid var(--line); border-radius:8px; }
+blockquote { margin:16px 0; padding:10px 16px; background:var(--accent-soft); border-left:3px solid var(--accent); border-radius:0 8px 8px 0; color:var(--quote); }
+blockquote p { margin:4px 0; }
+ul, ol { padding-left:24px; }
+li { margin:4px 0; }
+code { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.9em;
+  background:var(--code); padding:2px 5px; border-radius:4px; color:var(--code-ink); }
+pre { background:var(--code); border:1px solid var(--line); border-radius:10px; padding:14px 16px;
+  overflow-x:auto; white-space:pre-wrap; word-break:break-word; margin:12px 0; }
+pre code { background:none; padding:0; color:var(--ink); font-size:13px; line-height:1.6; }
+.copy { float:right; position:relative; top:6px; z-index:1; border:1px solid var(--line); background:var(--panel);
+  color:var(--muted); font-size:12px; padding:3px 9px; border-radius:6px; cursor:pointer; }
+.copy:hover { color:var(--accent); border-color:var(--accent); }
+table { border-collapse:collapse; width:100%; margin:16px 0; font-size:14px; }
+th, td { border:1px solid var(--line); padding:8px 11px; text-align:left; vertical-align:top; }
+th { background:var(--accent-soft); color:var(--th-ink); font-weight:600; }
+tr:nth-child(even) td { background:var(--zebra); }
+hr { border:0; border-top:1px solid var(--line); margin:34px 0; }
+.footer { margin-top:56px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:13px; }
+@media (max-width:900px) { .layout { grid-template-columns:1fr; gap:0; } aside { position:static; max-height:none; border-right:0; border-bottom:1px solid var(--line); padding:24px 0 12px; } main { padding-top:52px; } }
+@media print {
+  :root, :root[data-theme="dark"] {
+    --bg:#ffffff; --panel:#ffffff; --ink:#1f2328; --muted:#5f6b7a; --line:#e3e8ef;
+    --accent:#4270f5; --accent-soft:#e6efff; --code:#f6f8fa; --code-ink:#0c447c;
+    --quote:#2a3b4d; --zebra:#fbfcfe; --th-ink:#0c447c; --on-accent:#ffffff;
+    color-scheme: light;
+  }
+  body { font-size:11pt; } .layout { display:block; max-width:none; padding:0; }
+  aside,.copy,.theme-switch { display:none; } main { padding:0; }
+  h2 { page-break-after:avoid; } pre,table,blockquote,img { page-break-inside:avoid; }
+  a { color:inherit; text-decoration:none; }
+}
+</style>
+<script>
+/* 防闪烁：在 body 渲染前确定主题。
+   优先级 = 手动选择(localStorage) > URL 参数 > 跟随系统。 */
+(function () {
+  var saved = null, q = null;
+  try { saved = localStorage.getItem('report-theme'); } catch (e) {}
+  try { q = new URLSearchParams(location.search).get('theme'); } catch (e) {}
+  var mode = (saved === 'light' || saved === 'dark' || saved === 'system') ? saved
+           : (q === 'light' || q === 'dark') ? q : 'system';
+  var dark = mode === 'dark' || (mode === 'system' && window.matchMedia &&
+             window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-mode', mode);
+})();
+</script>
+</head>
+<body>
+<div class="theme-switch" role="group" aria-label="报告配色模式">
+  <button type="button" data-mode="light" aria-pressed="false">日间</button>
+  <button type="button" data-mode="dark" aria-pressed="false">夜间</button>
+  <button type="button" data-mode="system" aria-pressed="true">系统</button>
+</div>
+<div class="layout">
+<aside><h2>目录</h2><div class="toc">
+<ul>
+<li><a href="#halo-halo-astro">Halo 设置调整后 · 重新对比（原版 / Halo / Astro）</a><ul>
+<li><a href="#1">1. 一句话结论</a></li>
+<li><a href="#2">2. 到底改了什么（逐条证据）</a></li>
+<li><a href="#3-halo">3. 新旧 Halo 逐项对比</a></li>
+<li><a href="#4">4. 更新后的三方矩阵</a></li>
+<li><a href="#5">5. 新发现的两个素材问题（建议优先修）</a><ul>
+<li><a href="#51">5.1 第一张图没坏，是被裁没了</a></li>
+<li><a href="#52">5.2 第二张填的是网页，不是图片</a></li>
+</ul>
+</li>
+<li><a href="#6-css">6. 剩余差距：哪些后台能改，哪些必须动 CSS</a></li>
+<li><a href="#7-halo">7. 如果想让 Halo 继续贴近原版（按优先级）</a></li>
+<li><a href="#8">8. 数据来源与自洽校验</a></li>
+<li><a href="#9">9. 结论</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</aside>
+<main>
+<h1 id="halo-halo-astro">Halo 设置调整后 · 重新对比（原版 / Halo / Astro）</h1>
+<blockquote>
+<p>触发：2026-11-07 06:43「halo改了一下设置，重新对比」
+三个对象：<strong>WordPress 原版</strong> <code>mango.huitheme.cn</code> / <strong>Halo 新设置</strong> <code>halo.840428.xyz</code> / <strong>Astro v6</strong> <code>localhost:4321</code>
+新对照图：<code>对比-三方-Halo新设置-原版vsHalo-vsAstro.png</code>（940×2892，同一 1440px 视口、同一 <code>box=(250,0,1190,900)</code> 裁切、均浅色）
+抓取时间：2026-11-07 06:45
+阅读方式：HTML 版右上角可切「日间 / 夜间 / 系统」，选择会被记住；未做过手动选择时可用 <code>?theme=dark</code> 直接以夜间打开。Markdown 版无切换。
+主报告：<code>三方差异-原版vs-Halo-vs-Astro.md/.html</code>（已加过时提示，涉及轮播的旧描述保留作历史记录）</p>
+</blockquote>
+<p><img class="shot" src="对比-三方-Halo新设置-原版vsHalo-vsAstro.png" alt="Halo 新设置后的三方同框对照：上原版 / 中 Halo / 下 Astro" style="width:100%;max-width:660px;display:block;margin:18px 0 8px"></p>
+<p><em>上 WordPress 原版 / 中 Halo 新设置 / 下 Astro v6。对照图为三站浅色模式实拍，不随报告主题变化。</em></p>
+<hr />
+<h2 id="1">1. 一句话结论</h2>
+<p><strong>这次只动了「后台开关 + 置顶内容」，一行 CSS 都没改。</strong> 最大变化是 Halo 首页<strong>把轮播打开了</strong>，因此「有无轮播」这一项三方首次对齐；其余定制差异（0 缩进、绝对时间、满宽九宫格、作者卡、两项导航等）<strong>全部保持原样</strong>。</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>旧 Halo（06:10 前）</th>
+<th>新 Halo（06:45）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>首页轮播</td>
+<td>无</td>
+<td><strong>有</strong>：<code>index_banner</code> + <code>#banner</code>，2 条「置顶精彩」</td>
+</tr>
+<tr>
+<td>CSS 文件</td>
+<td><code>style.css</code> 31,549 B / <code>mango.css</code> 20,839 B</td>
+<td><strong>SHA256 与旧版完全一致</strong></td>
+</tr>
+<tr>
+<td>文章排序</td>
+<td>「定投日志26-12-26」排第 1</td>
+<td>「周末去了趟山里」「新入手的机械键盘」两篇置顶排前 2</td>
+</tr>
+<tr>
+<td>其余 17 项视觉</td>
+<td>见主报告第 3 节</td>
+<td><strong>不变</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>判断：Halo 主题把首页轮播做成「后台设置 / 置顶文章」驱动，<code>mango.css:47-56</code> 与 <code>style.css:161</code> 的 <code>#banner</code> 规则从一开始就存在，旧版只是模板没输出。这正好验证了上一版报告「CSS 还在、模板不输出」的推断。</p>
+</blockquote>
+<hr />
+<h2 id="2">2. 到底改了什么（逐条证据）</h2>
+<table>
+<thead>
+<tr>
+<th>证据项</th>
+<th>旧 Halo</th>
+<th>新 Halo</th>
+<th>判断</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>首页 HTML 字节</td>
+<td>44,970 B</td>
+<td><strong>46,910 B</strong></td>
+<td>多了约 1.9 KB 轮播 DOM</td>
+</tr>
+<tr>
+<td><code>id="banner"</code></td>
+<td>0</td>
+<td><strong>1</strong></td>
+<td>轮播容器已输出</td>
+</tr>
+<tr>
+<td><code>carousel</code> / <code>carousel-item</code></td>
+<td>0 / 0</td>
+<td><strong>8 / 2</strong></td>
+<td>含指示器、左右箭头、2 张 slide</td>
+</tr>
+<tr>
+<td><code>&lt;section class="index_banner"&gt;</code></td>
+<td>无</td>
+<td><strong>有</strong></td>
+<td>整块轮播 section 新增</td>
+</tr>
+<tr>
+<td><code>style.css</code> SHA256</td>
+<td><code>e20f0079d1ae…</code>（31,549 B）</td>
+<td><strong>同一值</strong></td>
+<td>未改</td>
+</tr>
+<tr>
+<td><code>mango.css</code> SHA256</td>
+<td><code>ea71fc150376…</code>（20,839 B）</td>
+<td><strong>同一值</strong></td>
+<td>未改</td>
+</tr>
+<tr>
+<td>CSS 版本号</td>
+<td><code>20261023a</code> / <code>20261025n</code></td>
+<td>同左</td>
+<td>未重新发布主题</td>
+</tr>
+<tr>
+<td>主色 / 版心 / 背景</td>
+<td><code>#4270f6</code> / <code>min(900px,…)</code> / <code>bg.svg</code></td>
+<td>同左</td>
+<td>主题设置未动</td>
+</tr>
+<tr>
+<td>文章卡片数</td>
+<td>7</td>
+<td>7</td>
+<td>没增删文章</td>
+</tr>
+<tr>
+<td>卡片顺序</td>
+<td>定投日志(10-26) → 山里(10-22) → 键盘(10-19)…</td>
+<td><strong>山里(10-22) → 键盘(10-19) → 定投日志(10-26)…</strong></td>
+<td>两篇置顶提升，非时间倒序</td>
+</tr>
+<tr>
+<td>热门文章副行首条</td>
+<td><code>2026-10-26</code></td>
+<td><strong><code>2026-10-22</code></strong></td>
+<td>随置顶/热度变化</td>
+</tr>
+<tr>
+<td>导航 / 作者卡 / 绝对时间 / 相对时间 / 「N条留言」</td>
+<td>2 项 / 1 个 / 7 处 / 0 / 0</td>
+<td><strong>完全相同</strong></td>
+<td>定制层未动</td>
+</tr>
+</tbody>
+</table>
+<p><strong>新轮播内容</strong>（来自 <code>/tmp/halo-home-v2.html</code>）：</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>链接</th>
+<th>标题</th>
+<th>图片 URL</th>
+<th>角标</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>/archives/weekend-mountain-9</code></td>
+<td>周末去了趟山里，拍了一组很喜欢的照片</td>
+<td><code>https://picsum.photos/seed/mountain1/800/800</code></td>
+<td>置顶精彩</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>/archives/new-keyboard-3</code></td>
+<td>新入手的机械键盘，打字手感真不错</td>
+<td><code>https://movie.douban.com/subject/36680492/</code></td>
+<td>置顶精彩</td>
+</tr>
+</tbody>
+</table>
+<p>结构（指示器 2 个、<code>carousel-control-prev/next</code>、<code>banlist &gt; img + h2 + i</code>）与 WordPress 原版 <code>mango-demo.html:117-137</code>、Astro <code>Banner.astro</code> 一致，<strong>形态上已经对齐</strong>。</p>
+<hr />
+<h2 id="3-halo">3. 新旧 Halo 逐项对比</h2>
+<table>
+<thead>
+<tr>
+<th>部位</th>
+<th>旧 Halo</th>
+<th>新 Halo</th>
+<th>是否变了</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>轮播 banner</td>
+<td>无</td>
+<td>2 条置顶精彩 + 指示器 + 左右箭头</td>
+<td><strong>变了</strong></td>
+</tr>
+<tr>
+<td>轮播图片素材</td>
+<td>—</td>
+<td>外链 picsum + 豆瓣网页 URL</td>
+<td><strong>新增，且有问题</strong>（见第 5 节）</td>
+</tr>
+<tr>
+<td>置顶文章排序</td>
+<td>定投日志第 1</td>
+<td>山里 / 键盘前 2</td>
+<td><strong>变了</strong></td>
+</tr>
+<tr>
+<td>卡片 60px 缩进</td>
+<td>0</td>
+<td>0</td>
+<td>未变</td>
+</tr>
+<tr>
+<td>时间格式</td>
+<td>绝对 <code>2026-10-26 11:11</code></td>
+<td>绝对</td>
+<td>未变</td>
+</tr>
+<tr>
+<td>摘要</td>
+<td>13.5px 灰色 3 行截断</td>
+<td>同左</td>
+<td>未变</td>
+</tr>
+<tr>
+<td>九宫格</td>
+<td>100% 3 列 grid / gap 5px</td>
+<td>同左</td>
+<td>未变</td>
+</tr>
+<tr>
+<td>导航</td>
+<td>首页 / 关于</td>
+<td>同左</td>
+<td>未变</td>
+</tr>
+<tr>
+<td>顶栏 logo</td>
+<td>猫咪 + 大明白日志</td>
+<td>同左</td>
+<td>未变</td>
+</tr>
+<tr>
+<td>侧栏第一块</td>
+<td>作者卡 <code>author_show_box</code></td>
+<td>同左</td>
+<td>未变</td>
+</tr>
+<tr>
+<td>热门文章副行</td>
+<td>日期</td>
+<td>日期（首条换成 10-22）</td>
+<td>仅数据变</td>
+</tr>
+<tr>
+<td>底部三数</td>
+<td>数据库实时</td>
+<td>同左</td>
+<td>未变</td>
+</tr>
+<tr>
+<td>背景水波纹</td>
+<td>明显</td>
+<td>同左</td>
+<td>未变</td>
+</tr>
+<tr>
+<td>暗色</td>
+<td><code>isDarkMode</code> 跟随系统</td>
+<td>同左</td>
+<td>未变</td>
+</tr>
+</tbody>
+</table>
+<p><strong>结论</strong>：18 项里只有 3 项变化，且都是「轮播 + 内容排序」，<strong>视觉定制层零改动</strong>。</p>
+<hr />
+<h2 id="4">4. 更新后的三方矩阵</h2>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>WordPress 原版</th>
+<th>Halo 新设置</th>
+<th>Astro v6</th>
+<th>现在是否对齐</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>首页轮播（形态）</strong></td>
+<td>有，2 条 + 角标 + 指示器 + 箭头</td>
+<td><strong>有，2 条 + 角标 + 指示器 + 箭头</strong></td>
+<td>有，2 条 + 角标 + 指示器 + 箭头</td>
+<td><strong>已对齐</strong></td>
+</tr>
+<tr>
+<td>轮播图片</td>
+<td>本地 900×350 工作台横图</td>
+<td>外链 800×800 方图 + 一个 HTML 网页</td>
+<td>本地横图</td>
+<td><strong>未对齐</strong>（素材问题）</td>
+</tr>
+<tr>
+<td>卡片缩进</td>
+<td>60px</td>
+<td>0</td>
+<td>60px</td>
+<td>未对齐（Halo 定制）</td>
+</tr>
+<tr>
+<td>九宫格</td>
+<td>66% 方形 + <code>+23</code></td>
+<td>100% 3 列 grid / 矩形</td>
+<td>66% 方形 + <code>+23</code></td>
+<td>未对齐</td>
+</tr>
+<tr>
+<td>时间</td>
+<td>相对「4 年前」</td>
+<td>绝对 <code>2026-10-22 01:54</code></td>
+<td>相对</td>
+<td>未对齐</td>
+</tr>
+<tr>
+<td>摘要</td>
+<td>14px / 300 / 1.8 不截断</td>
+<td>13.5px 灰 / 3 行截断</td>
+<td>原版式</td>
+<td>未对齐</td>
+</tr>
+<tr>
+<td>导航</td>
+<td>8 项分类</td>
+<td>2 项</td>
+<td>5 项分类</td>
+<td>未对齐</td>
+</tr>
+<tr>
+<td>侧栏第一块</td>
+<td>热门文章</td>
+<td>作者卡</td>
+<td>热门文章</td>
+<td>未对齐</td>
+</tr>
+<tr>
+<td>热门副行</td>
+<td><code>29条留言</code></td>
+<td>日期</td>
+<td><code>29 条留言</code></td>
+<td>未对齐</td>
+</tr>
+<tr>
+<td>logo</td>
+<td>芒果 + Mango</td>
+<td>猫咪 + 大明白日志</td>
+<td>芒果 + Mango</td>
+<td>未对齐</td>
+</tr>
+<tr>
+<td>底部三数</td>
+<td>演示值</td>
+<td>数据库实时</td>
+<td>frontmatter 静态</td>
+<td>形态一致、数据源不同</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>换句话说：<strong>原来最刺眼的「Halo 没有轮播」已经消失</strong>，但三联图里中段与上/下两段依然一眼可分，原因是缩进、九宫格、时间、摘要、导航、作者卡这 6 项定制仍在。</p>
+</blockquote>
+<hr />
+<h2 id="5">5. 新发现的两个素材问题（建议优先修）</h2>
+<h3 id="51">5.1 第一张图没坏，是被裁没了</h3>
+<p><code>https://picsum.photos/seed/mountain1/800/800</code> 实测 <strong>GET 200 / <code>image/jpeg</code> / 17,200 B / 800×800</strong>，图片本身是黄绿色调的雾景（大片浅黄绿天空 + 下方海面与建筑）。但 <code>mango.css:48-53</code> 给轮播图设了：</p>
+<button class="copy" type="button">复制</button><pre><code class="language-css">#banner .banlist img { width: 100%; aspect-ratio: 900 / 350; object-fit: cover; display: block; }
+</code></pre>
+<p>800×800 方图被压成 900×350 后<strong>只剩中间一条天空</strong>，三联图里看起来像一块「没加载的黄绿渐变」。</p>
+<blockquote>
+<p>注意：用 <code>curl -I</code>（HEAD）查这个 URL 会返回 <strong>405</strong>，不能据此判断图片不可用；必须看 GET。</p>
+</blockquote>
+<p><strong>修法</strong>：在 Halo 后台把封面换成 <strong>900×350 或 16:9 的横图</strong>（最好传到媒体库用本地 URL），裁切后才有主体内容。</p>
+<h3 id="52">5.2 第二张填的是网页，不是图片</h3>
+<p><code>https://movie.douban.com/subject/36680492/</code> 实测 <strong>GET 200 / <code>text/html</code> / 2,965 B</strong>（HEAD 是 403），返回的是 HTML 文档。轮播切到第二张时 <code>&lt;img&gt;</code> 必然加载失败裂图。这应该是把豆瓣条目链接误填进了封面字段。</p>
+<p><strong>修法</strong>：把该文章的封面改成真实图片 URL；若想保留豆瓣卡片效果，用 <code>plugin-douban</code> 在正文里渲染，而不是当 <code>&lt;img src&gt;</code>。</p>
+<blockquote>
+<p>这两个都是<strong>内容数据问题</strong>，不是 Mango 主题或 Halo 移植的实现缺陷；原版与 Astro 用的都是本地横图，所以形态一致、观感不同。</p>
+</blockquote>
+<hr />
+<h2 id="6-css">6. 剩余差距：哪些后台能改，哪些必须动 CSS</h2>
+<table>
+<thead>
+<tr>
+<th>差距</th>
+<th>后台设置能否解决</th>
+<th>具体位置 / 做法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>轮播已开</td>
+<td>已完成</td>
+<td>后台「首页轮播 / 置顶文章」</td>
+</tr>
+<tr>
+<td>轮播图裁切与裂图</td>
+<td><strong>能</strong>（改文章封面）</td>
+<td>换 900×350 横图，见第 5 节</td>
+</tr>
+<tr>
+<td>导航只有 2 项</td>
+<td><strong>能</strong></td>
+<td>Halo 后台菜单补齐分类项</td>
+</tr>
+<tr>
+<td>logo / 站点名</td>
+<td><strong>能</strong></td>
+<td>主题设置</td>
+</tr>
+<tr>
+<td>60px 缩进</td>
+<td>不能</td>
+<td><code>mango.css:870-872</code> 的 <code>.post_loop .post_loop_conter{margin-left:0}</code></td>
+</tr>
+<tr>
+<td>九宫格满宽 grid</td>
+<td>不能</td>
+<td><code>mango.css:765-795</code>，覆盖前段 <code>:59-93</code></td>
+</tr>
+<tr>
+<td>摘要 3 行灰字</td>
+<td>不能</td>
+<td><code>mango.css:881-890</code>，覆盖前段 <code>:758-763</code></td>
+</tr>
+<tr>
+<td>绝对时间 / 热门副行日期</td>
+<td>不能</td>
+<td>Thymeleaf 模板层</td>
+</tr>
+<tr>
+<td>侧栏作者卡</td>
+<td>不能</td>
+<td>模板层 + <code>:457 .author_show_box</code></td>
+</tr>
+<tr>
+<td>实时评论 / 浏览</td>
+<td>—</td>
+<td>这是 Halo 的优势，<strong>不建议改</strong></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="7-halo">7. 如果想让 Halo 继续贴近原版（按优先级）</h2>
+<ol>
+<li><strong>先修两张轮播图</strong>（立刻消除渐变块与裂图，收益最大且不动代码）；</li>
+<li>删掉或改回 <code>mango.css:870-872</code> 的 <code>margin-left:0</code> → 恢复 60px 缩进；</li>
+<li><code>:765-795</code> 九宫格改回 <code>width:66%</code> + 正方形裁切 + <code>+N</code> 叠加；</li>
+<li><code>:881-890</code> 摘要恢复 14px / 300 / 1.8、不截断；</li>
+<li>模板里时间切相对时间、热门文章副行切「N 条留言」；</li>
+<li>后台菜单补齐「风景 / 旅拍 / 科技 / 主题下载 / 旅游地图」；</li>
+<li>首页侧栏取消作者卡，或移到关于页；</li>
+<li>logo 与背景波纹强度按需调整。</li>
+</ol>
+<blockquote>
+<p>提醒：第 2–8 步做完，Halo 站就会变成「原版演示站」而不是「大明白日志」。建议先只做第 1 步，再决定要不要回退定制风格；主报告方向 D「各司其职」依然成立。</p>
+</blockquote>
+<hr />
+<h2 id="8">8. 数据来源与自洽校验</h2>
+<table>
+<thead>
+<tr>
+<th>结论</th>
+<th>依据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>新 Halo HTML</td>
+<td><code>curl -sSL https://halo.840428.xyz/</code> → <code>/tmp/halo-home-v2.html</code>（46,910 B），06:45 抓取</td>
+</tr>
+<tr>
+<td>新 Halo CSS</td>
+<td><code>/tmp/halo-style-v2.css</code> 31,549 B、<code>/tmp/halo-mango-v2.css</code> 20,839 B，与旧版 SHA256 逐字节相同</td>
+</tr>
+<tr>
+<td>旧基线</td>
+<td><code>/tmp/halo-home.html</code> 44,970 B、<code>/tmp/halo-style.css</code>、<code>/tmp/halo-mango.css</code></td>
+</tr>
+<tr>
+<td>轮播 DOM</td>
+<td>新 HTML 的 <code>&lt;section class="index_banner"&gt;</code> 区块：<code>carousel-item</code> 2 个、<code>banlist</code> 2 个、<code>置顶精彩</code> 2 个、prev/next 各 1</td>
+</tr>
+<tr>
+<td>图片 URL 实测</td>
+<td>picsum GET <code>200 image/jpeg 800×800</code>（HEAD 405）；豆瓣 URL GET <code>200 text/html 2,965 B</code>（HEAD 403）</td>
+</tr>
+<tr>
+<td>新截图</td>
+<td><code>/tmp/halo-light-top-v2.png</code>，CDP 设 <code>isDarkMode="0"</code> + reload，状态回读 <code>html.className="" \| isDarkMode=0</code>，1440×1000</td>
+</tr>
+<tr>
+<td>对照图</td>
+<td><code>对比-三方-Halo新设置-原版vsHalo-vsAstro.png</code>（940×2892），与旧 <code>对比-三方-原版vs-Halo-vs-Astro.png</code> 同视口同裁切</td>
+</tr>
+<tr>
+<td>旧报告</td>
+<td><code>三方差异-原版vs-Halo-vs-Astro.md/.html</code>、<code>Halo站-vs-Astro复刻-对比分析.md</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>五条自洽校验</strong>：</p>
+<ol>
+<li><strong>同一把尺子</strong>：新 Halo 截图仍用 1440×1000 视口、<code>box=(250,0,1190,900)</code> 裁切，且强制浅色（CDP 回读 <code>html.className=""</code>），避免把系统暗色误判成设置变化。</li>
+<li><strong>「只改设置」是双证据</strong>：HTML 新增轮播 DOM + 两个 CSS 文件 SHA256 完全一致 + CSS 版本号未变，排除「改了样式」的可能。</li>
+<li><strong>计数口径</strong>：<code>id="banner"</code> 0→1、<code>carousel</code> 0→8，但 <code>post_loop</code> 仍 7、作者卡仍 1、绝对时间仍 7、相对时间仍 0 → 变化范围被限定在轮播与排序。</li>
+<li><strong>图片结论看 GET 不看 HEAD</strong>：picsum 的 HEAD 返回 405 容易误判「图片挂了」，实际 GET 是正常 JPEG；豆瓣 URL 则确实是 <code>text/html</code>。两者分开处理。</li>
+<li><strong>主报告同步</strong>：主报告已加「Halo 无轮播结论已过时」提示，并更新矩阵第 1 / 17 行、4.4 节、第 7 节 B 类、第 10 节结论，避免两份报告互相矛盾。</li>
+</ol>
+<hr />
+<h2 id="9">9. 结论</h2>
+<ul>
+<li><strong>对齐了 1 项</strong>：首页轮播（形态、条数、角标、指示器、箭头都与原版/Astro 一致）。</li>
+<li><strong>没动的 17 项</strong>：缩进、九宫格、时间、摘要、导航、作者卡、副行文案等定制全部保留。</li>
+<li><strong>新增 2 个待修素材问题</strong>：800×800 方图被裁成「渐变块」、豆瓣网页被当成图片会裂图。</li>
+<li><strong>建议顺序</strong>：先换两张 900×350 横图 → 再决定是否回退 <code>mango.css</code> 定制 → 维持「Halo 当主博客、Astro 当复刻样板」。</li>
+</ul>
+<p>（本页沿用主报告的日夜切换模板：右上角「日间 / 夜间 / 系统」，<code>?theme=dark</code> 可直开夜间，打印强制浅色，对照截图固定白底不随主题变化。）</p>
+<div class="footer">Halo 设置调整后 · 重新对比（原版 / Halo / Astro） v1.0 · 2026-11-07 · 支持日间 / 夜间 / 系统三态切换 · 对照图以正文为准</div>
+</main>
+</div>
+<script>
+document.querySelectorAll('.copy').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var pre = b.nextElementSibling;
+    if (!pre || pre.tagName !== 'PRE') return;
+    navigator.clipboard.writeText(pre.innerText).then(function () {
+      b.textContent = '已复制'; setTimeout(function () { b.textContent = '复制'; }, 1500);
+    });
+  });
+});
+(function () {
+  var root = document.documentElement;
+  var btns = Array.prototype.slice.call(document.querySelectorAll('.theme-switch button'));
+  function apply(mode, persist) {
+    if (persist) {
+      try { localStorage.setItem('report-theme', mode); } catch (e) {}
+      try {
+        var u = new URL(location.href);
+        u.searchParams.delete('theme');
+        history.replaceState(null, '', u.href);
+      } catch (e) {}
+    }
+    var dark = mode === 'dark' || (mode === 'system' && window.matchMedia &&
+               window.matchMedia('(prefers-color-scheme: dark)').matches);
+    root.setAttribute('data-theme', dark ? 'dark' : 'light');
+    root.setAttribute('data-mode', mode);
+    btns.forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.getAttribute('data-mode') === mode));
+    });
+  }
+  btns.forEach(function (b) {
+    b.addEventListener('click', function () { apply(b.getAttribute('data-mode'), true); });
+  });
+  apply(root.getAttribute('data-mode') || 'system', false);
+  if (window.matchMedia) {
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    var onChange = function () {
+      if (root.getAttribute('data-mode') === 'system') apply('system', false);
+    };
+    if (mq.addEventListener) mq.addEventListener('change', onChange);
+    else if (mq.addListener) mq.addListener(onChange);
+  }
+})();
+</script>
+</body>
+</html>

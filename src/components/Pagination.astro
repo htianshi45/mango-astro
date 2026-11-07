@@ -1,0 +1,83 @@
+---
+interface Props {
+  currentPage: number;
+  totalPages: number;
+  baseUrl: string;
+}
+
+const { currentPage, totalPages, baseUrl } = Astro.props;
+
+function getPageUrl(page: number): string {
+  if (page === 1) return '/';
+  return `/page/${page}`;
+}
+---
+
+<nav class="pagination-nav">
+  {currentPage > 1 && (
+    <a href={getPageUrl(currentPage - 1)} class="pagination-item">
+      <i class="bi bi-chevron-left"></i>
+    </a>
+  )}
+
+  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+    <a
+      href={getPageUrl(page)}
+      class:list={['pagination-item', page === currentPage && 'current']}
+    >
+      {page}
+    </a>
+  ))}
+
+  {currentPage < totalPages && (
+    <a href={getPageUrl(currentPage + 1)} class="pagination-item">
+      <i class="bi bi-chevron-right"></i>
+    </a>
+  )}
+</nav>
+
+<style>
+  .pagination-nav {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    margin-top: 30px;
+  }
+
+  .pagination-item {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 10px;
+    background: #fff;
+    color: #555;
+    font-size: 12px;
+    border: none;
+    border-radius: 0;
+    text-decoration: none;
+    transition: all 0.2s;
+    min-width: 30px;
+  }
+
+  .pagination-item:hover {
+    background: #4270f6;
+    color: #fff;
+  }
+
+  .pagination-item.current {
+    background: #4270f6;
+    color: #fff;
+  }
+
+  :global(.dark) .pagination-item {
+    background: #2a2a2b;
+    color: #ccc;
+  }
+
+  :global(.dark) .pagination-item:hover,
+  :global(.dark) .pagination-item.current {
+    background: #4270f6;
+    color: #fff;
+  }
+</style>

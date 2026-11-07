@@ -1,0 +1,116 @@
+---
+import PostImages from './PostImages.astro';
+
+interface Props {
+  title: string;
+  slug: string;
+  author: string;
+  avatar: string;
+  content: string;
+  images: string[];
+  timestamp: string | Date;
+  sticky?: boolean;
+  tags?: string[];
+  likes?: number;
+  comments?: number;
+  views?: number;
+}
+
+const {
+  title,
+  slug,
+  author,
+  avatar,
+  content,
+  images,
+  timestamp,
+  sticky = false,
+  tags = [],
+  likes = 0,
+  comments = 0,
+  views = 0,
+} = Astro.props;
+
+/* Halo 优化：显示绝对日期 YYYY-MM-DD HH:mm，替代原版「X 年前」。
+   使用 UTC 分量可避免构建机时区把「只有日期」的 frontmatter 整体偏移 8 小时。 */
+function formatDate(date: string | Date): string {
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return '';
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
+}
+---
+
+<article class="post-loop">
+  <!-- Author Row -->
+  <div class="flex items-start mb-4">
+    <img src={avatar} alt={author} class="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+    <div class="ml-3 flex-1">
+      <h3 class="text-sm font-medium text-[#333] dark:text-[#ccc]">{author}</h3>
+      <div class="text-xs text-[#C6C6C6]">{formatDate(timestamp)}</div>
+    </div>
+    <a href={`/posts/${slug}`} class="more-btn" aria-label="更多选项">
+      <i class="bi bi-three-dots"></i>
+    </a>
+  </div>
+
+  <!-- Content Area：Halo 优化，取消 60px 缩进 -->
+  <div class="moment-content-area">
+    <!-- Title -->
+    <h2 class="post-loop-title text-lg font-medium text-[#333] dark:text-[#ccc] mb-4">
+      <a href={`/posts/${slug}`} class="hover:text-mango transition-colors duration-200">
+        {title}
+      </a>
+    </h2>
+
+    <!-- Excerpt：Halo 优化，3 行截断 + 弱化色 -->
+    {content && (
+      <p class="post-excerpt">{content}</p>
+    )}
+
+    <!-- Images -->
+    {images.length > 0 && (
+      <PostImages images={images} slug={slug} />
+    )}
+
+    <!-- Tags -->
+    {tags.length > 0 && (
+      <div class="post-loop-tag" style="margin-top: 30px;">
+        {tags.map((tag) => (
+          <a href={`/tags/${tag}`} class="post-tag">
+            <i class="bi bi-hash" style="font-size: 12px;"></i>{tag}
+          </a>
+        ))}
+      </div>
+    )}
+
+    <!-- Footer Data: Comments / Views / Likes -->
+    <div class="post-info-footer">
+      <span class="flex items-center">
+        <i class="bi bi-chat-square-text-fill mr-1"></i>
+        {comments.toLocaleString()} 评论
+      </span>
+      <span class="flex items-center">
+        <i class="bi bi-eye-fill mr-1"></i>
+        {views.toLocaleString()} 浏览
+      </span>
+      <span class="flex items-center">
+        <i class="bi bi-heart-fill mr-1"></i>
+        {likes.toLocaleString()} 点赞
+      </span>
+    </div>
+  </div>
+</article>
+
+<style>
+  .more-btn {
+    color: #3473fb;
+    font-size: 24px;
+    line-height: 1;
+    transition: opacity 0.2s;
+  }
+
+  .more-btn:hover {
+    opacity: 0.7;
+  }
+</style>

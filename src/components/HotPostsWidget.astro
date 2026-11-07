@@ -1,0 +1,85 @@
+---
+interface Post {
+  title: string;
+  slug: string;
+  views?: number;
+  heroImage?: string;
+  comments?: number;
+  timestamp?: string | Date;
+}
+
+interface Props {
+  posts: Post[];
+  limit?: number;
+}
+
+const { posts, limit = 3 } = Astro.props;
+const displayPosts = posts.slice(0, limit);
+
+/* Halo 优化：热门文章副行显示发布日期，不再是「N 条留言」 */
+function formatDay(date?: string | Date): string {
+  if (!date) return '';
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toISOString().slice(0, 10);
+}
+---
+
+<aside class="widget">
+  <h3 class="widget-title">热门文章</h3>
+  <ul class="widget_hot_post">
+    {displayPosts.map((post, index) => (
+      <li class:list={['widget_hot_li', index === 0 && 'first']}>
+        <a href={`/posts/${post.slug}`} class="block group">
+          {index === 0 && post.heroImage ? (
+            <!-- First post with large image -->
+            <div class="relative rounded overflow-hidden mb-3">
+              <img src={post.heroImage} alt={post.title} class="w-full object-cover" style="aspect-ratio: 4 / 3;" />
+              <div class="hot_post_info absolute inset-0 flex flex-col justify-end p-3">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                <h4 class="relative text-white text-[14px] font-medium line-clamp-3 group-hover:text-mango transition-colors duration-200 z-10">
+                  {post.title}
+                </h4>
+                <p class="relative text-[12px] text-white mt-1 z-10">
+                  {formatDay(post.timestamp)}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <!-- Other posts with thumbnail -->
+            <div class="flex items-start">
+              {post.heroImage && (
+                <img src={post.heroImage} alt={post.title} class="hot-post-thumb mr-[15px]" />
+              )}
+              <div class="flex-1 min-w-0">
+                <h4 class="text-[14px] text-[#333] dark:text-[#ccc] group-hover:text-mango transition-colors duration-200 line-clamp-3">
+                  {post.title}
+                </h4>
+                <p class="text-[12px] text-[#9b9b9b] mt-1">
+                  {formatDay(post.timestamp)}
+                </p>
+              </div>
+            </div>
+          )}
+        </a>
+      </li>
+    ))}
+  </ul>
+</aside>
+
+<style>
+  .widget_hot_post {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .widget_hot_li {
+    margin-bottom: 18px;
+  }
+  .widget_hot_li.first {
+    margin-bottom: 18px;
+  }
+  .hot_post_info {
+    z-index: 1;
+  }
+</style>

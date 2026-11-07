@@ -1,0 +1,55 @@
+---
+interface Props {
+  images: string[];
+  slug: string;
+}
+
+const { images, slug } = Astro.props;
+const maxDisplay = 9;
+const displayImages = images.slice(0, maxDisplay);
+const remainingCount = images.length - maxDisplay;
+
+function getLayoutClass(count: number): string {
+  if (count === 1) return 'post-img-1';
+  if (count === 2) return 'post-img-2';
+  if (count === 3) return 'post-img-3';
+  if (count === 4) return 'post-img-4';
+  if (count === 5) return 'post-img-5';
+  if (count === 6) return 'post-img-6';
+  if (count === 7) return 'post-img-7';
+  if (count === 8) return 'post-img-8';
+  return 'post-img-9';
+}
+---
+
+<!--
+  灯箱脚本与样式已抽到全局：public/js/lightbox.js + src/styles/global.css。
+  由 BaseLayout 全站引入，这里只负责输出缩略图与分组数据。
+  data-images 保存完整列表（含被 +N 折叠的），灯箱可一路翻到最后一张。
+-->
+<div
+  class:list={['post-images', getLayoutClass(displayImages.length)]}
+  data-gallery={slug}
+  data-images={JSON.stringify(images)}
+>
+  {displayImages.map((image, index) => (
+    <a
+      href={image}
+      class="post-img lightbox-link relative"
+      data-gallery={slug}
+      data-index={index}
+      aria-label={`查看大图 ${index + 1}`}
+    >
+      <img
+        src={image}
+        alt={`图片 ${index + 1}`}
+        loading="lazy"
+      />
+      {index === displayImages.length - 1 && remainingCount > 0 && (
+        <div class="img-overlay">
+          +{remainingCount}
+        </div>
+      )}
+    </a>
+  ))}
+</div>

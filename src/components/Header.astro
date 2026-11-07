@@ -1,0 +1,289 @@
+---
+const currentPath = Astro.url.pathname;
+
+const navItems = [
+  { name: '风景', href: '/categories/风景' },
+  { name: '旅拍', href: '/categories/旅拍', icon: 'bi-palette' },
+  { name: '科技', href: '/categories/科技', hasDropdown: true, children: [
+    { name: '数码', href: '/categories/数码' },
+    { name: '软件', href: '/categories/软件' },
+  ]},
+  { name: '主题下载', href: '/download' },
+  { name: '旅游地图', href: '/map' },
+];
+---
+
+<header class="site-header">
+  <div class="container mx-auto px-4 max-w-mango">
+    <div class="flex items-center justify-between">
+      <!-- Logo -->
+      <a href="/" class="flex items-center space-x-2">
+        <img src="/images/logo.svg" alt="Mango" class="h-[30px]" />
+        <b class="text-xl font-bold text-[#333] dark:text-[#ccc]" style="letter-spacing: 0.5px;">Mango</b>
+      </a>
+
+      <!-- Desktop Navigation -->
+      <nav class="hidden lg:flex items-center">
+        <ul class="flex items-center space-x-1">
+          {navItems.map((item) => (
+            <li class="relative group">
+              <a
+                href={item.href}
+                class:list={[
+                  'nav-link block',
+                  { 'nav-link-active': currentPath === item.href }
+                ]}
+              >
+                {'icon' in item && item.icon && (
+                  <i class:list={[item.icon, 'mr-1']}></i>
+                )}
+                {item.name}
+                {item.hasDropdown && (
+                  <i class="bi bi-chevron-down text-xs ml-1"></i>
+                )}
+              </a>
+              {item.hasDropdown && item.children && (
+                <ul class="absolute top-full left-0 w-40 bg-white dark:bg-[#212121] rounded-[10px] shadow-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                  {item.children.map((child) => (
+                    <li>
+                      <a href={child.href} class="block px-4 py-2 text-sm text-[#333] dark:text-[#ccc] hover:bg-gray-100 dark:hover:bg-[#333] hover:text-mango transition-colors duration-200">
+                        {child.name}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      <!-- Right side: Search toggle + Theme toggle + Mobile menu -->
+      <div class="flex items-center space-x-3">
+        <button id="search-toggle" class="header-icon-btn flex items-center justify-center" aria-label="搜索" aria-expanded="false">
+          <i class="bi bi-search"></i>
+        </button>
+
+        <button id="theme-toggle" class="header-icon-btn flex items-center justify-center" aria-label="切换主题">
+          <i class="bi bi-lightbulb-fill dark-icon"></i>
+          <i class="bi bi-lightbulb light-icon"></i>
+        </button>
+
+        <button id="mobile-menu-toggle" class="lg:hidden header-icon-btn flex items-center justify-center" aria-label="菜单">
+          <i class="bi bi-list"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Expandable top search bar -->
+    <div id="c_sousuo">
+      <div class="search_box">
+        <form action="/search" method="get" class="ss_a">
+          <input type="text" name="q" placeholder="输入关键词搜索..." autocomplete="off" />
+          <button type="submit" aria-label="搜索">
+            <i class="bi bi-search"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Mobile Navigation -->
+    <ul id="mobile-menu" class="hidden lg:hidden mt-4 pb-4 space-y-2">
+      {navItems.map((item) => (
+        <li>
+          <a
+            href={item.href}
+            class:list={[
+              'block px-4 py-2 rounded-lg',
+              'nav-link',
+              { 'nav-link-active bg-gray-100 dark:bg-[#333]': currentPath === item.href }
+            ]}
+          >
+            {item.name}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</header>
+
+<script>
+  // Theme toggle
+  const themeToggle = document.getElementById('theme-toggle');
+  
+  const toggleTheme = () => {
+    const html = document.documentElement;
+    // Halo 优化：主状态键改用 isDarkMode（'1' 暗 / '0' 浅），
+    // 同时保留 theme 键兼容旧书签；未设置时由 ThemeScript 跟随系统。
+    const isDark = html.classList.contains('dark');
+    if (isDark) {
+      html.classList.remove('dark');
+      localStorage.setItem('isDarkMode', '0');
+      localStorage.setItem('theme', 'light');
+    } else {
+      html.classList.add('dark');
+      localStorage.setItem('isDarkMode', '1');
+      localStorage.setItem('theme', 'dark');
+    }
+  };
+
+  themeToggle?.addEventListener('click', toggleTheme);
+
+  // Mobile menu toggle
+  const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+  const mobileMenu = document.getElementById('mobile-menu');
+
+  mobileMenuToggle?.addEventListener('click', () => {
+    mobileMenu?.classList.toggle('hidden');
+  });
+
+  // Expandable top search bar
+  const searchToggle = document.getElementById('search-toggle');
+  const searchBar = document.getElementById('c_sousuo');
+
+  searchToggle?.addEventListener('click', () => {
+    const isOpen = searchBar?.classList.toggle('open');
+    searchToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    if (isOpen) {
+      setTimeout(() => searchBar?.querySelector('input')?.focus(), 360);
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      searchBar?.classList.remove('open');
+      searchToggle?.setAttribute('aria-expanded', 'false');
+    }
+  });
+</script>
+
+<style>
+  .header-icon-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #e9e9e9;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.2s;
+    color: #333;
+  }
+
+  .header-icon-btn:hover {
+    background: #ddd;
+  }
+
+  :global(.dark) .header-icon-btn {
+    background: #333;
+    color: #ccc;
+  }
+
+  :global(.dark) .header-icon-btn:hover {
+    background: #444;
+  }
+
+  .dark-icon {
+    display: none;
+    color: #ffc008;
+  }
+
+  .light-icon {
+    display: block;
+  }
+
+  :global(.dark) .dark-icon {
+    display: block;
+  }
+
+  :global(.dark) .light-icon {
+    display: none;
+  }
+
+  /* One-shot override for every lg:hidden header control */
+  @media (min-width: 1024px) {
+    #mobile-menu-toggle,
+    .header-icon-btn.lg\:hidden {
+      display: none !important;
+    }
+  }
+
+  /* Expandable top search bar */
+  #c_sousuo {
+    height: 0;
+    overflow: hidden;
+    transition: height 0.35s ease;
+  }
+
+  #c_sousuo.open {
+    height: 120px;
+  }
+
+  #c_sousuo .search_box {
+    margin: 30px 0;
+    text-align: center;
+  }
+
+  #c_sousuo .search_box .ss_a {
+    position: relative;
+    width: 100%;
+    border: 3px solid #ddd;
+    line-height: 40px;
+    padding: 0 15px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+  }
+
+  #c_sousuo .search_box .ss_a input {
+    width: 100%;
+    border: none;
+    font-size: 12px;
+    line-height: 34px;
+    height: 34px;
+    padding: 0;
+    outline: none;
+    background: transparent;
+    color: #333;
+  }
+
+  #c_sousuo .search_box .ss_a input::placeholder {
+    color: #999;
+  }
+
+  #c_sousuo .search_box .ss_a button {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #999;
+    font-size: 15px;
+    line-height: 1;
+    padding: 0;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+
+  #c_sousuo .search_box .ss_a button:hover {
+    color: #4270f5;
+  }
+
+  :global(.dark) #c_sousuo {
+    background: #1a1a1a;
+  }
+
+  :global(.dark) #c_sousuo .search_box .ss_a {
+    border: 3px solid #414141;
+    background: #1a1a1a;
+  }
+
+  :global(.dark) #c_sousuo .search_box .ss_a input {
+    color: #ccc;
+  }
+
+  :global(.dark) #c_sousuo .search_box .ss_a input::placeholder {
+    color: #666;
+  }
+</style>

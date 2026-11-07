@@ -1,0 +1,55 @@
+---
+interface Tag {
+  name: string;
+  count: number;
+}
+
+interface Props {
+  tags: Tag[];
+}
+
+const { tags } = Astro.props;
+
+// Mark top 3 tags as "hot"
+const hotThreshold = Math.min(3, tags.length);
+const sortedTags = [...tags].sort((a, b) => b.count - a.count);
+---
+
+<aside class="widget">
+  <h3 class="widget-title">热门标签</h3>
+  <div class="flex flex-wrap">
+    {sortedTags.map((tag, index) => (
+      <a
+        href={`/tags/${tag.name}`}
+        class:list={[
+          'inline-block text-[13px] px-[13px] py-[5px] rounded-[3px] mr-[6px] mb-[6px] transition-colors duration-200',
+          'bg-[#f5f5f5] dark:bg-[#333] text-[#333] dark:text-[#ccc] hover:bg-mango hover:text-white',
+          index < hotThreshold && 'relative hot'
+        ]}
+      >
+        {index < hotThreshold && (
+          <span class="hot-dot"></span>
+        )}
+        {tag.name}
+      </a>
+    ))}
+  </div>
+</aside>
+
+<style>
+  .hot-dot {
+    position: absolute;
+    top: -2px;
+    right: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #4270f5;
+    border: 3px solid #fff;
+    z-index: 1;
+  }
+
+  :global(.dark) .hot-dot {
+    border-color: #212121;
+  }
+</style>

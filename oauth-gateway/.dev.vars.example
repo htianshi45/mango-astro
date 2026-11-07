@@ -1,0 +1,5 @@
+# 本地 `wrangler dev` 用的假/真凭据。复制为 .dev.vars（已被 .gitignore 排除）：
+#   cp .dev.vars.example .dev.vars
+# 线上部署请用 `wrangler secret put`，不要提交真实值。
+GITHUB_CLIENT_ID=REPLACE_ME_CLIENT_ID
+GITHUB_CLIENT_SECRET=REPLACE_ME_CLIENT_SECRET

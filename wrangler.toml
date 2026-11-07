@@ -1,0 +1,6 @@
+# Cloudflare Pages 项目配置（站点本体）
+# 注意：OAuth 网关是独立的 Worker，配置在 oauth-gateway/wrangler.toml，不要混用。
+# 部署命令：wrangler pages deploy dist --project-name mango-astro --branch main
+name = "mango-astro"
+compatibility_date = "2026-11-07"
+pages_build_output_dir = "dist"

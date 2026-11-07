@@ -1,0 +1,65 @@
+# Decap CMS · Mango Astro
+# 文档：https://decapcms.org/docs/github-backend/
+#
+# ⚠️ 上线前必须替换下面 3 处 REPLACE / 确认域名：
+#   1. backend.repo          → 你的 GitHub 仓库，格式 owner/name
+#   2. backend.base_url      → OAuth 网关根地址（默认 https://auth.840428.xyz）
+#   3. backend.site_domain   → CMS 页面所在域名（本地 localhost 也可，见操作清单）
+# 详细步骤见工程根目录《后台接入-操作清单.md》
+
+backend:
+  name: github
+  repo: REPLACE_ME_OWNER/REPLACE_ME_REPO
+  branch: main
+  base_url: https://auth.840428.xyz
+  auth_endpoint: auth
+  site_domain: mango.840428.xyz
+  # scope 由 CMS 弹窗传给网关（私有仓库 repo / 公开仓库 public_repo）
+  auth_scope: repo
+
+# CMS 上传的图片写入仓库 public/images/uploads，前端用 /images/uploads/xxx 引用
+media_folder: public/images/uploads
+public_folder: /images/uploads
+
+collections:
+  - name: posts
+    label: 文章
+    folder: src/content/posts
+    create: true
+    # 让作者显式填英文短名做文件名，避免中文标题被 slugify 成空文件名
+    slug: "{{fields.slug}}"
+    summary: "{{title}} · {{pubDate}}"
+    editor:
+      preview: true
+    fields:
+      - label: "URL 别名（文件名，小写英文/数字/连字符）"
+        name: "slug"
+        widget: "string"
+        pattern: ["^[a-z0-9-]+$", "只能用小写字母、数字和连字符"]
+      - { label: "标题", name: "title", widget: "string" }
+      - { label: "摘要", name: "description", widget: "text", required: false }
+      - { label: "发布日期", name: "pubDate", widget: "datetime" }
+      - { label: "更新日期", name: "updatedDate", widget: "datetime", required: false }
+      - { label: "封面图", name: "heroImage", widget: "image", required: false }
+      - label: "九宫格图片"
+        name: "images"
+        widget: "list"
+        required: false
+        field: { label: "图片", name: "image", widget: "image" }
+      - { label: "作者", name: "author", widget: "string", default: "Mango" }
+      - { label: "头像", name: "avatar", widget: "image", default: "/images/default-avatar.svg" }
+      - label: "标签"
+        name: "tags"
+        widget: "list"
+        required: false
+        field: { label: "标签", name: "tag", widget: "string" }
+      - { label: "分类", name: "category", widget: "string", required: false }
+      - { label: "置顶权重", name: "sticky", widget: "number", default: 0, required: false }
+      - { label: "浏览量", name: "views", widget: "number", default: 0, required: false }
+      - { label: "评论数", name: "comments", widget: "number", default: 0, required: false }
+      - { label: "点赞数", name: "likes", widget: "number", default: 0, required: false }
+      - { label: "草稿", name: "draft", widget: "boolean", default: false, required: false }
+      - { label: "正文", name: "body", widget: "markdown" }
+
+# 说明：没有配置 pages collection。原模板里的 "关于页面" 指向 src/pages/about.astro，
+# 那是 Astro 组件而非 Markdown；用 CMS 的 markdown widget 编辑会写坏组件文件。

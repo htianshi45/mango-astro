@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mango 主题 · 三轮对比剩余修改清单</title>
+<style>
+:root { --ink:#1f2328; --muted:#5f6b7a; --line:#e3e8ef; --accent:#4270f5; --accent-soft:#e6efff; --code:#f6f8fa; }
+* { box-sizing:border-box; }
+body { margin:0; background:#fff; color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:15px; line-height:1.75; }
+.layout { max-width:1240px; margin:0 auto; padding:0 28px; display:grid; grid-template-columns:258px minmax(0,1fr); gap:44px; }
+aside { position:sticky; top:0; align-self:start; max-height:100vh; overflow:auto; padding:38px 0 30px; border-right:1px solid var(--line); }
+aside h2 { font-size:13px; font-weight:600; letter-spacing:.08em; color:var(--muted); margin:0 0 12px; }
+.toc ul { list-style:none; margin:0; padding:0; }
+.toc ul ul { padding-left:14px; }
+.toc li { margin:3px 0; }
+.toc a { color:var(--muted); text-decoration:none; font-size:13px; display:block; padding:2px 8px; border-radius:6px; }
+.toc a:hover { color:var(--accent); background:var(--accent-soft); }
+main { padding:38px 0 80px; min-width:0; }
+h1 { font-size:30px; line-height:1.3; margin:0 0 22px; padding-bottom:16px; border-bottom:2px solid var(--accent); }
+h2 { font-size:21px; margin:44px 0 14px; padding-top:10px; border-top:1px solid var(--line); }
+h3 { font-size:17px; margin:28px 0 10px; }
+p { margin:10px 0; }
+a { color:var(--accent); }
+blockquote { margin:16px 0; padding:10px 16px; background:var(--accent-soft); border-left:3px solid var(--accent); border-radius:0 8px 8px 0; color:#2a3b4d; }
+blockquote p { margin:4px 0; }
+blockquote ul { margin:6px 0; }
+ul, ol { padding-left:24px; }
+li { margin:4px 0; }
+li.task { list-style:none; margin-left:-20px; }
+code { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.9em;
+  background:var(--code); padding:2px 5px; border-radius:4px; color:#0c447c; }
+pre { background:var(--code); border:1px solid var(--line); border-radius:10px; padding:14px 16px;
+  overflow-x:auto; white-space:pre-wrap; word-break:break-word; margin:12px 0; }
+pre code { background:none; padding:0; color:var(--ink); font-size:13px; line-height:1.6; }
+.copy { float:right; position:relative; top:6px; z-index:1; border:1px solid var(--line); background:#fff;
+  color:var(--muted); font-size:12px; padding:3px 9px; border-radius:6px; cursor:pointer; }
+.copy:hover { color:var(--accent); border-color:var(--accent); }
+table { border-collapse:collapse; width:100%; margin:16px 0; font-size:14px; }
+th, td { border:1px solid var(--line); padding:8px 11px; text-align:left; vertical-align:top; }
+th { background:var(--accent-soft); color:#0c447c; font-weight:600; }
+tr:nth-child(even) td { background:#fbfcfe; }
+hr { border:0; border-top:1px solid var(--line); margin:34px 0; }
+.footer { margin-top:56px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:13px; }
+@media (max-width:900px) { .layout { grid-template-columns:1fr; gap:0; } aside { position:static; max-height:none; border-right:0; border-bottom:1px solid var(--line); padding:24px 0 12px; } main { padding-top:24px; } }
+@media print { body { font-size:11pt; } .layout { display:block; max-width:none; padding:0; } aside,.copy { display:none; } main { padding:0; } h2 { page-break-after:avoid; } pre,table,blockquote { page-break-inside:avoid; } a { color:inherit; text-decoration:none; } }
+</style>
+</head>
+<body>
+<div class="layout">
+<aside><h2>目录</h2><div class="toc">
+<ul>
+<li><a href="#mango-qoder">Mango 主题 · 三轮对比（Qoder 第二次改版后）剩余修改清单</a><ul>
+<li><a href="#1">1. 一句话结论 🎯</a></li>
+<li><a href="#2">2. 本轮已修好的（逐项核销 ✅）</a></li>
+<li><a href="#3-p0-css">3. 🔴 唯一 P0：九宫格图片整块 CSS 失效（本轮回归）</a><ul>
+<li><a href="#31">3.1 现象</a></li>
+<li><a href="#32">3.2 根因（三层叠加，已逐层验证）</a></li>
+<li><a href="#33">3.3 最小可靠修复（推荐，可直接粘贴）</a></li>
+</ul>
+</li>
+<li><a href="#4-p1">4. P1 · 上轮清单里基本未动的项 ⚠️</a></li>
+<li><a href="#5">5. 本轮新浮现的中小差异 🧩</a></li>
+<li><a href="#6-qoder">6. 交给 Qoder 的完整指令（可直接复制）📋</a></li>
+<li><a href="#7">7. 验收清单 ✅</a></li>
+<li><a href="#8">8. 数据来源与自洽校验 🔗</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</aside>
+<main>
+<h1 id="mango-qoder">Mango 主题 · 三轮对比（Qoder 第二次改版后）剩余修改清单</h1>
+<blockquote>
+<p>对比对象：<code>http://localhost:4321/</code>（下称「本地 v3」）vs <code>https://mango.huitheme.cn/</code>（WordPress 原版）
+对照图：<code>对比-原版vs新版-v3.png</code>（<strong>上为原版、下为本地 v3</strong>，上下拼接，940×1930，同一 1440px 视口裁切）
+生成时间：2026-11-06 22:48 ｜ 基准 CSS：<code>Theme Version: 1.6.20241202</code>
+前两轮：<code>一比一复刻-差距清单.md</code>（v1）、<code>二轮对比-剩余修改清单.md</code>（v2）
+目标：<strong>一比一复刻，除静态站确实无法实现的功能外不做妥协</strong></p>
+</blockquote>
+<hr />
+<h2 id="1">1. 一句话结论 🎯</h2>
+<p>Qoder 这轮<strong>把上一轮 5 个 P0 里的 4 个修好了</strong>：轮播首帧/错字/箭头、侧栏热门文章大图、Bootstrap Icons、卡片元信息全部到位，还补了 4 个导航页与本地图片素材，观感已经很接近原版。</p>
+<p>但出现<strong>一个致命回归</strong> 🔴：<strong>文章九宫格图片整块 CSS 失效</strong>，3 张图变成竖着堆成一列的大图。根因不是数值写错，而是<strong>组件模板与全局 CSS 的命名体系对不上，导致整块规则被 Tailwind 从构建产物里 purge 掉了</strong>。这一项不修，首页视觉密度与原版差一倍以上，按「一比一」标准本轮<strong>不能算通过</strong>。</p>
+<p><strong>达成度：v2 约 65% → v3 约 78%</strong>（P0 修好 4 项 +2 项部分，但九宫格回归扣回约 5%）
+→ 修掉这一个 P0 约 <strong>84%</strong>；再补 P1 约 <strong>93%</strong>；剩余 7% 是 WordPress 动态功能（评论/点赞/浏览量/AJAX 分页）。</p>
+<hr />
+<h2 id="2">2. 本轮已修好的（逐项核销 ✅）</h2>
+<table>
+<thead>
+<tr>
+<th>上轮编号</th>
+<th>问题</th>
+<th>v3 状态</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P0-1</td>
+<td>侧栏热门文章首条大图消失</td>
+<td>✅ 已修</td>
+<td><code>index.astro</code> 的 <code>postData</code> 补了 <code>heroImage</code>/<code>comments</code>；<code>content/config.ts</code> 补 <code>comments</code>/<code>likes</code>；两篇 md 补齐数据；<code>HotPostsWidget</code> 改为 <code>widget_hot_post / widget_hot_li</code> 结构 + 首条大图叠加</td>
+</tr>
+<tr>
+<td>P0-2</td>
+<td>轮播首帧错、错字、箭头点不动</td>
+<td>✅ 已修</td>
+<td><code>banner.ts</code> 标题改回「干净通透的沉浸式工作台<strong>[文章分页效果]</strong>」、图改 <code>/images/banner-1.jpg</code>；<code>Banner.astro</code> radius 4px、角标 <code>top:0 left:0 / 3px 7px / 无圆角</code>、<code>h2 padding:20px 25px</code>、遮罩 <code>::before</code> 等效 div <code>opacity:.6 z-index:1</code>、整块 <code>&lt;a&gt;</code> 包裹、父容器 hover 显示箭头、<strong>prev/next 与 indicator 都有 click 且会 <code>clearInterval</code></strong>、图标换 <code>bi-chevron-*</code></td>
+</tr>
+<tr>
+<td>P0-3</td>
+<td>九宫格 8 条规则错 7 条</td>
+<td>⚠️ <strong>数值全改对了，但 CSS 没生效</strong></td>
+<td><code>global.css</code> 的 8 条规则已与原版逐条一致；但组件输出 <code>post_images post_img_3</code>，CSS 写的是 <code>.post-images .post-img-3</code> → 见第 3 节</td>
+</tr>
+<tr>
+<td>P0-4</td>
+<td>顶栏 logo / 图标 / 死链</td>
+<td>🟡 大部分已修</td>
+<td>引入 <code>bootstrap-icons</code> 自托管并在 <code>BaseLayout</code> 里 <code>&lt;link&gt;</code>；全站图标换 <code>bi-*</code>；新增 <code>/categories/[slug]</code>、<code>/download</code>、<code>/map</code> 三个页面，实测 6 条路由全 200；logo 由蓝底 M 换成蓝色圆环（<strong>仍不是原版芒果图</strong>）；「旅拍」仍缺 <code>bi-palette</code>；右侧按钮仍无 30×30 圆形灰底；搜索仍是假 offcanvas</td>
+</tr>
+<tr>
+<td>P0-5</td>
+<td>卡片头像/时间/更多/标签/三数</td>
+<td>✅ 基本修好</td>
+<td><code>formatTime</code> 补了「周前/月前/年前」；更多按钮改 <code>&lt;a&gt;</code> + <code>bi-three-dots</code>（横向三点）；标签补 <code>bi-hash</code>、<code>margin-top:30px</code>；<code>index.astro</code> 不再写死 0，三项从 frontmatter 读并 <code>toLocaleString()</code> 千分位</td>
+</tr>
+<tr>
+<td>P1-11</td>
+<td>返回顶部按钮颜色</td>
+<td>🟡 部分</td>
+<td>已改 <code>bg-black</code> + <code>bi-arrow-up</code>；仍有 <code>shadow-lg</code>、<code>bottom-8 right-8</code>(32px)、hover <code>#333</code>（原版 30px / 无阴影 / hover <code>#4270f6</code>）</td>
+</tr>
+<tr>
+<td>P2-19</td>
+<td>灯箱 ESC 重复注册</td>
+<td>✅ 已修</td>
+<td><code>lightboxInitialized</code> 单次守卫 + ESC 监听随 overlay 移除；补了左右切换按钮（视觉尚未接线到 gallery 数组）</td>
+</tr>
+<tr>
+<td>P1-7</td>
+<td>相关文章写死两条</td>
+<td>🟡 部分</td>
+<td><code>[slug].astro</code> 改成按 <code>category</code> 取真实相关文章 + fallback；但详情页<strong>仍是单个 <code>.post-loop</code> 卡片</strong></td>
+</tr>
+<tr>
+<td>—</td>
+<td>构建</td>
+<td>✅ 通过</td>
+<td><code>npm run build</code> → <strong>20 pages / 2.54s / Complete</strong>，无报错</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-p0-css">3. 🔴 唯一 P0：九宫格图片整块 CSS 失效（本轮回归）</h2>
+<h3 id="31">3.1 现象</h3>
+<p>对照图里：原版第一张卡片是 <strong>3×3 共 9 张正方形小图 + 最后一张 <code>+23</code> 角标</strong>，占卡片高度约 230px；本地 v3 是<strong>一张横向大图竖着叠三张</strong>，首屏里只露得出第一张，卡片被撑到 1000px 以上。这是本轮最刺眼的差距。</p>
+<p>长图 <code>/tmp/mango-v3-long.png</code> 可见三张图片<strong>按原始宽高比垂直堆叠</strong>，完全没有 float 网格、没有方形裁剪、没有 <code>margin:2%</code>。</p>
+<h3 id="32">3.2 根因（三层叠加，已逐层验证）</h3>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>事实</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① 命名不一致</td>
+<td><code>PostImages.astro</code> 输出 <code>class="post_images post_img_3"</code>（<strong>下划线</strong>）；<code>global.css</code> 定义 <code>.post-images</code> / <code>.post-images.post-img-3</code>（<strong>中划线</strong>）</td>
+<td>运行时 HTML：<code>curl -s http://localhost:4321/ \| grep -oE 'class="[^"]*post_images…'</code> → <code>class="post_images post_img_3"</code>、<code>class="post_images post_img_4"</code></td>
+</tr>
+<tr>
+<td>② 子元素缺 class</td>
+<td>CSS 全部写成 <code>.post-images .post-img …</code>，但模板里 <code>&lt;a&gt;</code> 只有 <code>class="lightbox-link relative"</code>，<strong>根本没有 <code>.post-img</code></strong></td>
+<td><code>PostImages.astro:27</code>；运行时 HTML 只有 <code>class="lightbox-link relative"</code></td>
+</tr>
+<tr>
+<td>③ <strong>Tailwind purge</strong></td>
+<td>这些规则写在 <code>@layer components</code> 里，Tailwind 3 会按 content 扫描<strong>丢弃未被引用的类</strong>；因为模板里从没出现过 <code>post-images</code>/<code>post-img-3</code> 字面量，<strong>整块规则连构建产物都没进</strong></td>
+<td><code>dist/_astro/about.DyYm-obg.css</code> 里 <code>grep -c '62.67%'</code> = <strong>0</strong>；含 <code>post</code> 的选择器只剩 <code>.post-loop / .post-loop-tag / .post-tag / .post-info-footer</code>（这些恰好是模板里用到的名字）；dev 首页内联 CSS 里也搜不到 <code>.post-images</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ 所以这不是「样式优先级不够」，而是<strong>规则被删除</strong>。改模板 class 或改 CSS 名，二者必须选一个统一；只改一处仍会被 purge。</p>
+</blockquote>
+<h3 id="33">3.3 最小可靠修复（推荐，可直接粘贴）</h3>
+<p><strong>A. <code>src/components/PostImages.astro</code></strong> —— 统一成中划线，并给 <code>&lt;a&gt;</code> 加 <code>.post-img</code>：</p>
+<button class="copy" type="button">复制</button><pre><code class="language-astro">// getLayoutClass 返回值全部改中划线
+if (count === 1) return 'post-img-1';
+if (count === 2) return 'post-img-2';
+// … 3..8 同理
+return 'post-img-9';
+</code></pre>
+<button class="copy" type="button">复制</button><pre><code class="language-astro">&lt;div class:list={['post-images', getLayoutClass(displayImages.length)]}&gt;
+  {displayImages.map((image, index) =&gt; (
+    &lt;a href={image} class=&quot;post-img lightbox-link&quot; data-gallery={slug} data-index={index}&gt;
+      &lt;img src={image} alt={`图片 ${index + 1}`} loading=&quot;lazy&quot; /&gt;
+      {index === displayImages.length - 1 &amp;&amp; remainingCount &gt; 0 &amp;&amp; (
+        &lt;div class=&quot;img-overlay&quot;&gt;+{remainingCount}&lt;/div&gt;
+      )}
+    &lt;/a&gt;
+  ))}
+&lt;/div&gt;
+</code></pre>
+<p><strong>B. <code>src/styles/global.css</code></strong> —— 把整块 <code>.post-images*</code> 规则<strong>移出 <code>@layer components</code></strong>（Tailwind 不 purge 普通 CSS），并修掉 <code>img</code> 的高度冲突：</p>
+<button class="copy" type="button">复制</button><pre><code class="language-css">/* 放在 @layer 之外，避免被 purge */
+.post-images { width: 66%; font-size: 0; display: table; margin: 0 -1%; }
+.post-images &gt; a.post-img {
+  display: inline-block; float: left; position: relative;
+  border-radius: 8px; overflow: hidden; margin: 2%;
+}
+.post-images &gt; a.post-img &gt; img {
+  display: block; width: 100%;
+  height: auto;                 /* 删掉 height:340px */
+  aspect-ratio: 1 / 1;          /* 原版是 340x340-c 方图 */
+  object-fit: cover;
+}
+.post-images.post-img-2 &gt; a { width: 46%; }
+.post-images.post-img-3 &gt; a:first-child { width: 62.67%; }
+.post-images.post-img-3 &gt; a:not(:first-child) { width: 29.33%; }
+.post-images.post-img-4 &gt; a { width: 46%; }
+.post-images.post-img-5 &gt; a:nth-child(-n+2) { width: 46%; }
+.post-images.post-img-5 &gt; a:nth-child(n+3) { width: 29.33%; }
+.post-images.post-img-6 &gt; a:first-child { width: 62.67%; }
+.post-images.post-img-6 &gt; a:not(:first-child) { width: 29.33%; margin: 2.2% 2%; }
+.post-images.post-img-7 &gt; a:nth-child(-n+3) { width: 29.33%; }
+.post-images.post-img-7 &gt; a:nth-child(n+4) { width: 21%; }
+.post-images.post-img-8 &gt; a:nth-child(-n+2) { width: 46%; }
+.post-images.post-img-8 &gt; a:nth-child(n+3) { width: 29.33%; }
+.post-images.post-img-9 &gt; a { width: 29.33%; }
+</code></pre>
+<blockquote>
+<p>现有 <code>height:340px</code> 与 <code>aspect-ratio:1/1</code> 同时写会互相打架；且 29.33% 宽度的小图只有约 100px 宽，固定 340px 高会拉成竖条。<strong>必须改成 <code>height:auto</code> + <code>aspect-ratio</code></strong>。</p>
+</blockquote>
+<p><strong>C. 内容补数据</strong>：两篇 md 的 <code>images</code> 仍是 3 / 4 张且是 Unsplash 外链。建议补到 <strong>9 张以上</strong>（本地化到 <code>public/images/</code>），才能触发 <code>post-img-9</code> 与 <code>+N</code> 角标，把 8 套布局全部验收一遍。</p>
+<p><strong>D. 验收命令</strong>：</p>
+<button class="copy" type="button">复制</button><pre><code class="language-bash">npm run build &amp;&amp; grep -o '62.67%' dist/_astro/*.css | wc -l   # 必须 &gt; 0
+&quot;/Applications/Google Chrome.app/Contents/MacOS/Google Chrome&quot; \
+  --headless=new --disable-gpu --no-sandbox --no-proxy-server --hide-scrollbars \
+  --user-data-dir=/tmp/chrome-v4 --window-size=1440,1000 \
+  --virtual-time-budget=2200 --screenshot=/tmp/mango-v4.png http://localhost:4321/
+</code></pre>
+<p>（<code>--virtual-time-budget</code> 保持 <strong>&lt;5000</strong>，否则会截到轮播第 2 帧。）</p>
+<hr />
+<h2 id="4-p1">4. P1 · 上轮清单里基本未动的项 ⚠️</h2>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>项目</th>
+<th>v3 状态</th>
+<th>原版要求</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1-6</td>
+<td>分页</td>
+<td>❌ <strong>全工程 <code>grep Pagination</code> = 0 引用</strong>，<code>Pagination.astro</code> 仍是孤儿；首页一次性列完 2 篇</td>
+<td><code>paginate()</code> 生成 <code>/page/N</code>；<code>.posts-nav .page-numbers</code> 无圆角无边框、<code>padding:5px 10px</code>、<code>#fff/#555</code>、<code>current #4270f6</code></td>
+</tr>
+<tr>
+<td>P1-7</td>
+<td>详情页</td>
+<td>❌ 仍是单个 <code>.post-loop</code> 卡片；<code>post_container_title</code> / <code>post_author</code> 仍是<strong>无 CSS 定义的死 class</strong>；无评论区</td>
+<td>三段分离白卡（title / container / author）+ <code>.post_related</code> + <code>#comments</code>；作者头像 28×28；右侧蓝底分享按钮</td>
+</tr>
+<tr>
+<td>P1-8a</td>
+<td>侧栏吸顶</td>
+<td>❌ <code>sidebar_sticky</code> 全工程 0 处</td>
+<td><code>position:sticky; top:95px; margin-bottom:20px</code></td>
+</tr>
+<tr>
+<td>P1-8b</td>
+<td>标签 hot 圆点</td>
+<td>❌ 仍是 <code>-left-1 -top-1</code>（左上）</td>
+<td><code>top:-2px; right:0; 12×12; border:3px solid #fff</code>（<strong>右上</strong>），暗色边框 <code>#212121</code></td>
+</tr>
+<tr>
+<td>P1-8c</td>
+<td>最近评论</td>
+<td>❌ 完全未改：结构仍是「访客 A：内容 + 文章标题 - 日期」、<code>space-y-4</code> 无分隔线、只有 2 条</td>
+<td>「头像 + 评论正文（13px 两行截断）+ <code>&lt;span&gt;昵称 / 发布于X 月前&lt;/span&gt;</code>」、<code>border-bottom:1px solid #f4f4f4</code>、<code>padding-bottom:15px</code>、5 条</td>
+</tr>
+<tr>
+<td>P1-9</td>
+<td>搜索</td>
+<td>❌ 仍是右侧 offcanvas 假表单，提交按钮无事件；形态与原版不同</td>
+<td>顶部 120px 搜索条（<code>#c_sousuo</code>、3px <code>#ddd</code> 边框、40px 行高）；接 Pagefind 或 <code>/search</code> 页</td>
+</tr>
+<tr>
+<td>P1-10</td>
+<td>背景纹理 / 间距</td>
+<td>❌ <code>--ds_background</code> 仍是 inline data-URI 细波浪，对照图里<strong>几乎看不见纹理</strong>（原版水波纹明显）；<code>BaseLayout</code> 的 <code>main</code> 仍有 <code>py-6 px-4</code></td>
+<td>自绘等价浅灰波纹 SVG 放 <code>public/images/</code>；去掉 <code>py-6</code>；暗色补 <code>background-blend-mode:overlay</code></td>
+</tr>
+<tr>
+<td>P1-11</td>
+<td>页脚</td>
+<td>❌ 完全未改：<code>© 2026 Mango Theme / Powered by Astro</code>、友情链接与网站地图都是 <code>href="#"</code> 空链接</td>
+<td>主题版权 + ICP 备案号 <code>.beian</code>；独立 <code>.links{background:#272b30; padding:25px 0}</code> 友情链接块</td>
+</tr>
+<tr>
+<td>P1-12</td>
+<td>暗色模式</td>
+<td>❌ <code>global.css</code> 里只有 5 处零散 <code>.dark</code>；<code>Footer</code> / <code>Banner</code> / <code>BackToTop</code> 无暗色适配</td>
+<td>把原版 <code>.dark</code> 段整体映射成集中规则表：卡片/widget <code>#212121</code>、header/footbox <code>#151516</code>、links <code>#1d1d1d</code>、<code>widget-title:after #191919</code>、页码 <code>#2a2a2b</code>、标签 hot 边框 <code>#212121</code>、评论分隔 <code>#252525</code>、<code>.post_loop_tag em #343435</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5">5. 本轮新浮现的中小差异 🧩</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>位置</th>
+<th>差异</th>
+<th>原版 / 本地</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>轮播素材</td>
+<td><strong>图片内容不同</strong>：原版是桌面工作台（显示器/键盘/绿植），v3 是办公室走廊</td>
+<td>形态已对，属素材层面；换更接近的本地图即可</td>
+</tr>
+<tr>
+<td>2</td>
+<td>侧栏首条大图</td>
+<td>叠加的「N 条留言」用了 <code>text-[#9b9b9b]</code> 灰字，深色图上看不清</td>
+<td>原版 <code>.widget_hot_li:first-child .hot_post_info p{color:#fff}</code> → 改白字</td>
+</tr>
+<tr>
+<td>3</td>
+<td>侧栏热门文章条数</td>
+<td>只有 2 条</td>
+<td>原版 3 条；补文章即解决</td>
+</tr>
+<tr>
+<td>4</td>
+<td>更多按钮</td>
+<td><code>text-[#999]</code> 灰色、约 18px</td>
+<td>原版 <code>i{font-size:24px; color:#3473fb}</code> → 改蓝色 24px</td>
+</tr>
+<tr>
+<td>5</td>
+<td>底部三数</td>
+<td>三项都是裸数字「18 / 1,024 / 56」</td>
+<td>原版「29评论」「19,387浏览」「1448」→ 前两项补单位；图标已是 <code>bi-*-fill</code> ✅</td>
+</tr>
+<tr>
+<td>6</td>
+<td>顶栏右侧</td>
+<td>纯图标、无底；暗色切换是月亮</td>
+<td>原版 30×30 圆 <code>#e9e9e9</code> 底、灯泡 <code>bi-lightbulb</code>，暗色 <code>#ffc008</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td>「旅拍」导航</td>
+<td>无图标</td>
+<td>原版 <code>&lt;i class="bi bi-palette me-1"&gt;&lt;/i&gt;旅拍</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td>Logo</td>
+<td>蓝色圆环</td>
+<td>原版橙黄芒果圆形图（30px 高 + 10px 右距）</td>
+</tr>
+<tr>
+<td>9</td>
+<td>头像</td>
+<td>蓝色/红色圆 + 字母 M/摄影</td>
+<td>原版 Gravatar 真人照；占位图可以，但建议换成本地人像或中性灰底</td>
+</tr>
+<tr>
+<td>10</td>
+<td>首卡摘要</td>
+<td>v3 多了一行「这是一个简洁优雅的…」</td>
+<td>原版首卡无摘要（<code>.post_loop_title_box p</code> 可选）；有内容时 OK，但为对齐可给首卡留空</td>
+</tr>
+<tr>
+<td>11</td>
+<td>卡片首条</td>
+<td>v3 首卡是「欢迎使用 Mango 主题」（<code>sticky:10</code>）</td>
+<td>原版首卡是「也许是最实用的万兆NAS 超长文分页」；属内容排序，不影响复刻</td>
+</tr>
+<tr>
+<td>12</td>
+<td>图片外链</td>
+<td><code>heroImage</code> / <code>images</code> 仍是 <code>images.unsplash.com</code></td>
+<td>建议全部本地化到 <code>public/images/</code>，国内加载更稳</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-qoder">6. 交给 Qoder 的完整指令（可直接复制）📋</h2>
+<button class="copy" type="button">复制</button><pre><code>请基于 /Users/ming/mango-astro 继续一比一复刻 Mango 主题。
+规格书：本目录《三轮对比-剩余修改清单.md》《二轮对比-剩余修改清单.md》
+《一比一复刻-差距清单.md》；当前差距图《对比-原版vs新版-v3.png》。
+参照 https://mango.huitheme.cn/。只按数值与结构重写等价 CSS，不要拷贝原版资产。
+
+【P0 唯一必做：修复九宫格 CSS 整块失效（本轮回归）】
+根因：PostImages.astro 输出 post_images / post_img_N（下划线），
+而 global.css 写的是 .post-images / .post-img-N（中划线），
+且 &lt;a&gt; 没有 .post-img class；这些规则又在 @layer components 里
+被 Tailwind 按 content 扫描 purge 掉了 → dist CSS 里 62.67% 出现 0 次，
+图片按原始比例竖着堆成一列。
+1. PostImages.astro：getLayoutClass 返回值统一改成中划线 post-img-1..9；
+   容器 class 改 ['post-images', …]；每个 &lt;a&gt; 加 class &quot;post-img lightbox-link&quot;。
+2. global.css：把整块 .post-images* 规则移出 @layer components（或确保产物里存在），
+   选择器改成 .post-images &gt; a.post-img；
+   img 规则删掉 height:340px，改成 height:auto + aspect-ratio:1/1 + object-fit:cover。
+   8 套宽度规则保持你已改对的数值（2:46% | 3:①62.67% 余29.33% | 4:46% |
+   5:①②46% 余29.33% | 6:①62.67% 余29.33% margin:2.2% 2% |
+   7:前三29.33% 4-7张21% | 8:①②46% 余29.33% | 9:29.33%）。
+3. 两篇 md 的 images 补到 9 张以上并本地化到 public/images/，
+   用于触发 post-img-9 与 +N 角标、验收全部 8 套分支。
+4. 验收：npm run build 后 `grep -o '62.67%' dist/_astro/*.css` 必须 &gt;0；
+   用 --virtual-time-budget=2200 截图，确认 3x3 正方形九宫格。
+
+【P1：上轮清单里未动的项，按优先级做】
+5. 详情页按三段分离白卡重做：.post_container_title(25px 30px 20px / 下边框2px /
+   顶部圆角4px) + .post_container(30px 32px 20px) + .post_author(20px 30px /
+   上边框3px / flex space-between / 头像28x28 / 右侧蓝底分享按钮)，
+   再补 .post_related 与评论区（Giscus 或 Twikoo）；删掉死 class 或补齐 CSS。
+6. 用 astro paginate() 生成 /page/N，首页每页 8 篇；
+   Pagination.astro 接进首页并改成无圆角无边框方形页码。
+7. 侧栏：加 .sidebar_sticky{position:sticky;top:95px}；
+   TagsWidget 的 hot 圆点改 top:-2px right:0 / 12x12 / border:3px solid #fff；
+   RecentCommentsWidget 改成「头像 + 评论正文 + span(昵称/发布于X 月前)」，
+   加 border-bottom 分隔线，补到 5 条；
+   HotPostsWidget 首条叠加的 p 改成白字 #fff。
+8. 搜索改成原版顶部 120px 搜索条形态并接 Pagefind 真正可用。
+9. 自绘浅灰水波 SVG 作 --ds_background 放 public/images/；
+   BaseLayout 的 main 去掉 py-6；把原版 .dark 规则整体映射成集中的 .dark {...}
+   规则表，覆盖 Footer / Banner / BackToTop / 背景纹理。
+10. 页脚补 .links 深色块与备案号，去掉所有 href=&quot;#&quot;；
+    BackToTop 去 shadow-lg、位置改 bottom:30px right:30px、hover #4270f6。
+11. 顶栏细节：右侧两个按钮改 30x30 圆 #e9e9e9 底、图标用 bi-lightbulb（暗色 #ffc008）；
+    「旅拍」前加 bi-palette；logo 换成非蓝环的等价图标；
+    PostCard 更多按钮改 #3473fb / 24px；底部前两项补「评论」「浏览」单位。
+
+【验收】
+- 1440 / 768 / 375 三种宽度各截一次，浅色与深色各一套；
+- 依次用 1..9 张图验证 8 套九宫格，最后一张有 +N 角标；
+- npm run build 通过；站内所有链接（含 /categories/* /download /map）无 404；
+- 与《对比-原版vs新版-v3.png》逐项比对，卡片高度应与原版接近。
+</code></pre>
+<hr />
+<h2 id="7">7. 验收清单 ✅</h2>
+<ul>
+<li class="task">☐ <code>dist/_astro/*.css</code> 里能搜到 <code>62.67%</code>，九宫格规则确实进入产物</li>
+<li class="task">☐ 9 张图时呈 3×3 正方形网格，最后一张有 <code>+N</code> 角标</li>
+<li class="task">☐ 1/2/3/4/5/6/7/8 张图时 8 套布局逐条与原版一致</li>
+<li class="task">☐ 侧栏热门文章首条大图 + 白字叠加标题（非灰字）</li>
+<li class="task">☐ 轮播首帧为工作台图、箭头可点、indicator 可点</li>
+<li class="task">☐ 详情页为三段分离白卡 + 相关文章 + 评论区</li>
+<li class="task">☐ 首页有分页，页码为无圆角方形</li>
+<li class="task">☐ 侧栏滚动吸顶；最近评论 5 条带分隔线；hot 圆点在右上</li>
+<li class="task">☐ 搜索能真正搜到文章</li>
+<li class="task">☐ 背景水波纹可见；深浅色两态全站无漏改</li>
+<li class="task">☐ 页脚有备案号与 links 块，无 <code>#</code> 空链接</li>
+<li class="task">☐ <code>npm run build</code> 通过、20+ 页、站内链接全绿</li>
+</ul>
+<hr />
+<h2 id="8">8. 数据来源与自洽校验 🔗</h2>
+<table>
+<thead>
+<tr>
+<th>结论来源</th>
+<th>具体依据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>原版基准</td>
+<td><code>/tmp/mango-style.css</code>（31KB，<code>Version 1.6.20241202</code>）、<code>/tmp/mango-demo.html</code>（8 个 <code>.post_loop</code>、1 个 <code>.index_banner</code>、3 个 widget）、<code>/tmp/mango-demo.png</code>（1440×1000）</td>
+</tr>
+<tr>
+<td>本地 v3 视觉</td>
+<td><code>/tmp/mango-v3-top.png</code>（1440×1000）、<code>/tmp/mango-v3-long.png</code>（1440×2400），<code>--virtual-time-budget=2200</code> 避开 5s 自动轮播</td>
+</tr>
+<tr>
+<td>对照图</td>
+<td><code>对比-原版vs新版-v3.png</code>（940×1930，<code>/tmp/gen_mango_compare_v3.py</code>）</td>
+</tr>
+<tr>
+<td>本地 v3 代码</td>
+<td>全量读取 <code>src/**</code> 变更文件、<code>tailwind.config.mjs</code>、<code>public/**</code>、<code>package.json</code></td>
+</tr>
+<tr>
+<td>命名不匹配证据</td>
+<td>运行时 <code>curl -s --noproxy '*' http://localhost:4321/</code> → <code>class="post_images post_img_3"</code> / <code>class="post_images post_img_4"</code>，而 <code>global.css:162-198</code> 全是 <code>.post-images</code> / <code>.post-img-N</code></td>
+</tr>
+<tr>
+<td>purge 证据</td>
+<td><code>dist/_astro/about.DyYm-obg.css</code> 中 <code>grep -c '62.67%'</code> = <strong>0</strong>；含 <code>post</code> 的选择器只剩 <code>.post-loop / .post-loop-tag / .post-tag / .post-info-footer</code>（恰好都是模板里出现过的类名）</td>
+</tr>
+<tr>
+<td>死链修复验证</td>
+<td><code>/</code>、<code>/posts/welcome/</code>、<code>/categories/风景/</code>、<code>/download/</code>、<code>/map/</code>、<code>/tags/</code> 六条路由实测全部 HTTP 200</td>
+</tr>
+<tr>
+<td>构建验证</td>
+<td><code>npm run build</code> → <code>20 page(s) built in 2.54s / Complete</code>，无报错</td>
+</tr>
+<tr>
+<td>自洽校验</td>
+<td>① 上轮 5 个 P0 逐项回读源码核销，4 项已修、1 项回归；② <code>grep Pagination</code> = 0、<code>grep sidebar_sticky</code> = 0、<code>grep ".dark "</code> 仅 5 处 → 确认 P1 基本未动；③ <code>dist/index.html</code> 里 <code>post_images</code> 出现 2 次而 CSS 产物里 0 次 → 规则确被删除而非优先级问题；④ <code>height:340px</code> 与 <code>aspect-ratio:1/1</code> 冲突已单独标注</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>三份清单的关系：v1 是<strong>改动前</strong>的全量基线，v2 是<strong>第一次改后</strong>的剩余项，本份 v3 是<strong>第二次改后</strong>的剩余项。按本份执行即可；数值速查表仍以 v2 第 6 节为准（本轮未发现新的数值偏差，8 套规则数值已全部正确）。</p>
+</blockquote>
+<div class="footer">Mango 主题 · 三轮对比剩余修改清单 v3.0 · 2026-11-06 · 仅供本机学习对照</div>
+</main>
+</div>
+<script>
+document.querySelectorAll('.copy').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var pre = b.nextElementSibling;
+    if (!pre || pre.tagName !== 'PRE') return;
+    navigator.clipboard.writeText(pre.innerText).then(function () {
+      b.textContent = '已复制'; setTimeout(function () { b.textContent = '复制'; }, 1500);
+    });
+  });
+});
+</script>
+</body>
+</html>

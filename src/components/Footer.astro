@@ -1,0 +1,69 @@
+---
+const currentYear = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="links">
+    <div class="container mx-auto px-4 max-w-mango text-center">
+      <a href="/about">关于我们</a>
+      <span>|</span>
+      <a href="/tags">标签云</a>
+      <span>|</span>
+      <a href="/archive">文章归档</a>
+      <span>|</span>
+      <a href="/download">主题下载</a>
+      <span>|</span>
+      <a href="/map">旅游地图</a>
+    </div>
+  </div>
+  <div class="footbox">
+    <div class="container mx-auto px-4 max-w-mango text-center">
+      <p class="mb-2">
+        &copy; {currentYear} Mango Theme. All rights reserved.
+      </p>
+      <p class="text-xs opacity-75">
+        Powered by <a href="https://astro.build" class="text-[#4270f5] hover:text-[#6b8ff7] transition-colors duration-200" target="_blank" rel="noopener">Astro</a>
+      </p>
+      <p class="text-xs opacity-50 mt-2">
+        京ICP备00000000号
+      </p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    margin-top: 30px;
+  }
+
+  .links {
+    background: #272b30;
+    padding: 25px 0;
+    font-size: 12px;
+  }
+
+  .links a {
+    color: #999;
+    transition: color 0.2s;
+  }
+
+  .links a:hover {
+    color: #fff;
+  }
+
+  .links span {
+    color: #666;
+    margin: 0 10px;
+  }
+
+  :global(.dark) .links {
+    background: #1d1d1d;
+  }
+
+  .footbox {
+    background: #1f2327;
+    padding: 20px 0;
+    color: #999;
+    font-size: 12px;
+  }
+</style>

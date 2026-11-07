@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mango 主题 · 六轮对比与总验收清单</title>
+<style>
+:root { --ink:#1f2328; --muted:#5f6b7a; --line:#e3e8ef; --accent:#4270f5; --accent-soft:#e6efff; --code:#f6f8fa; }
+* { box-sizing:border-box; }
+body { margin:0; background:#fff; color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:15px; line-height:1.75; }
+.layout { max-width:1240px; margin:0 auto; padding:0 28px; display:grid; grid-template-columns:258px minmax(0,1fr); gap:44px; }
+aside { position:sticky; top:0; align-self:start; max-height:100vh; overflow:auto; padding:38px 0 30px; border-right:1px solid var(--line); }
+aside h2 { font-size:13px; font-weight:600; letter-spacing:.08em; color:var(--muted); margin:0 0 12px; }
+.toc ul { list-style:none; margin:0; padding:0; }
+.toc ul ul { padding-left:14px; }
+.toc li { margin:3px 0; }
+.toc a { color:var(--muted); text-decoration:none; font-size:13px; display:block; padding:2px 8px; border-radius:6px; }
+.toc a:hover { color:var(--accent); background:var(--accent-soft); }
+main { padding:38px 0 80px; min-width:0; }
+h1 { font-size:30px; line-height:1.3; margin:0 0 22px; padding-bottom:16px; border-bottom:2px solid var(--accent); }
+h2 { font-size:21px; margin:44px 0 14px; padding-top:10px; border-top:1px solid var(--line); }
+h3 { font-size:17px; margin:28px 0 10px; }
+p { margin:10px 0; }
+a { color:var(--accent); }
+blockquote { margin:16px 0; padding:10px 16px; background:var(--accent-soft); border-left:3px solid var(--accent); border-radius:0 8px 8px 0; color:#2a3b4d; }
+blockquote p { margin:4px 0; }
+blockquote ul { margin:6px 0; }
+ul, ol { padding-left:24px; }
+li { margin:4px 0; }
+li.task { list-style:none; margin-left:-20px; }
+code { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.9em;
+  background:var(--code); padding:2px 5px; border-radius:4px; color:#0c447c; }
+pre { background:var(--code); border:1px solid var(--line); border-radius:10px; padding:14px 16px;
+  overflow-x:auto; white-space:pre-wrap; word-break:break-word; margin:12px 0; }
+pre code { background:none; padding:0; color:var(--ink); font-size:13px; line-height:1.6; }
+.copy { float:right; position:relative; top:6px; z-index:1; border:1px solid var(--line); background:#fff;
+  color:var(--muted); font-size:12px; padding:3px 9px; border-radius:6px; cursor:pointer; }
+.copy:hover { color:var(--accent); border-color:var(--accent); }
+table { border-collapse:collapse; width:100%; margin:16px 0; font-size:14px; }
+th, td { border:1px solid var(--line); padding:8px 11px; text-align:left; vertical-align:top; }
+th { background:var(--accent-soft); color:#0c447c; font-weight:600; }
+tr:nth-child(even) td { background:#fbfcfe; }
+hr { border:0; border-top:1px solid var(--line); margin:34px 0; }
+.footer { margin-top:56px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:13px; }
+@media (max-width:900px) { .layout { grid-template-columns:1fr; gap:0; } aside { position:static; max-height:none; border-right:0; border-bottom:1px solid var(--line); padding:24px 0 12px; } main { padding-top:24px; } }
+@media print { body { font-size:11pt; } .layout { display:block; max-width:none; padding:0; } aside,.copy { display:none; } main { padding:0; } h2 { page-break-after:avoid; } pre,table,blockquote { page-break-inside:avoid; } a { color:inherit; text-decoration:none; } }
+</style>
+</head>
+<body>
+<div class="layout">
+<aside><h2>目录</h2><div class="toc">
+<ul>
+<li><a href="#mango">Mango 主题 · 六轮对比与总验收清单</a><ul>
+<li><a href="#1">1. 结论：可以收工了 ✅</a></li>
+<li><a href="#2">2. 六轮演进与达成度 📈</a></li>
+<li><a href="#3">3. 首次暗色验证 🌙（前五轮一直缺的一项）</a></li>
+<li><a href="#4-5">4. 剩余 5 项小差异 🧩</a></li>
+<li><a href="#5">5. 总体验收结果 ✅</a></li>
+<li><a href="#6">6. 上线前检查清单 🚀</a></li>
+<li><a href="#7">7. 数据来源与自洽校验 🔗</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</aside>
+<main>
+<h1 id="mango">Mango 主题 · 六轮对比与总验收清单</h1>
+<blockquote>
+<p>对比对象：<code>http://localhost:4321/</code>（下称「本地 v6」）vs <code>https://mango.huitheme.cn/</code>（WordPress 原版）
+浅色对照图：<code>对比-原版vs新版-v6.png</code>（上原版 / 下 v6，940×1930）
+<strong>暗色对照图：<code>对比-暗色-原版vs-v6.png</code>（首次完成暗色验证，见 §3）</strong>
+生成时间：2026-11-07 00:15 ｜ 基准 CSS：<code>Theme Version: 1.6.20241202</code>
+历轮：v1《一比一复刻-差距清单》→ v2 → v3 → v4 → v5 → <strong>本份（总验收）</strong></p>
+</blockquote>
+<hr />
+<h2 id="1">1. 结论：可以收工了 ✅</h2>
+<p>第五轮点名的 3 处「代码写了、实际没生效」，本轮<strong>全部补实</strong>；素材也做了一次大换血，视觉上已经很难与原版区分：</p>
+<table>
+<thead>
+<tr>
+<th>v5 遗留</th>
+<th>v6 状态</th>
+<th>验证</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>分页永不触发</td>
+<td>✅ 补实</td>
+<td>文章 <strong>8 → 16 篇</strong>，<code>/page/2/</code> 实测 <strong>200</strong>，首页出现 <code>pagination-nav</code> 与页码，<code>npm run build</code> <strong>51 页</strong></td>
+</tr>
+<tr>
+<td>Giscus 占位参数</td>
+<td>✅ 补实</td>
+<td>新增 <code>src/config/comment.ts</code>（<code>enabled / repo / repoId / category / categoryId</code> 可配置）；未配置时渲染「评论未启用」占位块，<strong>不注入会报错的脚本</strong>；文章页实测出现占位块</td>
+</tr>
+<tr>
+<td>顶栏多余按钮</td>
+<td>✅ 补实</td>
+<td><code>Header.astro:201-206</code> 改成 <code>@media(min-width:1024px){#mobile-menu-toggle, .header-icon-btn.lg\:hidden{display:none!important}}</code> 一次覆盖，并把 <code>display:flex</code> 移出 scoped CSS 交给 Tailwind <code>flex</code> 类 → 1440px 顶栏右侧只剩 <strong>2 个圆按钮</strong></td>
+</tr>
+</tbody>
+</table>
+<p>同时把上轮列的细节也收了：顶栏搜索改成<strong>点图标 → 顶部展开 120px 搜索条</strong>（<code>#c_sousuo{height:0} → .open{height:120px}</code>、<code>.ss_a</code> 3px <code>#ddd</code> 边框 / 40px 行高），与原版一致；灯箱补了<strong>按 <code>data-gallery</code> 分组的上一张/下一张</strong>；侧栏热门文章回到 3 条；<code>bg-wave.svg</code> 换成 120×120、<code>#d8d8d8</code>、1~1.1 线宽，暗色下水波纹清晰可见。</p>
+<p><strong>素材换血</strong>：logo 改橙黄芒果、banner 改桌面工作台（显示器 + 台灯 + 绿植）、头像改真人风格、首卡标题改「也许是最实用的万兆NAS 超长文分页」、九宫格出现 <strong><code>+23</code></strong> —— 对照图上下两半的作者名、标题、角标、侧栏条数已经能对上。</p>
+<p><strong>达成度：v5 约 95% → v6 约 98%</strong>。剩余的 2% 是内容素材与上线配置，不再是复刻缺陷。</p>
+<hr />
+<h2 id="2">2. 六轮演进与达成度 📈</h2>
+<table>
+<thead>
+<tr>
+<th>轮次</th>
+<th>时间</th>
+<th>主要变化</th>
+<th>达成度</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v1</td>
+<td>11-06 20:39</td>
+<td>首次全量基线：6 个根因（主题色、900px 容器、缺轮播、导航结构、卡片版式、侧栏错配）</td>
+<td>~35%</td>
+</tr>
+<tr>
+<td>v2</td>
+<td>11-06 21:14</td>
+<td>Qoder 第一次改：蓝色主色、900px、卡片/小工具数值、侧栏顺序；发现 5 个 P0</td>
+<td>~65%</td>
+</tr>
+<tr>
+<td>v3</td>
+<td>11-06 22:52</td>
+<td>修好 4 个 P0；<strong>但九宫格 CSS 被 Tailwind purge 整块删掉</strong>（命名不匹配）→ 致命回归</td>
+<td>~78%</td>
+</tr>
+<tr>
+<td>v4</td>
+<td>11-06 23:31</td>
+<td>P0 全清，P1 大批补齐；发现 2 个新 bug（汉堡按钮特异性、<code>filter:brightness</code>）</td>
+<td>~90%</td>
+</tr>
+<tr>
+<td>v5</td>
+<td>11-06 23:52</td>
+<td>4 项功能缺口代码都写了；但发现 3 处「写了没生效」</td>
+<td>~95%</td>
+</tr>
+<tr>
+<td><strong>v6</strong></td>
+<td><strong>11-07 00:15</strong></td>
+<td><strong>三处补实 + 素材换血 + 首次暗色验证通过</strong></td>
+<td><strong>~98%</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>两次关键教训已沉淀：① Tailwind 3 会 purge <code>@layer components</code> 内未被 content 扫描到的自定义类；② Astro scoped CSS 的 <code>[data-astro-cid]</code> 属性选择器特异性 (0,2,0) 会压过 Tailwind 响应式工具类 (0,1,0)。这两条在 v3、v4 各造成过一次返工。</p>
+</blockquote>
+<hr />
+<h2 id="3">3. 首次暗色验证 🌙（前五轮一直缺的一项）</h2>
+<p>前五轮对照只做了浅色，本轮用 Chrome DevTools Protocol 补上了：</p>
+<button class="copy" type="button">复制</button><pre><code class="language-bash"># 本地：先写 localStorage 再 reload，让 ThemeScript 生效
+/Users/ming/.workbuddy/binaries/python/envs/default/bin/python /tmp/mango_dark_shot2.py \
+  &quot;http://localhost:4321/&quot; /tmp/mango-v6-dark.png local
+
+# 原版：手动给 html/body 加 .dark 类（WordPress 主题同款选择器）
+/Users/ming/.workbuddy/binaries/python/envs/default/bin/python /tmp/mango_dark_shot2.py \
+  &quot;https://mango.huitheme.cn/&quot; /tmp/mango-demo-dark.png original
+</code></pre>
+<p><strong>验证结果（<code>/tmp/mango-v6-dark.png</code>）</strong>：<code>document.documentElement.className = dark</code>、<code>localStorage.theme = dark</code> ✅；顶栏 <code>#151516</code>、背景 <code>#191919</code> + 清晰水波纹、卡片与侧栏 widget <code>#212121</code>、正文浅灰、标签与 <code>+23</code> 角标可辨、灯泡按钮黄色、橙黄芒果 logo、轮播与九宫格图片正常 —— <strong>暗色模式没有漏改，也没有 v4 那个「整体发灰」的问题</strong>。</p>
+<p>⚠️ <strong>对照局限（如实说明）</strong>：原版暗色截图是用 CDP 手动加 <code>.dark</code> 类得到的，且 <code>--no-proxy-server</code> 下原版的外链 banner / 侧栏缩略图未加载（显示为黑块）。所以 <code>对比-暗色-原版vs-v6.png</code> 只能用于<strong>比对色板与布局</strong>（背景/顶栏/卡片/文字/间距），<strong>不能</strong>用于比对图片区域。若要做严格的暗色视觉回归，需先让原版外链图片正常加载再截一次。</p>
+<hr />
+<h2 id="4-5">4. 剩余 5 项小差异 🧩</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>位置</th>
+<th>v6 现状</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>首卡摘要</td>
+<td>多一行「从选型到组装，再到系统部署，一篇把万兆 NAS 讲透的长文。」</td>
+<td>原版首卡<strong>无摘要</strong>。<code>nas-build-guide.md</code> 的 <code>description</code> 清空即可（v4 曾对 <code>welcome.md</code> 这么做过，本轮首卡换了文章又带回来了）。<strong>这是唯一一处肉眼可见的版式差异</strong></td>
+</tr>
+<tr>
+<td>2</td>
+<td>图片素材</td>
+<td>九宫格是风景照、侧栏大图是砖墙木纹、banner 显示器里是风景拼图</td>
+<td>原版对应位置是 NAS 机器/桌面实拍。形态、数量、<code>+23</code> 全对，纯内容层面</td>
+</tr>
+<tr>
+<td>3</td>
+<td>浅色背景纹理</td>
+<td><code>bg-wave.svg</code> 已加深到 <code>#d8d8d8</code>，暗色下清晰</td>
+<td>浅色 <code>#f7f7f7</code> 上仍比原版淡一档，可再调到 <code>#d0d0d0</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>备案号</td>
+<td><code>京ICP备00000000号</code></td>
+<td>占位值，上线前必须换成真实备案号或移除</td>
+</tr>
+<tr>
+<td>5</td>
+<td>WordPress 动态功能</td>
+<td>浏览量/点赞数写在 frontmatter、评论走 Giscus</td>
+<td>原版是数据库实时计数 + AJAX 点赞。静态站做不到，属第一轮就约定的「需替代」项，不算复刻缺陷</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5">5. 总体验收结果 ✅</h2>
+<table>
+<thead>
+<tr>
+<th>验收项</th>
+<th>结果</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>全局基线（900px / 14px / <code>#f7f7f7</code> / 波纹 / 主色）</td>
+<td>✅</td>
+<td><code>tailwind.config.mjs</code> + <code>global.css</code></td>
+</tr>
+<tr>
+<td>顶栏（logo / 分类菜单 / 展开搜索条 / 主题切换 / 移动菜单）</td>
+<td>✅</td>
+<td>1440px 顶栏 2 个圆按钮；<code>#c_sousuo</code> 120px</td>
+</tr>
+<tr>
+<td>轮播（900×350 / 角标 / 遮罩 / 指示器 / 左右箭头）</td>
+<td>✅</td>
+<td><code>Banner.astro</code>，5s 自动轮播 + 手动切换</td>
+</tr>
+<tr>
+<td>文章卡片（头像 / 相对时间 / 三点 / 60px 缩进 / 8 套九宫格 / <code>+N</code> / <code>#</code> 标签 / 三数）</td>
+<td>✅</td>
+<td><code>post-images</code> 规则在 <code>@layer</code> 外，产物 CSS 含 <code>62.67%</code>；运行时 <code>img-overlay</code> 4 处</td>
+</tr>
+<tr>
+<td>侧栏（sticky / 热门文章 3 条首条大图 / 标签 hot 圆点 / 最近评论 5 条）</td>
+<td>✅</td>
+<td><code>Sidebar.astro</code> + 三个 widget</td>
+</tr>
+<tr>
+<td>分页（每页 8 篇 / 方形页码 / <code>/page/2/</code>）</td>
+<td>✅</td>
+<td>16 篇 → <code>/page/2/</code> 200，首页有 <code>pagination-nav</code></td>
+</tr>
+<tr>
+<td>搜索（顶部展开条 + <code>/search</code> 客户端过滤）</td>
+<td>✅</td>
+<td><code>/search?q=NAS</code> 200</td>
+</tr>
+<tr>
+<td>详情页（title / content / author / related / comments 五段）</td>
+<td>✅</td>
+<td><code>[slug].astro</code></td>
+</tr>
+<tr>
+<td>评论区（可配置 + 未配置时占位）</td>
+<td>✅</td>
+<td><code>src/config/comment.ts</code></td>
+</tr>
+<tr>
+<td>页脚（<code>.links</code> 独立块 + 版权 + 备案）</td>
+<td>✅</td>
+<td><code>Footer.astro</code></td>
+</tr>
+<tr>
+<td>灯箱（分组左右切换 / ESC / 关闭）</td>
+<td>✅</td>
+<td><code>PostImages.astro</code></td>
+</tr>
+<tr>
+<td>返回顶部（48×48 黑圆 / hover 蓝）</td>
+<td>✅</td>
+<td><code>BackToTop.astro</code></td>
+</tr>
+<tr>
+<td>暗色模式</td>
+<td>✅</td>
+<td>首次 CDP 实测通过</td>
+</tr>
+<tr>
+<td>构建与路由</td>
+<td>✅</td>
+<td><code>npm run build</code> <strong>51 pages / 3.30s / Complete</strong>；<code>/</code>、<code>/page/2/</code>、<code>/search/</code>、<code>/search?q=NAS</code>、<code>/posts/welcome/</code>、<code>/posts/nas-build-guide/</code> 全 200</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6">6. 上线前检查清单 🚀</h2>
+<p>复刻已经完成，接下来是把它真正变成一个可访问的站点。按优先级：</p>
+<ol>
+<li><strong>必须</strong>
+   - [ ] 清空 <code>nas-build-guide.md</code> 的 <code>description</code>（对齐原版首卡无摘要）
+   - [ ] 替换 <code>京ICP备00000000号</code>，或在没有备案时移除该行
+   - [ ] 若要用评论：准备公开 GitHub 仓库 + 开启 Discussions → 到 <a href="https://giscus.app/">https://giscus.app/</a> 取 <code>repoId</code> / <code>categoryId</code> → 填 <code>src/config/comment.ts</code> 并把 <code>enabled: true</code>
+   - [ ] 全站外链图片已本地化（当前 <code>test-*.jpg</code> 等均在 <code>public/images/</code>，✅ 已完成）</li>
+<li><strong>建议</strong>
+   - [ ] 把 <code>site_url</code> / canonical / RSS / OG 等站点级配置换成正式域名（工程里若有 <code>astro.config.mjs</code> 的 <code>site</code> 需一并改）
+   - [ ] 跑一次链接巡检：<code>npm run build</code> 后扫 <code>dist/**/*.html</code> 里的 <code>href</code>，确认无 404、无 <code>href="#"</code>
+   - [ ] 375px / 768px 移动端各截一次（本轮对照只做了 1440px）
+   - [ ] 中文搜索目前是客户端简单包含匹配；若文章继续增多，可换 Pagefind（注意中文分词限制，参考 Firefly 项目那次的结论）</li>
+<li><strong>部署</strong>（工程里已有 <code>wrangler.toml</code> / <code>DEPLOYMENT.md</code>）
+   - [ ] <code>npm run build</code> → <code>dist/</code>
+   - [ ] Cloudflare Pages：<code>wrangler pages deploy dist --project-name &lt;name&gt; --branch main</code>，或连 GitHub 自动构建
+   - [ ] 绑定自定义域名 + 确认 CNAME 与 SSL 生效</li>
+</ol>
+<hr />
+<h2 id="7">7. 数据来源与自洽校验 🔗</h2>
+<table>
+<thead>
+<tr>
+<th>结论来源</th>
+<th>具体依据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>原版基准</td>
+<td><code>/tmp/mango-style.css</code>（31KB，<code>Version 1.6.20241202</code>）、<code>/tmp/mango-demo.html</code>、<code>/tmp/mango-demo.png</code></td>
+</tr>
+<tr>
+<td>本地 v6 视觉</td>
+<td><code>/tmp/mango-v6-top.png</code>、<code>/tmp/mango-v6-long.png</code>（1440×1000 / 2200，<code>--virtual-time-budget=2200</code> 避开 5s 轮播）</td>
+</tr>
+<tr>
+<td>暗色视觉</td>
+<td><code>/tmp/mango-v6-dark.png</code>、<code>/tmp/mango-demo-dark.png</code>（CDP 设置 localStorage / <code>.dark</code> 类后截图）</td>
+</tr>
+<tr>
+<td>对照图</td>
+<td><code>对比-原版vs新版-v6.png</code>、<code>对比-暗色-原版vs-v6.png</code>（均 940×1930，同一裁切区域）</td>
+</tr>
+<tr>
+<td>代码</td>
+<td>全量读取 26 个在 23:50 后被修改的 <code>src/**</code>、<code>public/**</code> 文件</td>
+</tr>
+<tr>
+<td>三处补实</td>
+<td><code>ls src/content/posts/*.md \| wc -l</code> = <strong>16</strong>；<code>/page/2/</code> <strong>200</strong>；首页 <code>pagination-nav</code> 存在；<code>src/config/comment.ts</code> 的 <code>isGiscusConfigured</code> 守卫 + 文章页「评论未启用」占位块；<code>Header.astro:201-206</code> 双选择器 media 兜底；运行时 1440px 截图顶栏右侧 2 个圆按钮</td>
+</tr>
+<tr>
+<td>构建/路由</td>
+<td><code>npm run build</code> → <strong>51 pages / 3.30s / Complete</strong>；6 条 URL 全 200</td>
+</tr>
+<tr>
+<td>九宫格未回归</td>
+<td>运行时 <code>img-overlay</code> = 4 处、<code>post-images post-img-9</code> 等 class 齐全；产物 CSS 里 <code>62.67%</code> 仍在；暗色截图里 <code>+23</code> 可辨</td>
+</tr>
+<tr>
+<td>自洽校验</td>
+<td>① v5 的 3 处「未生效」逐项用<strong>运行时状态 + 实测 HTTP</strong>核销，不用「文件存在」当完成；② 暗色验证同时检查了 <code>html.className = dark</code> 与 <code>localStorage.theme = dark</code>，确认不是靠截图伪装；③ 明确标注原版暗色图外链未加载的局限，避免过度解读；④ 六轮对照图同尺寸同裁切，可纵向比较演进</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>六份清单按 v1→v6 递进；本份是<strong>总验收</strong>，后续如再改动，建议只做单点回归截图，不必再出全量清单。</p>
+</blockquote>
+<div class="footer">Mango 主题 · 六轮对比与总验收清单 v6.0 · 2026-11-06 · 仅供本机学习对照</div>
+</main>
+</div>
+<script>
+document.querySelectorAll('.copy').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var pre = b.nextElementSibling;
+    if (!pre || pre.tagName !== 'PRE') return;
+    navigator.clipboard.writeText(pre.innerText).then(function () {
+      b.textContent = '已复制'; setTimeout(function () { b.textContent = '复制'; }, 1500);
+    });
+  });
+});
+</script>
+</body>
+</html>

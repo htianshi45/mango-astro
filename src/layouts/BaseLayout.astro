@@ -1,0 +1,45 @@
+---
+import '@/styles/global.css';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+import ThemeScript from '@components/ThemeScript.astro';
+import BackToTop from '@components/BackToTop.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = 'Mango - 微信朋友圈风格图片博客' } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="stylesheet" href="/fonts/bootstrap-icons.css" />
+    <!-- 全站图片灯箱：静态资源，defer 保证 DOM 就绪；不经过 Astro 打包，避免样式被 scoped -->
+    <script is:inline defer src="/js/lightbox.js"></script>
+    <title>{title}</title>
+    <ThemeScript />
+  </head>
+  <body class="antialiased">
+    <div class="min-h-screen flex flex-col">
+      <Header />
+      <main class="flex-1 container mx-auto px-4 max-w-mango">
+        <slot />
+      </main>
+      <Footer />
+      <BackToTop />
+    </div>
+  </body>
+</html>
+
+<style>
+  :global(*) {
+    box-sizing: border-box;
+  }
+</style>

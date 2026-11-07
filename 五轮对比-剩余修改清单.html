@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mango 主题 · 五轮对比剩余修改清单</title>
+<style>
+:root { --ink:#1f2328; --muted:#5f6b7a; --line:#e3e8ef; --accent:#4270f5; --accent-soft:#e6efff; --code:#f6f8fa; }
+* { box-sizing:border-box; }
+body { margin:0; background:#fff; color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:15px; line-height:1.75; }
+.layout { max-width:1240px; margin:0 auto; padding:0 28px; display:grid; grid-template-columns:258px minmax(0,1fr); gap:44px; }
+aside { position:sticky; top:0; align-self:start; max-height:100vh; overflow:auto; padding:38px 0 30px; border-right:1px solid var(--line); }
+aside h2 { font-size:13px; font-weight:600; letter-spacing:.08em; color:var(--muted); margin:0 0 12px; }
+.toc ul { list-style:none; margin:0; padding:0; }
+.toc ul ul { padding-left:14px; }
+.toc li { margin:3px 0; }
+.toc a { color:var(--muted); text-decoration:none; font-size:13px; display:block; padding:2px 8px; border-radius:6px; }
+.toc a:hover { color:var(--accent); background:var(--accent-soft); }
+main { padding:38px 0 80px; min-width:0; }
+h1 { font-size:30px; line-height:1.3; margin:0 0 22px; padding-bottom:16px; border-bottom:2px solid var(--accent); }
+h2 { font-size:21px; margin:44px 0 14px; padding-top:10px; border-top:1px solid var(--line); }
+h3 { font-size:17px; margin:28px 0 10px; }
+p { margin:10px 0; }
+a { color:var(--accent); }
+blockquote { margin:16px 0; padding:10px 16px; background:var(--accent-soft); border-left:3px solid var(--accent); border-radius:0 8px 8px 0; color:#2a3b4d; }
+blockquote p { margin:4px 0; }
+blockquote ul { margin:6px 0; }
+ul, ol { padding-left:24px; }
+li { margin:4px 0; }
+li.task { list-style:none; margin-left:-20px; }
+code { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.9em;
+  background:var(--code); padding:2px 5px; border-radius:4px; color:#0c447c; }
+pre { background:var(--code); border:1px solid var(--line); border-radius:10px; padding:14px 16px;
+  overflow-x:auto; white-space:pre-wrap; word-break:break-word; margin:12px 0; }
+pre code { background:none; padding:0; color:var(--ink); font-size:13px; line-height:1.6; }
+.copy { float:right; position:relative; top:6px; z-index:1; border:1px solid var(--line); background:#fff;
+  color:var(--muted); font-size:12px; padding:3px 9px; border-radius:6px; cursor:pointer; }
+.copy:hover { color:var(--accent); border-color:var(--accent); }
+table { border-collapse:collapse; width:100%; margin:16px 0; font-size:14px; }
+th, td { border:1px solid var(--line); padding:8px 11px; text-align:left; vertical-align:top; }
+th { background:var(--accent-soft); color:#0c447c; font-weight:600; }
+tr:nth-child(even) td { background:#fbfcfe; }
+hr { border:0; border-top:1px solid var(--line); margin:34px 0; }
+.footer { margin-top:56px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:13px; }
+@media (max-width:900px) { .layout { grid-template-columns:1fr; gap:0; } aside { position:static; max-height:none; border-right:0; border-bottom:1px solid var(--line); padding:24px 0 12px; } main { padding-top:24px; } }
+@media print { body { font-size:11pt; } .layout { display:block; max-width:none; padding:0; } aside,.copy { display:none; } main { padding:0; } h2 { page-break-after:avoid; } pre,table,blockquote { page-break-inside:avoid; } a { color:inherit; text-decoration:none; } }
+</style>
+</head>
+<body>
+<div class="layout">
+<aside><h2>目录</h2><div class="toc">
+<ul>
+<li><a href="#mango-qoder">Mango 主题 · 五轮对比（Qoder 第四次改版后）剩余修改清单</a><ul>
+<li><a href="#1">1. 一句话结论 🎯</a></li>
+<li><a href="#2">2. 本轮已修好的（逐项核销 ✅）</a></li>
+<li><a href="#3">3. 🔴 三处「看起来做了、实际没生效」</a><ul>
+<li><a href="#31-page2-404">3.1 分页永远不触发（/page/2/ 404）</a></li>
+<li><a href="#32-giscus">3.2 Giscus 是占位配置，评论区加载必然失败</a></li>
+<li><a href="#33-css-bug">3.3 顶栏多余按钮：上轮的 CSS 特异性 bug 换元素复发</a></li>
+<li><a href="#34">3.4 顺带：顶栏搜索形态与原版不同 🟡</a></li>
+</ul>
+</li>
+<li><a href="#4">4. 剩余素材与细节差异 🧩</a></li>
+<li><a href="#5-qoder">5. 交给 Qoder 的收尾指令（可直接复制）📋</a></li>
+<li><a href="#6">6. 验收清单 ✅</a></li>
+<li><a href="#7">7. 数据来源与自洽校验 🔗</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</aside>
+<main>
+<h1 id="mango-qoder">Mango 主题 · 五轮对比（Qoder 第四次改版后）剩余修改清单</h1>
+<blockquote>
+<p>对比对象：<code>http://localhost:4321/</code>（下称「本地 v5」）vs <code>https://mango.huitheme.cn/</code>（WordPress 原版）
+对照图：<code>对比-原版vs新版-v5.png</code>（<strong>上为原版、下为本地 v5</strong>，940×1930，同一 1440px 视口裁切）
+生成时间：2026-11-06 23:50 ｜ 基准 CSS：<code>Theme Version: 1.6.20241202</code>
+前几轮：v1《一比一复刻-差距清单》→ v2 → v3 → v4《四轮对比-剩余修改清单》</p>
+</blockquote>
+<hr />
+<h2 id="1">1. 一句话结论 🎯</h2>
+<p><strong>上一轮列的 4 项功能缺口 + 2 个 bug，代码层面全部动手了，而且大部分真的修好了</strong> ✅ 分页组件接进了首页、新增 <code>/search.astro</code> 可搜、详情页加了评论区容器、<code>.dark</code> 集中规则表补齐、<code>filter</code> 删掉、汉堡按钮加了 media 兜底；细节上首卡摘要去掉、最近评论结构改对、侧栏白字、<code>.links</code> 独立块、背景纹理加深、示例文章补到 8 篇。</p>
+<p>对照图上下两半已经<strong>很难一眼挑出结构性差距</strong>。但本轮要特别提醒：<strong>有 3 处是「代码写了、实际没生效」</strong>，如果只看文件清单会误判为完成：</p>
+<table>
+<thead>
+<tr>
+<th>🔴</th>
+<th>现象</th>
+<th>真相</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>分页</td>
+<td>8 篇文章 ÷ 每页 8 篇 = <strong>1 页</strong> → <code>Pagination</code> 永不渲染、<code>/page/2/</code> 实测 <strong>404</strong></td>
+</tr>
+<tr>
+<td>2</td>
+<td>评论区</td>
+<td>Giscus 三个参数仍是<strong>占位符</strong> <code>OWNER/REPO</code> / <code>REPLACE_WITH_YOUR_REPO_ID</code> / <code>REPLACE_WITH_YOUR_CATEGORY_ID</code>，脚本加载必然失败</td>
+</tr>
+<tr>
+<td>3</td>
+<td>顶栏多余按钮</td>
+<td>上轮修的是 <code>#mobile-menu-toggle</code>，这轮<strong>新加的移动端搜索 <code>&lt;a&gt;</code> 用了同样的 <code>lg:hidden header-icon-btn</code></strong>，同一个 CSS 特异性 bug 换个元素复发，桌面端又多一个放大镜圆按钮</td>
+</tr>
+</tbody>
+</table>
+<p><strong>达成度：v4 约 90% → v5 约 95%</strong>；把这 3 处补实约 <strong>98%</strong>，剩下 2% 是真人素材与备案号这类内容项。</p>
+<hr />
+<h2 id="2">2. 本轮已修好的（逐项核销 ✅）</h2>
+<table>
+<thead>
+<tr>
+<th>来源</th>
+<th>项目</th>
+<th>v5 状态</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v4-bug2</td>
+<td><code>.dark{filter:brightness(.85)}</code></td>
+<td>✅ 已删</td>
+<td><code>global.css</code> 中 <code>filter: brightness</code> = 0；改为集中规则表（<code>:52-86</code>）：<code>.dark .post-loop/.widget/.post_container_title/.post_container/.post_author/.post_related{#212121}</code>、<code>.dark .site-header/.site-footer{#151516}</code>、<code>.dark .widget-title::after{#191919}</code>、<code>.dark .post-tag{#343435}</code>、<code>.dark .comment-item{#252525}</code>、<code>.dark .links</code>、<code>.dark .pagination-item{#2a2a2b}</code>、<code>.dark .hot-dot</code></td>
+</tr>
+<tr>
+<td>v4-bug1</td>
+<td>桌面汉堡按钮</td>
+<td>🟡 <strong>只修了一半</strong></td>
+<td><code>Header.astro:188-191</code> 加了 <code>@media(min-width:1024px){#mobile-menu-toggle{display:none!important}}</code>；但新加的移动端搜索 <code>&lt;a&gt;</code> 没覆盖 → 见 §3.3</td>
+</tr>
+<tr>
+<td>v4-缺口1</td>
+<td>分页</td>
+<td>🟡 代码完成、数据不够</td>
+<td><code>index.astro</code> 与新增 <code>src/pages/page/[page].astro</code> 都 <code>import Pagination</code> 并渲染；<code>Pagination.astro</code> 改成原版方形页码（<code>padding:5px 10px</code>、<code>#fff/#555</code>、无圆角无边框、<code>current #4270f6</code>、暗色 <code>#2a2a2b</code>）；<strong>但 <code>totalPages=1</code></strong> → 见 §3.1</td>
+</tr>
+<tr>
+<td>v4-缺口2</td>
+<td>搜索</td>
+<td>✅ 可用</td>
+<td>新增 <code>src/pages/search.astro</code>，把全部文章 frontmatter 序列化到客户端按标题/摘要/标签/分类过滤，<code>/search?q=Mango</code> 实测 <strong>200</strong>；顶栏 <code>&lt;form id="c_sousuo" action="/search"&gt;</code> 能提交</td>
+</tr>
+<tr>
+<td>v4-缺口3</td>
+<td>评论区</td>
+<td>🟡 容器有了、参数占位</td>
+<td>详情页新增 <code>.post_comments</code> + <code>#giscus-container</code> + 动态注入 <code>giscus.app/client.js</code>（含暗色主题切换）；<strong>三个 ID 仍是占位</strong> → 见 §3.2</td>
+</tr>
+<tr>
+<td>v4-缺口4</td>
+<td>暗色覆盖</td>
+<td>🟡 大部分</td>
+<td><code>global.css</code> 集中规则 + 详情页 5 处 <code>.dark</code> + Footer <code>.dark .links</code>；<strong><code>Banner.astro</code> 仍无 <code>.dark</code> 规则</strong></td>
+</tr>
+<tr>
+<td>v4-§5-1</td>
+<td>详情页作者卡</td>
+<td>✅ 已修</td>
+<td><code>.post_author</code> 移出 <code>.post_container</code>，顺序为 title → content → author → related → comments 五段</td>
+</tr>
+<tr>
+<td>v4-§5-2</td>
+<td>最近评论结构</td>
+<td>✅ 已修</td>
+<td>改为「头像 + 评论正文(13px 两行截断) + <code>&lt;span&gt;&lt;em&gt;昵称&lt;/em&gt;&lt;em&gt;发布于X 月前&lt;/em&gt;&lt;/span&gt;</code>」，不再显示文章标题</td>
+</tr>
+<tr>
+<td>v4-§5-3</td>
+<td>侧栏首条白字</td>
+<td>✅ 已修</td>
+<td><code>HotPostsWidget.astro:34</code> → <code>text-white</code></td>
+</tr>
+<tr>
+<td>v4-§5-4</td>
+<td><code>.links</code> 独立块</td>
+<td>✅ 已修</td>
+<td><code>Footer.astro</code> 把 <code>.links</code> 提成独立块，含 5 个真实链接 + 备案号 + 暗色规则</td>
+</tr>
+<tr>
+<td>v4-§5-5</td>
+<td>背景纹理太淡</td>
+<td>🟡 改善</td>
+<td><code>bg-wave.svg</code> 由 <code>#e8e8e8/0.3~0.5</code> 调到 <code>#dedede~#e0e0e0 / 0.8~1</code>，对照图里仍比原版淡</td>
+</tr>
+<tr>
+<td>v4-§5-9</td>
+<td>首卡摘要</td>
+<td>✅ 已修</td>
+<td><code>welcome.md</code> 的 <code>description: ""</code>，首卡与原版一样无摘要</td>
+</tr>
+<tr>
+<td>v4-§5-12</td>
+<td>示例文章太少</td>
+<td>🟡 补到 8 篇</td>
+<td>新增 <code>city-night / digital-camera-review / landscape-photography / photo-management-software / post-processing-workflow / travel-food</code> 共 6 篇；但 8 篇恰好等于每页上限 → 分页不触发</td>
+</tr>
+<tr>
+<td>—</td>
+<td>构建</td>
+<td>✅ 通过</td>
+<td><code>npm run build</code> → <strong>37 pages / 3.19s / Complete</strong>；<code>/</code>、<code>/search/</code>、<code>/search?q=Mango</code>、<code>/posts/welcome/</code> 全 200</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3">3. 🔴 三处「看起来做了、实际没生效」</h2>
+<h3 id="31-page2-404">3.1 分页永远不触发（<code>/page/2/</code> 404）</h3>
+<button class="copy" type="button">复制</button><pre><code class="language-ts">// src/pages/index.astro
+const POSTS_PER_PAGE = 8;
+const totalPages = Math.ceil(sortedPosts.length / POSTS_PER_PAGE);  // 8 / 8 = 1
+...
+{totalPages &gt; 1 &amp;&amp; &lt;Pagination ... /&gt;}   // 永远不渲染
+</code></pre>
+<button class="copy" type="button">复制</button><pre><code class="language-ts">// src/pages/page/[page].astro
+if (totalPages &lt;= 1) return [];          // 不生成任何 /page/N 路由
+</code></pre>
+<p><strong>实测</strong>：<code>/page/2</code>、<code>/page/2/</code> 均返回 <strong>404</strong>；运行时首页 HTML 里搜不到 <code>pagination-nav</code>。</p>
+<p><strong>修复二选一</strong>：</p>
+<ul>
+<li>✅ <strong>推荐</strong>：把示例文章补到 <strong>16 篇</strong>（或 17+），这样 <code>totalPages=2</code>、<code>/page/2/</code> 有 8 篇内容，既能验收分页，也更接近原版「长首页 + 分页」的观感；</li>
+<li>临时方案：把 <code>POSTS_PER_PAGE</code> 调到 5（8 篇 → 2 页），但首页只有 5 张卡片，视觉密度比原版 8 张稀疏。</li>
+</ul>
+<blockquote>
+<p>建议同时补一篇 9+ 图的文章，让 <code>+23</code> 那种大角标在首页可见（现在 <code>welcome.md</code> 10 张 → <code>+1</code>，运行时共 3 处 <code>img-overlay</code>）。</p>
+</blockquote>
+<h3 id="32-giscus">3.2 Giscus 是占位配置，评论区加载必然失败</h3>
+<p><code>src/pages/posts/[slug].astro:143-146</code>：</p>
+<button class="copy" type="button">复制</button><pre><code class="language-js">script.setAttribute('data-repo', 'OWNER/REPO');
+script.setAttribute('data-repo-id', 'REPLACE_WITH_YOUR_REPO_ID');
+script.setAttribute('data-category', 'Announcements');
+script.setAttribute('data-category-id', 'REPLACE_WITH_YOUR_CATEGORY_ID');
+</code></pre>
+<p><strong>修复步骤</strong>（需要你提供信息，AI 无法代填）：</p>
+<ol>
+<li>准备一个<strong>公开的 GitHub 仓库</strong>，在 Settings → General → Features 勾选 <strong>Discussions</strong>；</li>
+<li>到 <a href="https://giscus.app/">https://giscus.app/</a> 输入仓库名，按指引拿到 <code>repoId</code> 与 <code>categoryId</code>（选 <code>Announcements</code> 分类）；</li>
+<li>把三个占位值换成真实值；<code>data-mapping="pathname"</code> 保持不变；</li>
+<li>在仓库安装 giscus app 并授权。</li>
+</ol>
+<blockquote>
+<p>若不想依赖 GitHub，可改接 Twikoo（需 Cloudflare Workers / Vercel 后端）或先放一个静态「评论已关闭」占位块，至少不要留一个会报错的空容器。</p>
+</blockquote>
+<h3 id="33-css-bug">3.3 顶栏多余按钮：上轮的 CSS 特异性 bug 换元素复发</h3>
+<p><strong>现象</strong>：v5 顶栏右侧是「搜索输入框 + 蓝色按钮 + <strong>放大镜圆按钮</strong> + 灯泡圆按钮」，原版只有 2 个圆按钮（搜索图标 + 主题切换）。</p>
+<p><strong>根因</strong>：本轮新增的移动端搜索链接</p>
+<button class="copy" type="button">复制</button><pre><code class="language-astro">&lt;a href=&quot;/search&quot; class=&quot;lg:hidden header-icon-btn&quot; aria-label=&quot;搜索&quot;&gt;
+</code></pre>
+<p>与 <code>mobile-menu-toggle</code> 一样，被 scoped <code>.header-icon-btn[data-astro-cid-3ef6ksr2]{display:flex}</code>（特异性 0,2,0）压过 <code>@media(min-width:1024px){.lg\:hidden{display:none}}</code>（0,1,0）。上轮的兜底规则只写了 <code>#mobile-menu-toggle</code>，<strong>没覆盖这个新 <code>&lt;a&gt;</code></strong>。</p>
+<p>运行时 HTML 里两个 <code>lg:hidden</code> 元素都在：</p>
+<button class="copy" type="button">复制</button><pre><code>&lt;a href=&quot;/search&quot; class=&quot;lg:hidden header-icon-btn&quot; ...&gt;
+&lt;button id=&quot;mobile-menu-toggle&quot; class=&quot;lg:hidden header-icon-btn&quot; ...&gt;
+</code></pre>
+<p><strong>修复（一次覆盖两个，避免再加元素时复发）</strong>：</p>
+<button class="copy" type="button">复制</button><pre><code class="language-css">@media (min-width: 1024px) {
+  #mobile-menu-toggle,
+  .header-icon-btn.lg\:hidden { display: none !important; }
+}
+</code></pre>
+<p>或者更彻底：<strong>把 <code>display:flex</code> 从 scoped <code>.header-icon-btn</code> 里拿掉</strong>，改由 Tailwind 的 <code>flex</code> 工具类提供，这样所有 <code>lg:hidden</code> 都能正常生效，不再需要逐个 ID 打补丁。</p>
+<h3 id="34">3.4 顺带：顶栏搜索形态与原版不同 🟡</h3>
+<p>v5 用了 <code>#c_sousuo</code> 这个 ID，但做成<strong>常驻 inline 输入框</strong>（<code>.search-bar-input{width:120px; border:3px solid #ddd; height:30px}</code>）。原版是<strong>点击搜索图标后从顶部展开的 120px 高搜索条</strong>：</p>
+<button class="copy" type="button">复制</button><pre><code class="language-css">#c_sousuo { height:120px; }
+#c_sousuo .search_box { margin:30px 0; text-align:center; }
+#c_sousuo .search_box .ss_a { width:100%; border:3px solid #dddddd;
+  line-height:40px; padding:0 15px; }
+#c_sousuo .search_box .ss_a input { width:100%; border:none; font-size:12px; }
+#c_sousuo .search_box .ss_a button { position:absolute; right:12px; ... }
+.dark #c_sousuo { background:#1a1a1a; }
+.dark #c_sousuo .search_box .ss_a { border:3px solid #414141; }
+</code></pre>
+<p>搜索<strong>功能</strong>已经可用（<code>/search</code> 客户端过滤），这一项属形态差异：要么把常驻框改成「点图标 → 顶部展开」，要么保留常驻框但在文档里注明是有意的静态站替代（原版演示站的搜索也是 WordPress 服务端 <code>?s=</code>，Astro 静态站做不到完全一致）。</p>
+<hr />
+<h2 id="4">4. 剩余素材与细节差异 🧩</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>位置</th>
+<th>v5 现状</th>
+<th>原版</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Logo</td>
+<td>蓝色圆 + 白色十字/圆点</td>
+<td>橙黄芒果圆形图（30px 高 + 10px 右距）；至少换暖色系</td>
+</tr>
+<tr>
+<td>2</td>
+<td>轮播首图</td>
+<td>办公室走廊</td>
+<td>桌面工作台（显示器 / 键盘 / 绿植）；形态已对，换素材即可</td>
+</tr>
+<tr>
+<td>3</td>
+<td>头像</td>
+<td>蓝圆 M / 红圆「摄影」等字母占位</td>
+<td>Gravatar 真人照；建议换本地人像或中性灰底</td>
+</tr>
+<tr>
+<td>4</td>
+<td>首卡标题</td>
+<td>「欢迎使用 Mango 主题」（<code>sticky:10</code>）</td>
+<td>「也许是最实用的万兆NAS 超长文分页」；属内容排序</td>
+</tr>
+<tr>
+<td>5</td>
+<td>侧栏热门文章</td>
+<td><strong>4 条</strong>（<code>limit=5</code>）</td>
+<td>3 条（首条大图 + 2 条缩略图）</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>+N</code> 角标</td>
+<td><code>+1</code> / <code>+2</code>（10~12 张图）</td>
+<td><code>+23</code>；补一篇 30+ 图的文章即可复现</td>
+</tr>
+<tr>
+<td>7</td>
+<td>备案号</td>
+<td><code>京ICP备00000000号</code> 占位</td>
+<td>真实备案号（没有就先留占位，别上线当真）</td>
+</tr>
+<tr>
+<td>8</td>
+<td>背景水波纹</td>
+<td>已加深但仍比原版淡</td>
+<td>原版波纹清晰；可再调到 <code>#d8d8d8</code> 或加大振幅</td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>Banner.astro</code> 暗色</td>
+<td>无 <code>.dark</code> 规则</td>
+<td>暗色下轮播遮罩/角标需适配</td>
+</tr>
+<tr>
+<td>10</td>
+<td>暗色实测</td>
+<td>五轮对照<strong>只做了浅色</strong></td>
+<td>建议手动切一次暗色截图，确认白卡 <code>#212121</code>、无整体发灰、回顶按钮贴视口</td>
+</tr>
+<tr>
+<td>11</td>
+<td>灯箱左右按钮</td>
+<td>按钮有 DOM，但点击只关闭/无切换逻辑（<code>initLightbox</code> 未绑定 prev/next）</td>
+<td>原版 Fancybox 可左右切换</td>
+</tr>
+<tr>
+<td>12</td>
+<td>搜索页视觉</td>
+<td>独立 <code>/search</code> 页 + 大搜索框</td>
+<td>原版是顶部展开条，无独立搜索结果页（静态站合理替代）</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5-qoder">5. 交给 Qoder 的收尾指令（可直接复制）📋</h2>
+<button class="copy" type="button">复制</button><pre><code>请基于 /Users/ming/mango-astro 做最后一轮收尾。规格书见本目录
+《五轮对比-剩余修改清单.md》及前四轮清单；当前差距图《对比-原版vs新版-v5.png》。
+P0/P1 结构已对齐，不要再动九宫格、轮播、卡片元信息、侧栏三段、详情页五段结构。
+只按数值与结构重写等价 CSS，不要拷贝原版资产。
+
+【三个「代码写了但没生效」必须补实】
+1. 分页：目前 8 篇文章 / 每页 8 → totalPages=1，Pagination 不渲染，
+   /page/2/ 实测 404。请新增 8 篇示例文章（总数 16 篇），
+   保证 /page/2/ 返回 200 且有 8 张卡片；build 后出现 /page/2/index.html。
+   顺带补一篇 30+ 图的文章，让首页出现类似 +23 的大角标。
+2. Giscus：src/pages/posts/[slug].astro 里三个占位值
+   （OWNER/REPO、REPLACE_WITH_YOUR_REPO_ID、REPLACE_WITH_YOUR_CATEGORY_ID）
+   请改成可配置常量，从 src/config/comment.ts 读取，并在 README 写明
+   「需到 giscus.app 获取 repoId/categoryId」；未配置时不要注入会报错的 script，
+   改为显示「评论未启用」占位块。
+3. 顶栏多余按钮：上轮只给 #mobile-menu-toggle 加了 media 兜底，
+   本轮新加的 &lt;a href=&quot;/search&quot; class=&quot;lg:hidden header-icon-btn&quot;&gt;
+   又因 scoped CSS 特异性 (0,2,0) 压过 .lg\:hidden (0,1,0) 而在桌面显示。
+   请改成一次性覆盖所有：
+     @media (min-width:1024px){
+       #mobile-menu-toggle, .header-icon-btn.lg\:hidden{display:none !important}
+     }
+   或者把 display:flex 从 scoped .header-icon-btn 移除，交给 Tailwind flex 类。
+   验收：1440px 顶栏右侧只允许 2 个圆按钮（若保留常驻搜索框，则 1 个圆按钮 + 搜索框）。
+
+【形态与细节】
+4. 顶栏搜索：若追求一比一，把常驻 inline 框改成「点击搜索图标 → 顶部展开
+   120px 搜索条」（#c_sousuo{height:120px} / .ss_a 3px #ddd 边框 / 40px 行高 /
+   暗色 #1a1a1a + 边框 #414141）；若保留常驻框，在 README 注明是静态站替代。
+5. Banner.astro 补暗色规则；做一次暗色实测截图并放进工程。
+6. 侧栏热门文章 limit 从 5 改 3；logo 换暖色系等价图标；
+   banner-1.jpg 换桌面工作台类图；头像换本地人像或中性占位；
+   bg-wave.svg 线条再深一点（#d8d8d8）或加大振幅。
+7. 灯箱补 prev/next 点击切换（按 data-gallery 分组取图片数组），
+   ESC 监听保持单次注册。
+
+【验收】
+- npm run build 通过，产物里存在 /page/2/index.html；
+- /、/page/2/、/search?q=Mango、/posts/welcome/ 全 200；
+- 1440 / 768 / 375 三种宽度，浅色 + 深色各截一次；
+- 桌面顶栏无多余按钮，暗色下白卡为 #212121 且无整体发灰；
+- 1..9 张图的 8 套九宫格全部正方形对齐，最后一张有 +N 角标；
+- 未配置 Giscus 时评论区显示占位块而不是报错。
+</code></pre>
+<hr />
+<h2 id="6">6. 验收清单 ✅</h2>
+<ul>
+<li class="task">☐ 示例文章 ≥16 篇，<code>/page/2/</code> 返回 200 且有 8 张卡片</li>
+<li class="task">☐ Giscus 参数可配置，未配置时不报错</li>
+<li class="task">☐ 1440px 顶栏右侧无多余圆按钮</li>
+<li class="task">☐ 顶栏搜索形态与原版一致（或在文档中声明为替代方案）</li>
+<li class="task">☐ <code>Banner.astro</code> 有暗色规则；完成一次暗色实测截图</li>
+<li class="task">☐ 侧栏热门文章 3 条；首页出现 <code>+23</code> 级别大角标</li>
+<li class="task">☐ logo / banner / 头像素材更贴近原版</li>
+<li class="task">☐ 灯箱左右切换可用</li>
+<li class="task">☐ <code>npm run build</code> 通过、37+ 页、站内链接全绿</li>
+</ul>
+<hr />
+<h2 id="7">7. 数据来源与自洽校验 🔗</h2>
+<table>
+<thead>
+<tr>
+<th>结论来源</th>
+<th>具体依据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>原版基准</td>
+<td><code>/tmp/mango-style.css</code>（31KB，<code>Version 1.6.20241202</code>）、<code>/tmp/mango-demo.html</code>、<code>/tmp/mango-demo.png</code></td>
+</tr>
+<tr>
+<td>本地 v5 视觉</td>
+<td><code>/tmp/mango-v5-top.png</code>（1440×1000）、<code>/tmp/mango-v5-long.png</code>（1440×2200），<code>--virtual-time-budget=2200</code> 避开 5s 轮播</td>
+</tr>
+<tr>
+<td>对照图</td>
+<td><code>对比-原版vs新版-v5.png</code>（940×1930，<code>/tmp/gen_mango_compare_v5.py</code>）</td>
+</tr>
+<tr>
+<td>本地 v5 代码</td>
+<td>全量读取 20 个在 23:29 后被修改的 <code>src/**</code>、<code>public/**</code> 文件</td>
+</tr>
+<tr>
+<td>分页未生效</td>
+<td><code>index.astro</code> 的 <code>POSTS_PER_PAGE=8</code> + <code>ls src/content/posts/*.md | wc -l</code> = <strong>8</strong> → <code>totalPages=1</code>；<code>page/[page].astro</code> 的 <code>if(totalPages&lt;=1) return []</code>；<code>/page/2/</code> 与 <code>/page/2</code> 实测 <strong>404</strong></td>
+</tr>
+<tr>
+<td>Giscus 占位</td>
+<td><code>[slug].astro:143/144/146</code> 三个 <code>setAttribute</code> 值仍为 <code>OWNER/REPO</code>、<code>REPLACE_WITH_YOUR_REPO_ID</code>、<code>REPLACE_WITH_YOUR_CATEGORY_ID</code></td>
+</tr>
+<tr>
+<td>多余按钮复发</td>
+<td>运行时 HTML 存在两个 <code>lg:hidden header-icon-btn</code>（<code>/search</code> 的 <code>&lt;a&gt;</code> 与 <code>#mobile-menu-toggle</code>）；<code>Header.astro:188-191</code> 的 media 兜底只写了 <code>#mobile-menu-toggle</code>；1440px 截图顶栏可见「搜索框 + 蓝按钮 + 放大镜圆 + 灯泡圆」</td>
+</tr>
+<tr>
+<td>已修项验证</td>
+<td><code>global.css</code> 中 <code>filter: brightness</code> = 0、<code>.dark</code> 集中规则 <code>:52-86</code>；<code>RecentCommentsWidget</code> 出现「发布于X 月前」且不再渲染文章标题；<code>HotPostsWidget:34</code> 为 <code>text-white</code>；<code>Footer.astro</code> 有独立 <code>.links</code>；<code>bg-wave.svg</code> 为 <code>#dedede/#e0e0e0</code>；<code>welcome.md</code> 的 <code>description: ""</code></td>
+</tr>
+<tr>
+<td>构建/路由</td>
+<td><code>npm run build</code> → <strong>37 pages / 3.19s / Complete</strong>；<code>/</code>、<code>/search/</code>、<code>/search?q=Mango</code>、<code>/posts/welcome/</code> 全 200；<code>/search?q=摄影</code>（未编码）返回 400 属 curl 未编码所致，浏览器会自动编码</td>
+</tr>
+<tr>
+<td>自洽校验</td>
+<td>① v4 的 2 个 bug + 4 项缺口逐项回读源码，2 bug 中 1 项完全修复、1 项部分复发，4 缺口中 1 项完全可用（搜索）、3 项为「代码有但未生效/占位」；② 运行时 <code>img-overlay</code> = 3 处、<code>post-images post-img-9</code> 等 8 套 class 均存在，确认九宫格未回归；③ <code>dist/_astro/*.css</code> 里 <code>.img-overlay</code> 规则仍在；④ 五轮对照图统一 940×1930、同一裁切区域，可直接纵向比较演进</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>数值速查表仍以 v2 第 6 节为准。五份清单按 v1→v5 递进，按本份执行即可。</p>
+</blockquote>
+<div class="footer">Mango 主题 · 五轮对比剩余修改清单 v5.0 · 2026-11-06 · 仅供本机学习对照</div>
+</main>
+</div>
+<script>
+document.querySelectorAll('.copy').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var pre = b.nextElementSibling;
+    if (!pre || pre.tagName !== 'PRE') return;
+    navigator.clipboard.writeText(pre.innerText).then(function () {
+      b.textContent = '已复制'; setTimeout(function () { b.textContent = '复制'; }, 1500);
+    });
+  });
+});
+</script>
+</body>
+</html>

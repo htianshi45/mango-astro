@@ -1,0 +1,22 @@
+# Decap CMS GitHub OAuth 网关 · Cloudflare Worker
+# 部署命令见同目录 README.md / 工程根目录《后台接入-操作清单.md》
+name = "mango-cms-oauth"
+main = "worker.js"
+compatibility_date = "2026-11-07"
+
+# 绑定自有域名，避开 workers.dev 默认域名在国内的 DNS 问题。
+# 需要 zone_id 时填 840428.xyz 的 Zone ID；也可部署后在 Dashboard
+# → Workers & Pages → mango-cms-oauth → Settings → Domains & Routes 里添加
+#   auth.840428.xyz（Cloudflare 会自动创建 DNS 记录）。
+# routes = [
+#   { pattern = "auth.840428.xyz", custom_domain = true }
+# ]
+
+[vars]
+# CMS 页面所在 origin 白名单，逗号分隔。
+# 本地验证用 localhost，站点上线后把 https://mango.840428.xyz 加进去。
+ALLOWED_ORIGINS = "http://localhost:4321,http://localhost:4322,https://mango.840428.xyz"
+
+# ⚠️ 不要把 GitHub 凭据写在这里！用：
+#   wrangler secret put GITHUB_CLIENT_ID
+#   wrangler secret put GITHUB_CLIENT_SECRET

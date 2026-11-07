@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Halo 站 vs Astro 复刻 · 对比分析</title>
+<style>
+:root { --ink:#1f2328; --muted:#5f6b7a; --line:#e3e8ef; --accent:#4270f5; --accent-soft:#e6efff; --code:#f6f8fa; }
+* { box-sizing:border-box; }
+body { margin:0; background:#fff; color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:15px; line-height:1.75; }
+.layout { max-width:1240px; margin:0 auto; padding:0 28px; display:grid; grid-template-columns:258px minmax(0,1fr); gap:44px; }
+aside { position:sticky; top:0; align-self:start; max-height:100vh; overflow:auto; padding:38px 0 30px; border-right:1px solid var(--line); }
+aside h2 { font-size:13px; font-weight:600; letter-spacing:.08em; color:var(--muted); margin:0 0 12px; }
+.toc ul { list-style:none; margin:0; padding:0; }
+.toc ul ul { padding-left:14px; }
+.toc li { margin:3px 0; }
+.toc a { color:var(--muted); text-decoration:none; font-size:13px; display:block; padding:2px 8px; border-radius:6px; }
+.toc a:hover { color:var(--accent); background:var(--accent-soft); }
+main { padding:38px 0 80px; min-width:0; }
+h1 { font-size:30px; line-height:1.3; margin:0 0 22px; padding-bottom:16px; border-bottom:2px solid var(--accent); }
+h2 { font-size:21px; margin:44px 0 14px; padding-top:10px; border-top:1px solid var(--line); }
+h3 { font-size:17px; margin:28px 0 10px; }
+p { margin:10px 0; }
+a { color:var(--accent); }
+blockquote { margin:16px 0; padding:10px 16px; background:var(--accent-soft); border-left:3px solid var(--accent); border-radius:0 8px 8px 0; color:#2a3b4d; }
+blockquote p { margin:4px 0; }
+blockquote ul { margin:6px 0; }
+ul, ol { padding-left:24px; }
+li { margin:4px 0; }
+li.task { list-style:none; margin-left:-20px; }
+code { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.9em;
+  background:var(--code); padding:2px 5px; border-radius:4px; color:#0c447c; }
+pre { background:var(--code); border:1px solid var(--line); border-radius:10px; padding:14px 16px;
+  overflow-x:auto; white-space:pre-wrap; word-break:break-word; margin:12px 0; }
+pre code { background:none; padding:0; color:var(--ink); font-size:13px; line-height:1.6; }
+.copy { float:right; position:relative; top:6px; z-index:1; border:1px solid var(--line); background:#fff;
+  color:var(--muted); font-size:12px; padding:3px 9px; border-radius:6px; cursor:pointer; }
+.copy:hover { color:var(--accent); border-color:var(--accent); }
+table { border-collapse:collapse; width:100%; margin:16px 0; font-size:14px; }
+th, td { border:1px solid var(--line); padding:8px 11px; text-align:left; vertical-align:top; }
+th { background:var(--accent-soft); color:#0c447c; font-weight:600; }
+tr:nth-child(even) td { background:#fbfcfe; }
+hr { border:0; border-top:1px solid var(--line); margin:34px 0; }
+.footer { margin-top:56px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:13px; }
+@media (max-width:900px) { .layout { grid-template-columns:1fr; gap:0; } aside { position:static; max-height:none; border-right:0; border-bottom:1px solid var(--line); padding:24px 0 12px; } main { padding-top:24px; } }
+@media print { body { font-size:11pt; } .layout { display:block; max-width:none; padding:0; } aside,.copy { display:none; } main { padding:0; } h2 { page-break-after:avoid; } pre,table,blockquote { page-break-inside:avoid; } a { color:inherit; text-decoration:none; } }
+</style>
+</head>
+<body>
+<div class="layout">
+<aside><h2>目录</h2><div class="toc">
+<ul>
+<li><a href="#halo-halo840428xyz-vs-astro">Halo 站 halo.840428.xyz vs 本地 Astro 复刻 · 对比分析</a><ul>
+<li><a href="#1">1. 先说清楚：这个站是什么 🔍</a></li>
+<li><a href="#2">2. 结论：两个站长得不一样，是因为参照物不同 🎯</a></li>
+<li><a href="#3-halo-vs-astro-v6png">3. 视觉逐项对比（对照图 对比-Halo-vs-Astro-v6.png）📐</a></li>
+<li><a href="#4-halo-vs-halopng">4. Halo 相对原版做了哪些定制（对照图 对比-原版vs-Halo.png）🧩</a></li>
+<li><a href="#5">5. 技术栈与运维对比 ⚙️</a></li>
+<li><a href="#6">6. 两个方向的操作清单 🛠️</a><ul>
+<li><a href="#a-astro-v6-halo">方向 A：想让 Astro v6 变成 Halo 站那个样子</a></li>
+<li><a href="#b-halo-wordpress">方向 B：想让 Halo 站更接近 WordPress 原版</a></li>
+<li><a href="#c">方向 C（我的建议）✅</a></li>
+</ul>
+</li>
+<li><a href="#7">7. 数据来源与自洽校验 🔗</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</aside>
+<main>
+<h1 id="halo-halo840428xyz-vs-astro">Halo 站 <code>halo.840428.xyz</code> vs 本地 Astro 复刻 · 对比分析</h1>
+<blockquote>
+<p>新参照站：<strong>https://halo.840428.xyz/</strong>（「大明白日志」，你自己的线上站）
+对比主体：<code>http://localhost:4321/</code>（本地 Astro v6，前六轮做完的 Mango 一比一复刻）
+第三方基准：<code>https://mango.huitheme.cn/</code>（WordPress 原版演示站，前六轮一直用的基准）
+对照图：<code>对比-Halo-vs-Astro-v6.png</code>（上 Halo / 下 Astro）、<code>对比-原版vs-Halo.png</code>（上原版 / 下 Halo），均 940×1930、同一 1440px 视口裁切
+生成时间：2026-11-07 00:26</p>
+</blockquote>
+<hr />
+<h2 id="1">1. 先说清楚：这个站是什么 🔍</h2>
+<p>它<strong>不是另一个原版参照</strong>，而是 <strong>Mango 主题的 Halo 移植版</strong>，而且就是你自己的站：</p>
+<table>
+<thead>
+<tr>
+<th>证据</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>建站程序</td>
+<td><code>&lt;meta content="Halo 2.26.0" name="generator"&gt;</code></td>
+</tr>
+<tr>
+<td>主题</td>
+<td><code>/themes/theme-mango/...</code>，<code>v=1.0.0</code></td>
+</tr>
+<tr>
+<td>样式表</td>
+<td><code>bootstrap.min.css</code> + <code>bootstrap-icons.css</code> + <code>fancybox.css</code> + <strong><code>style.css</code>（31,549 B）</strong> + <strong><code>mango.css</code>（20,839 B）</strong></td>
+</tr>
+<tr>
+<td>站点</td>
+<td>标题「大明白日志」，作者「赵大明白 / htianshi45」，7 篇文章</td>
+</tr>
+<tr>
+<td>插件</td>
+<td><code>PluginCommentWidget</code> 3.1.2、<code>PluginSearchWidget</code> 1.8.0、<code>plugin-douban</code> 1.2.7</td>
+</tr>
+<tr>
+<td>版心</td>
+<td>HTML 内联注入 <code>@media(min-width:992px){.container{max-width:min(900px, calc(100% - 48px))}}</code></td>
+</tr>
+<tr>
+<td>主色</td>
+<td><code>--ds_main_color:#4270f6</code>，由主题设置注入</td>
+</tr>
+<tr>
+<td>暗色</td>
+<td><code>localStorage["isDarkMode"]</code>（<code>"1"</code> 暗 / <code>"0"</code> 浅 / 缺省跟随 <code>prefers-color-scheme</code>），首屏防闪烁脚本</td>
+</tr>
+</tbody>
+</table>
+<p><strong>最关键的发现</strong>：<code>/themes/theme-mango/assets/css/style.css</code> 与我一直当基准的 <code>/tmp/mango-style.css</code> <strong>是同一套 CSS</strong> —— 头部同为 <code>Theme Name: Mango / Author: Crazy uncle / Version: 1.6.20241202</code>，大小 31,549 B vs 31,101 B，行号几乎逐行对应（<code>post_loop_conter</code> 都在 195 行、<code>post_img_2</code> 都在 203 行），差别只是把硬编码色值换成了 <code>var(--ds_main_color, #4270f6)</code>。</p>
+<p>而多出来的 <strong>20KB <code>mango.css</code> 是 Halo 移植版的定制覆盖层</strong>，里面有明确的中文注释记录着「有意偏离原版」的决定。</p>
+<hr />
+<h2 id="2">2. 结论：两个站长得不一样，是因为参照物不同 🎯</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>本地 Astro v6</th>
+<th>Halo 站</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>目标</td>
+<td><strong>严格一比一复刻 WordPress 原版演示站</strong></td>
+<td><strong>在 Mango 基础上定制成「大明白日志」</strong></td>
+</tr>
+<tr>
+<td>做法</td>
+<td>不拷贝原版 CSS，按数值与结构从零写等价实现</td>
+<td>直接用原版 <code>style.css</code>，再叠一层 <code>mango.css</code> 覆盖</td>
+</tr>
+<tr>
+<td>结果</td>
+<td>更像「原版」</td>
+<td>更像「你自己的博客」</td>
+</tr>
+</tbody>
+</table>
+<p><strong>换句话说：不是谁做得差，是两者刻意走向了不同方向。</strong> 如果拿「像不像原版 Mango 演示站」当尺子，<strong>Astro v6 明显更接近</strong>；如果拿「适不适合当个人博客用」当尺子，Halo 站的定制（无轮播、作者卡、真实评论与浏览数、在线后台）反而更实用。</p>
+<p>决定性证据在 <code>mango.css:864-872</code>：</p>
+<button class="copy" type="button">复制</button><pre><code class="language-css">/* ============================================================
+   卡片内容对齐（2026-10-25）
+   ------------------------------------------------------------
+   原版 .post_loop_conter 有 60px 左缩进（对齐头像右侧），
+   宽版下会在图片左侧留出空白带；这里取消缩进让图片/标签满宽，
+   标题区（标题 + 摘要）居中，视觉重心落在卡片中轴。
+   ============================================================ */
+.post_loop .post_loop_conter { margin-left: 0; }
+</code></pre>
+<p>这一段直接解释了对照图里最刺眼的差别：<strong>Halo 站标题与头像左对齐、Astro v6 标题缩进 60px</strong> —— 不是 Halo 版漏做，是 10 月 25 日主动改掉的。</p>
+<hr />
+<h2 id="3-halo-vs-astro-v6png">3. 视觉逐项对比（对照图 <code>对比-Halo-vs-Astro-v6.png</code>）📐</h2>
+<table>
+<thead>
+<tr>
+<th>部位</th>
+<th>Halo 站（上）</th>
+<th>本地 Astro v6（下）</th>
+<th>谁更接近原版</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>轮播 banner</strong></td>
+<td>❌ <strong>没有</strong>（首页直接从文章列表开始）</td>
+<td>✅ 900×350 工作台图 + 「置顶精彩」角标 + 标题 + 指示器/箭头</td>
+<td><strong>Astro</strong>（原版有）</td>
+</tr>
+<tr>
+<td>顶栏 logo</td>
+<td>圆形猫咪头像 +「大明白日志」</td>
+<td>橙黄芒果图 +「Mango」</td>
+<td>Astro（原版是芒果图 + Mango）</td>
+</tr>
+<tr>
+<td>顶栏导航</td>
+<td>只有「首页 / 关于」</td>
+<td>风景 / 旅拍 / 科技▾ / 主题下载 / 旅游地图</td>
+<td><strong>Astro</strong>（原版是分类菜单）</td>
+</tr>
+<tr>
+<td>顶栏右侧</td>
+<td>灯泡圆按钮 + 搜索图标（无圆底）</td>
+<td>2 个 30×30 圆按钮（搜索 + 灯泡），点搜索展开 120px 顶部条</td>
+<td>Astro</td>
+</tr>
+<tr>
+<td>背景纹理</td>
+<td>水波纹<strong>很明显</strong>（<code>bg.svg</code>）</td>
+<td>浅色下偏淡，暗色下清晰</td>
+<td>Halo 更明显</td>
+</tr>
+<tr>
+<td>容器</td>
+<td>900px ✅</td>
+<td>900px ✅</td>
+<td>一致</td>
+</tr>
+<tr>
+<td><strong>卡片内容缩进</strong></td>
+<td><strong>0</strong>（标题/摘要/图片与头像左对齐）</td>
+<td><strong>60px</strong>（标题区对齐头像右侧）</td>
+<td><strong>Astro</strong>（原版 <code>margin-left:60px</code>）</td>
+</tr>
+<tr>
+<td>时间格式</td>
+<td><strong>绝对日期</strong> <code>2026-10-26 11:11</code></td>
+<td>相对时间「X 年前 / X 月前」</td>
+<td><strong>Astro</strong>（原版「4 年前」）</td>
+</tr>
+<tr>
+<td>摘要</td>
+<td>3 行截断、灰色 <code>#8c8989</code>、13.5px</td>
+<td>原版式 14px / 300 / 1.8 行高、不截断</td>
+<td>Astro</td>
+</tr>
+<tr>
+<td>九宫格</td>
+<td>第一张卡是 3 张<strong>横向矩形</strong>大图</td>
+<td>3×3 <strong>正方形</strong>小图 + <code>+23</code></td>
+<td><strong>Astro</strong>（原版 340×340 方图）</td>
+</tr>
+<tr>
+<td>图片布局 class</td>
+<td><code>post_img_1/2/3/6/9</code>（7 篇里各 1 次）</td>
+<td><code>post-img-1..9</code> 八套齐全</td>
+<td>都有，Halo 少样本</td>
+</tr>
+<tr>
+<td>标签</td>
+<td><code>#定投日志</code> 浅蓝胶囊 ✅</td>
+<td><code>#欢迎</code> 等浅蓝胶囊 ✅</td>
+<td>一致</td>
+</tr>
+<tr>
+<td>底部三数</td>
+<td><code>0评论 / 13浏览 / 0</code>（<strong>实时数据</strong>）</td>
+<td><code>18 评论 / 1,024 浏览 / 56 点赞</code>（frontmatter 静态值）</td>
+<td>形态一致，数据来源不同</td>
+</tr>
+<tr>
+<td>侧栏第一块</td>
+<td><strong>作者卡 <code>author_show_box</code></strong>（头像 + 名称 + 文章7 / 评论2）</td>
+<td>无，直接是「热门文章」</td>
+<td><strong>Astro</strong>（原版首页侧栏无作者卡）</td>
+</tr>
+<tr>
+<td>侧栏热门文章</td>
+<td>首条大图 + 2 条缩略图，副行是<strong>日期</strong> <code>2026-10-12</code></td>
+<td>首条大图 + 2 条缩略图，副行是<strong>「29 条留言」</strong></td>
+<td><strong>Astro</strong>（原版「29条留言」）</td>
+</tr>
+<tr>
+<td>侧栏其余</td>
+<td>热门标签、最近评论 ✅</td>
+<td>热门标签、最近评论 ✅</td>
+<td>一致</td>
+</tr>
+<tr>
+<td>页脚</td>
+<td><code>footbox</code> + <code>links</code> + <code>copyright</code> ✅</td>
+<td><code>.links</code> 独立块 + 版权 + 备案占位 ✅</td>
+<td>一致</td>
+</tr>
+<tr>
+<td>暗色</td>
+<td>默认跟随系统，<code>isDarkMode</code> 可覆盖</td>
+<td>默认浅色，<code>theme</code> 可切换</td>
+<td>都可用</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>补一句：Halo 站首页有 <strong>7 张 <code>post_loop</code></strong> 卡片、无 <code>index_banner</code>/<code>id="banner"</code>；原版首页是 8 张卡片 + 1 个轮播。所以三者连内容密度都不同。</p>
+</blockquote>
+<hr />
+<h2 id="4-halo-vs-halopng">4. Halo 相对原版做了哪些定制（对照图 <code>对比-原版vs-Halo.png</code>）🧩</h2>
+<p>从 <code>mango.css</code> 的规则与注释可以还原出这份「定制清单」：</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>定制</th>
+<th><code>mango.css</code> 线索</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>去掉 60px 缩进、标题区左对齐</td>
+<td><code>:870 .post_loop .post_loop_conter{margin-left:0}</code> + 注释「2026-10-25」</td>
+</tr>
+<tr>
+<td>2</td>
+<td>摘要改 3 行截断、弱化色</td>
+<td><code>:881 p{-webkit-line-clamp:3; color:#8c8989; font-size:13.5px}</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>主色/版心/背景变量化，交给主题设置注入</td>
+<td>HTML 内联三段 <code>&lt;style&gt;</code>；<code>--ds_main_color</code> / <code>--ds_background</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>新增作者卡</td>
+<td><code>:457 .author_show_box</code>，首页 DOM 有 1 个</td>
+</tr>
+<tr>
+<td>5</td>
+<td>图片规则扩展 <code>post_img_1</code>、响应式重写</td>
+<td><code>:91 .post_img_1 a</code>、<code>:766 .post_images</code>、<code>:508 @media</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td>首页不输出轮播</td>
+<td>HTML 里无 <code>banner</code>；<code>#banner</code> 规则仍留在 <code>style.css</code> 里未删</td>
+</tr>
+<tr>
+<td>7</td>
+<td>导航简化为「首页 / 关于」</td>
+<td><code>header-menu-ul</code> 只有 2 项（后台菜单配置）</td>
+</tr>
+<tr>
+<td>8</td>
+<td>暗色跟随系统</td>
+<td><code>isDarkMode</code> + <code>prefers-color-scheme</code>，原版是纯手动切换</td>
+</tr>
+<tr>
+<td>9</td>
+<td>侧栏热门文章副行改日期</td>
+<td>截图可见 <code>2026-10-12</code>（模板层改动）</td>
+</tr>
+<tr>
+<td>10</td>
+<td>接入 Halo 插件生态</td>
+<td>评论 / 搜索 / 豆瓣三个插件</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5">5. 技术栈与运维对比 ⚙️</h2>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Halo 站</th>
+<th>本地 Astro v6</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>渲染</td>
+<td><strong>动态 SSR</strong>（Halo 2.26 Java 后端 + Thymeleaf 模板）</td>
+<td><strong>静态 SSG</strong>（Astro 5，构建出 51 个 HTML）</td>
+</tr>
+<tr>
+<td>内容</td>
+<td>Halo 数据库 + 在线后台可视化编辑</td>
+<td><code>src/content/posts/*.md</code> + Content Collections（Zod schema）</td>
+</tr>
+<tr>
+<td>主题</td>
+<td>原版 <code>style.css</code> 直移 + 20KB 定制层</td>
+<td>按数值重写的 <code>global.css</code> + Tailwind + 组件 scoped CSS</td>
+</tr>
+<tr>
+<td>评论</td>
+<td><code>PluginCommentWidget</code> 3.1.2，原生评论（Hello Halo 有 2 条）</td>
+<td>Giscus（<code>src/config/comment.ts</code> 可配置，<strong>当前未启用</strong>显示占位块）</td>
+</tr>
+<tr>
+<td>搜索</td>
+<td><code>PluginSearchWidget</code> 1.8.0（服务端）</td>
+<td><code>/search.astro</code> 客户端过滤 frontmatter</td>
+</tr>
+<tr>
+<td>浏览/点赞</td>
+<td><strong>数据库实时计数</strong>（13 浏览等）</td>
+<td>frontmatter 里写死的静态值</td>
+</tr>
+<tr>
+<td>图片</td>
+<td>媒体库 + Fancybox 灯箱</td>
+<td><code>public/images/</code> + 自写灯箱（分组左右切换）</td>
+</tr>
+<tr>
+<td>暗色</td>
+<td><code>isDarkMode</code> + 系统偏好，防闪烁</td>
+<td><code>theme</code> localStorage + <code>&lt;head&gt;</code> 内联防闪烁</td>
+</tr>
+<tr>
+<td>部署</td>
+<td>自有服务器 + Cloudflare（<code>cf-ray ...-HKG</code>、<code>server: cloudflare</code>）</td>
+<td>任意静态托管（工程已有 <code>wrangler.toml</code> / <code>DEPLOYMENT.md</code>）</td>
+</tr>
+<tr>
+<td>优势</td>
+<td>后台好用、数据真实、插件丰富、内容可随时改</td>
+<td>无服务器成本、CDN 极快、无数据库攻击面、可进 Git</td>
+</tr>
+<tr>
+<td>代价</td>
+<td>要维护 Java 服务与数据库</td>
+<td>改内容要重新构建；动态计数/评论需外接服务</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>顺带一提：Halo 站 <code>&lt;meta name="generator" content="Halo 2.26.0"&gt;</code>，和本次会话最开始分析的 <code>www.alei.kdns.fr</code>（Astro v7.1.3 + <code>/admin/</code> 404）是完全不同的技术路线，但两者都是「Mango 风格」。</p>
+</blockquote>
+<hr />
+<h2 id="6">6. 两个方向的操作清单 🛠️</h2>
+<h3 id="a-astro-v6-halo">方向 A：想让 <strong>Astro v6 变成 Halo 站那个样子</strong></h3>
+<p>按影响从大到小（都只改 Astro 工程，不动原版基准）：</p>
+<ol>
+<li>去掉首页 <code>&lt;Banner /&gt;</code>（<code>src/pages/index.astro</code>）；</li>
+<li><code>.moment-content-area{margin-left:60px}</code> → <code>0</code>（<code>global.css</code>）；</li>
+<li><code>formatTime()</code> 改成输出 <code>YYYY-MM-DD HH:mm</code>（<code>PostCard.astro</code>，原版现在是相对时间）；</li>
+<li>侧栏最上面插入作者卡组件（照 <code>mango.css:457 .author_show_box</code> 的结构：头像 + 名称 + 文章数/评论数）；</li>
+<li><code>HotPostsWidget</code> 副行从「N 条留言」改成日期；</li>
+<li>顶栏 <code>navItems</code> 精简成「首页 / 关于」，logo 换站点名；</li>
+<li>摘要加 3 行截断 + <code>#8c8989</code> / 13.5px；</li>
+<li>暗色改成默认跟随 <code>prefers-color-scheme</code>，键名换 <code>isDarkMode</code>；</li>
+<li>接真实评论（Giscus 或 Twikoo）+ 浏览量服务，替代 frontmatter 静态值。</li>
+</ol>
+<blockquote>
+<p>注意：这样做会<strong>主动放弃前六轮的一比一成果</strong>，除非你打算把 Astro 版当成「大明白日志」的新家，否则不建议。</p>
+</blockquote>
+<h3 id="b-halo-wordpress">方向 B：想让 <strong>Halo 站更接近 WordPress 原版</strong></h3>
+<ol>
+<li>主题设置里重新启用轮播（<code>#banner</code> 的 CSS 还在，只是模板没输出）；</li>
+<li>把 <code>mango.css:870</code> 的 <code>margin-left:0</code> 改回 <code>60px</code>（或删掉这段覆盖）；</li>
+<li>后台菜单补齐「风景 / 旅拍 / 科技 / 主题下载 / 旅游地图」；</li>
+<li>时间格式切相对时间、热门文章副行切「N 条留言」；</li>
+<li>摘要恢复 14px / 300 / 1.8、不截断；</li>
+<li>首页侧栏取消作者卡（或移到关于页）；</li>
+<li>九宫格缩略图改成正方形裁切（当前是横向矩形）。</li>
+</ol>
+<h3 id="c">方向 C（我的建议）✅</h3>
+<p><strong>保持现状，各司其职</strong>：Halo 站继续当你的主博客（后台好用、评论浏览真实、内容可随时改），Astro v6 作为「一比一复刻的技术样板 / 静态镜像」保留。如果哪天想给 Astro 版接真实数据，优先做 Giscus + 浏览量 API，而不是反向去改视觉。</p>
+<hr />
+<h2 id="7">7. 数据来源与自洽校验 🔗</h2>
+<table>
+<thead>
+<tr>
+<th>结论来源</th>
+<th>具体依据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Halo 站身份</td>
+<td><code>curl -sSL https://halo.840428.xyz/</code> → <code>/tmp/halo-home.html</code>（44,970 B）：<code>Halo 2.26.0</code>、<code>/themes/theme-mango/</code>、三个插件、内联 900px/主色/背景 <code>&lt;style&gt;</code>、<code>isDarkMode</code> 防闪烁脚本</td>
+</tr>
+<tr>
+<td>Halo 主题 CSS</td>
+<td><code>/tmp/halo-style.css</code>（31,549 B）与 <code>/tmp/mango-style.css</code>（31,101 B，原版基准）逐行对照：同 <code>Theme Name / Version: 1.6.20241202</code>、<code>post_loop_conter</code> 同在 195 行、<code>post_img_2</code> 同在 203 行</td>
+</tr>
+<tr>
+<td>定制层</td>
+<td><code>/tmp/halo-mango.css</code>（20,839 B），<code>:864-872</code> 的「卡片内容对齐（2026-10-25）」注释原文；<code>:457 .author_show_box</code>、<code>:91 .post_img_1 a</code>、<code>:836 .sidebar_sticky</code></td>
+</tr>
+<tr>
+<td>Halo 首页 DOM</td>
+<td>7 个 <code>post_loop</code>、1 个 <code>author_show_box</code>、<code>post_img_1/2/3/6/9</code> 各 1 次、<strong>无 <code>index_banner</code> / <code>id="banner"</code></strong>、有 <code>footbox</code> / <code>links</code> / <code>header-menu-ul</code> / <code>sidebar_sticky</code></td>
+</tr>
+<tr>
+<td>视觉</td>
+<td><code>/tmp/halo-top.png</code>（默认暗色）、<code>/tmp/halo-light-top.png</code>（CDP 设 <code>isDarkMode="0"</code> 后 reload，状态 <code>html.className=""</code>）、<code>/tmp/halo-light-long.png</code>（1440×2200）</td>
+</tr>
+<tr>
+<td>本地 Astro v6</td>
+<td><code>/tmp/mango-v6-top.png</code> / <code>对比-原版vs新版-v6.png</code>；六轮总验收结论 98%</td>
+</tr>
+<tr>
+<td>对照图</td>
+<td><code>对比-Halo-vs-Astro-v6.png</code>、<code>对比-原版vs-Halo.png</code>（均 940×1930，同一 <code>box=(250,0,1190,900)</code> 裁切）</td>
+</tr>
+<tr>
+<td>自洽校验</td>
+<td>① 用「CSS 同源 + 定制层注释」双重证明 Halo 站是<strong>有意定制</strong>而非实现缺陷；② 三方（原版 / Halo / Astro）在同一裁切区截图，避免视口差异误判；③ 暗色图因 CDP 设置后 <code>html.className</code> 为空，确认浅色截图有效；④ 长图首轮因 CDP 截图帧超 <code>websockets</code> 默认 1 MB 报 1009，加 <code>max_size=None</code> 后成功</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>如果你原本想对比的是「<strong>原版 WordPress 演示站 vs Halo 站</strong>」，报告第 4 节与 <code>对比-原版vs-Halo.png</code> 就是这部分；如果想对比「<strong>Halo 站 vs 最初的 <code>www.alei.kdns.fr</code></strong>」，告诉我一声，我再补一份技术栈专项。</p>
+</blockquote>
+<div class="footer">Mango 主题 · Halo 站对比分析 · 2026-11-07 · 2026-11-06 · 仅供本机学习对照</div>
+</main>
+</div>
+<script>
+document.querySelectorAll('.copy').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var pre = b.nextElementSibling;
+    if (!pre || pre.tagName !== 'PRE') return;
+    navigator.clipboard.writeText(pre.innerText).then(function () {
+      b.textContent = '已复制'; setTimeout(function () { b.textContent = '复制'; }, 1500);
+    });
+  });
+});
+</script>
+</body>
+</html>

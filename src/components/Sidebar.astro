@@ -1,0 +1,91 @@
+---
+import AuthorCard from './AuthorCard.astro';
+import HotPostsWidget from './HotPostsWidget.astro';
+import TagsWidget from './TagsWidget.astro';
+import RecentCommentsWidget from './RecentCommentsWidget.astro';
+
+interface Post {
+  title: string;
+  slug: string;
+  timestamp: string | Date;
+  views?: number;
+  excerpt?: string;
+  heroImage?: string;
+  comments?: number;
+}
+
+interface Tag {
+  name: string;
+  count: number;
+}
+
+interface Props {
+  posts: Post[];
+  tags: Tag[];
+}
+
+const { posts, tags } = Astro.props;
+
+const hotPosts = [...posts]
+  .sort((a, b) => (b.views || 0) - (a.views || 0))
+  .slice(0, 3);
+
+// Mock recent comments - in production, these would come from a CMS or API
+const recentComments = [
+  {
+    author: '访客 A',
+    avatar: '/images/default-avatar.svg',
+    content: '这篇文章写得太好了，学到了很多！',
+    postTitle: '欢迎使用 Mango 主题',
+    postSlug: 'welcome',
+    timestamp: '2024-01-15',
+  },
+  {
+    author: '访客 B',
+    avatar: '/images/default-avatar.svg',
+    content: '图片展示效果非常棒，喜欢这个主题。',
+    postTitle: '我的第一篇摄影作品',
+    postSlug: 'my-first-photos',
+    timestamp: '2024-01-20',
+  },
+  {
+    author: '小明',
+    avatar: '/images/default-avatar.svg',
+    content: '布局很精美，请问是用什么主题搭建的？',
+    postTitle: '欢迎使用 Mango 主题',
+    postSlug: 'welcome',
+    timestamp: '2024-02-05',
+  },
+  {
+    author: '摄影爱好者',
+    avatar: '/images/default-avatar.svg',
+    content: '风景照片拍得真美，色彩很舒服。',
+    postTitle: '我的第一篇摄影作品',
+    postSlug: 'my-first-photos',
+    timestamp: '2024-02-10',
+  },
+  {
+    author: '路人甲',
+    avatar: '/images/default-avatar.svg',
+    content: '暗黑模式效果不错，眼睛很舒服。',
+    postTitle: '欢迎使用 Mango 主题',
+    postSlug: 'welcome',
+    timestamp: '2024-02-15',
+  },
+];
+---
+
+<aside class="space-y-5 sidebar_sticky">
+  <!-- Halo 优化：侧栏第一块是站点作者卡，之后才是热门文章 -->
+  <AuthorCard postCount={posts.length} commentCount={recentComments.length} />
+  <HotPostsWidget posts={hotPosts} />
+  <TagsWidget {tags} />
+  <RecentCommentsWidget comments={recentComments} />
+</aside>
+
+<style>
+  .sidebar_sticky {
+    position: sticky;
+    top: 95px;
+  }
+</style>

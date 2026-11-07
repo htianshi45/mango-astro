@@ -1,0 +1,24 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="404 - 页面未找到">
+  <div class="max-w-2xl mx-auto text-center py-16">
+    <div class="text-8xl mb-8">🥭</div>
+    <h1 class="text-6xl font-bold text-gray-900 dark:text-gray-100 mb-4">404</h1>
+    <p class="text-2xl text-gray-600 dark:text-gray-400 mb-8">
+      哎呀，这个页面走丢了！
+    </p>
+    <p class="text-lg text-gray-500 dark:text-gray-500 mb-12">
+      你访问的页面不存在或已被移除
+    </p>
+    <div class="space-x-4">
+      <a href="/" class="btn-primary inline-block">
+        返回首页
+      </a>
+      <a href="/archive" class="btn-secondary inline-block">
+        浏览归档
+      </a>
+    </div>
+  </div>
+</BaseLayout>
