@@ -45,6 +45,40 @@ export async function GET() {
     staticPaths.push(`/page/${page}`);
   }
 
+  /**
+   * lastmod：只给「内容确实由文章驱动」的 URL 标注，静态页（关于/收藏/导航等）
+   * 没有可信的更新时间，宁可留空也不要编一个构建日期，否则会误导爬虫反复重抓。
+   * 日期用 W3C date（YYYY-MM-DD），符合 sitemaps.org 规范。
+   */
+  const day = (value: Date | string) => new Date(value).toISOString().slice(0, 10);
+  const lastmodByPath = new Map<string, string>();
+  const postDay = (post: (typeof posts)[number]) =>
+    day(post.data.updatedDate ?? post.data.pubDate);
+
+  posts.forEach((post) => {
+    const d = postDay(post);
+    lastmodByPath.set(`/posts/${post.slug}`, d);
+    (post.data.tags || []).forEach((tag) => {
+      const key = `/tags/${encodeURIComponent(tag)}`;
+      if (!lastmodByPath.has(key) || lastmodByPath.get(key)! < d) lastmodByPath.set(key, d);
+    });
+    if (post.data.category) {
+      const key = `/categories/${encodeURIComponent(post.data.category)}`;
+      if (!lastmodByPath.has(key) || lastmodByPath.get(key)! < d) lastmodByPath.set(key, d);
+    }
+  });
+
+  // 首页、归档、分页与最近文章列表同源，用全站最新一篇文章的日期
+  if (posts.length > 0) {
+    const latest = posts.reduce(
+      (max, post) => (postDay(post) > max ? postDay(post) : max),
+      postDay(posts[0])
+    );
+    ['/', '/archive', ...Array.from({ length: Math.max(0, totalPages - 1) }, (_, i) => `/page/${i + 2}`)].forEach(
+      (path) => lastmodByPath.set(path, latest)
+    );
+  }
+
   const paths = [
     ...staticPaths,
     ...posts.map((post) => `/posts/${post.slug}`),
@@ -58,7 +92,8 @@ export async function GET() {
       const isHome = path === '/';
       const changefreq = isHome ? 'daily' : 'monthly';
       const priority = isHome ? '1.0' : path.startsWith('/posts/') ? '0.8' : '0.5';
-      return `<url><loc>${loc}</loc><changefreq>${changefreq}</changefreq><priority>${priority}</priority></url>`;
+      const lastmod = lastmodByPath.get(path);
+      return `<url><loc>${loc}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ''}<changefreq>${changefreq}</changefreq><priority>${priority}</priority></url>`;
     })
     .join('\n  ');
 

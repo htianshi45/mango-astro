@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mango Astro · 博客能力体检与优化路线图</title>
+<script>
+  // 主题初始化：放在 head 里同步执行，避免深色模式闪白
+  (function () {
+    try {
+      var p = new URLSearchParams(location.search).get('theme');
+      var s = localStorage.getItem('mango-report-theme');
+      var d = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', p === 'dark' || p === 'light' ? p : (s || d));
+    } catch (e) {
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+  })();
+</script>
+<style>
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --surface-2: #fbfaf7;
+    --border: #e6e2da;
+    --border-strong: #d5cfc4;
+    --text: #26231f;
+    --text-2: #57514a;
+    --text-3: #8a8378;
+    --accent: #c2683a;
+    --accent-soft: #fdf0e8;
+    --accent-2: #2f6f5e;
+    --accent-2-soft: #e8f3ef;
+    --ok: #2f7d4f;
+    --ok-soft: #e7f4ec;
+    --warn: #a8730f;
+    --warn-soft: #fbf2dd;
+    --bad: #b23c34;
+    --bad-soft: #fbeae8;
+    --code-bg: #f2efe8;
+    --shadow: 0 1px 2px rgba(38, 35, 31, 0.04), 0 8px 24px -12px rgba(38, 35, 31, 0.14);
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #16151a;
+    --surface: #1e1d23;
+    --surface-2: #232228;
+    --border: #302f37;
+    --border-strong: #3d3c45;
+    --text: #e8e5df;
+    --text-2: #b3aea4;
+    --text-3: #837e74;
+    --accent: #e0895c;
+    --accent-soft: #2e211a;
+    --accent-2: #63b39b;
+    --accent-2-soft: #1a2724;
+    --ok: #6fbf8e;
+    --ok-soft: #17261d;
+    --warn: #dfb055;
+    --warn-soft: #2a2317;
+    --bad: #e28a80;
+    --bad-soft: #2b1b1a;
+    --code-bg: #26252b;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 30px -14px rgba(0, 0, 0, 0.6);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", sans-serif;
+    font-size: 15px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 940px; margin: 0 auto; padding: 56px 24px 120px; }
+
+  /* ===== 主题切换 ===== */
+  .theme-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 50;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 38px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text-2);
+    font-size: 13px;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    transition: background .18s ease, color .18s ease, border-color .18s ease;
+  }
+  .theme-toggle:hover { color: var(--text); border-color: var(--accent); }
+  .theme-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .theme-toggle .ico { font-size: 15px; line-height: 1; }
+  html[data-theme="light"] .theme-toggle .ico-dark,
+  html[data-theme="dark"] .theme-toggle .ico-light { display: none; }
+
+  /* ===== 页头 ===== */
+  .kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .kicker::before {
+    content: "";
+    width: 22px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  h1 {
+    margin: 14px 0 10px;
+    font-size: clamp(28px, 4.6vw, 40px);
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    font-weight: 700;
+  }
+  .lede { color: var(--text-2); font-size: 16px; margin: 0 0 6px; max-width: 44em; }
+  .meta { color: var(--text-3); font-size: 13px; margin-top: 14px; }
+  .meta code { font-family: var(--mono); font-size: 12px; background: var(--code-bg); padding: 1px 6px; border-radius: 5px; }
+
+  /* ===== 指标条 ===== */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin: 30px 0 8px;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 16px 14px;
+  }
+  .stat b { display: block; font-size: 24px; line-height: 1.2; letter-spacing: -0.02em; }
+  .stat span { display: block; font-size: 12px; color: var(--text-3); margin-top: 4px; }
+  .stat.is-bad b { color: var(--bad); }
+  .stat.is-ok b { color: var(--ok); }
+  .stat.is-warn b { color: var(--warn); }
+
+  /* ===== 章节 ===== */
+  section { margin-top: 52px; }
+  h2 {
+    font-size: 21px;
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  h2 .num {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 500;
+  }
+  h2 + .sub { color: var(--text-3); font-size: 13.5px; margin: 0 0 20px; }
+  h3 { font-size: 15.5px; margin: 28px 0 10px; }
+
+  p { margin: 10px 0; color: var(--text-2); }
+  strong { color: var(--text); font-weight: 600; }
+  a { color: var(--accent-2); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--accent-2) 35%, transparent); }
+  a:hover { border-bottom-color: var(--accent-2); }
+
+  /* ===== 表格 ===== */
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 560px; }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th {
+    font-size: 12px;
+    letter-spacing: .04em;
+    color: var(--text-3);
+    font-weight: 600;
+    background: var(--surface-2);
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--surface-2); }
+  td.num { font-family: var(--mono); font-size: 12.5px; color: var(--text-2); white-space: nowrap; }
+  .dim { color: var(--text-3); }
+
+  /* ===== 状态徽标 ===== */
+  .tag {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    line-height: 1.7;
+  }
+  .tag.ok { background: var(--ok-soft); color: var(--ok); }
+  .tag.warn { background: var(--warn-soft); color: var(--warn); }
+  .tag.bad { background: var(--bad-soft); color: var(--bad); }
+  .tag.info { background: var(--accent-soft); color: var(--accent); }
+  .tag.flat { background: var(--code-bg); color: var(--text-3); }
+
+  /* ===== 结论卡 ===== */
+  .verdict {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px 12px 12px 4px;
+    padding: 20px 22px;
+    margin-top: 18px;
+    box-shadow: var(--shadow);
+  }
+  .verdict p { margin: 8px 0; }
+  .verdict p:first-child { margin-top: 0; }
+  .verdict p:last-child { margin-bottom: 0; }
+
+  /* ===== 优化条目 ===== */
+  .group { margin-top: 26px; }
+  .group-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .group-head .badge {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 6px;
+    letter-spacing: .04em;
+  }
+  .badge.p0 { background: var(--bad-soft); color: var(--bad); }
+  .badge.p1 { background: var(--warn-soft); color: var(--warn); }
+  .badge.p2 { background: var(--accent-2-soft); color: var(--accent-2); }
+  .group-head .hint { font-size: 12.5px; color: var(--text-3); }
+
+  .item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 10px;
+  }
+  .item-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .item-head h4 { margin: 0; font-size: 14.5px; font-weight: 600; }
+  .item-head .cost { font-size: 12px; color: var(--text-3); font-family: var(--mono); white-space: nowrap; }
+  .item p { margin: 7px 0 0; font-size: 13.5px; line-height: 1.7; }
+  .item ul { margin: 8px 0 0; padding-left: 18px; font-size: 13.5px; color: var(--text-2); }
+  .item li { margin: 3px 0; }
+  .item code, .path {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: var(--code-bg);
+    color: var(--text-2);
+    padding: 1px 6px;
+    border-radius: 5px;
+    word-break: break-all;
+  }
+  .why {
+    margin-top: 9px;
+    font-size: 12.5px;
+    color: var(--text-3);
+    border-top: 1px dashed var(--border);
+    padding-top: 8px;
+  }
+  .why b { color: var(--accent); font-weight: 600; }
+
+  /* ===== 路线 ===== */
+  .road {
+    display: grid;
+    gap: 12px;
+    margin-top: 16px;
+  }
+  .step {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .step .n {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1.3;
+  }
+  .step h4 { margin: 0 0 4px; font-size: 14.5px; }
+  .step p { margin: 4px 0 0; font-size: 13.5px; }
+  .step .accept { font-size: 12.5px; color: var(--text-3); margin-top: 8px; }
+  .step .accept b { color: var(--accent-2); }
+
+  ul.plain { padding-left: 20px; color: var(--text-2); }
+  ul.plain li { margin: 6px 0; }
+
+  footer {
+    margin-top: 64px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+    font-size: 12.5px;
+    color: var(--text-3);
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 720px) {
+    .wrap { padding: 40px 16px 80px; }
+    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .theme-toggle { top: 12px; right: 12px; height: 34px; padding: 0 12px; font-size: 12px; }
+    .step { grid-template-columns: 32px minmax(0, 1fr); }
+  }
+
+  @media print {
+    :root { --bg: #fff; --surface: #fff; --surface-2: #fff; --text: #000; --text-2: #222; --text-3: #555; }
+    html[data-theme="dark"] {
+      --bg: #fff; --surface: #fff; --surface-2: #fff; --text: #000; --text-2: #222; --text-3: #555;
+      --border: #ccc; --border-strong: #bbb; --code-bg: #f2f2f2;
+    }
+    .theme-toggle { display: none; }
+    .item, .step, .verdict, .table-wrap { box-shadow: none; break-inside: avoid; }
+    body { font-size: 12pt; }
+  }
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换日间/夜间模式" aria-pressed="false">
+  <span class="ico ico-light">☀</span>
+  <span class="ico ico-dark">☾</span>
+  <span class="label" id="themeLabel">夜间</span>
+</button>
+
+<div class="wrap">
+
+  <div class="kicker">Site Audit · 2026-11-08</div>
+  <h1>Mango Astro 博客能力体检<br>与优化路线图</h1>
+  <p class="lede">对照 Mango 官方主题 1.1 的功能清单、Astro 5 官方能力与本机实测数据，逐项核对站点现状，给出 27 项可落地的优化与功能。</p>
+  <div class="meta">
+    站点 <code>https://mango-astro.pages.dev</code> · 代码 <code>~/mango-astro</code> · 最近提交 <code>54ccbb5</code> · 构建产物 58 页 / 9.1 MB
+  </div>
+
+  <div class="stats">
+    <div class="stat is-ok"><b>58</b><span>静态页面 · 0 运行时框架</span></div>
+    <div class="stat is-warn"><b>1.06 MB</b><span>首页首屏传输（未压缩）</span></div>
+    <div class="stat is-bad"><b>0</b><span>评论系统</span></div>
+    <div class="stat is-warn"><b>15 / 16</b><span>首页图片缺尺寸声明</span></div>
+  </div>
+
+  <div class="verdict">
+    <p><strong>一句话结论：</strong>复刻程度已经很高——Mango 官方 9 项核心特性里 7 项到位，视觉与交互基本一比一；但作为「一个真能长期运营的博客」，还缺三样硬东西：<strong>评论、真实数据（阅读/点赞）、全文搜索</strong>。</p>
+    <p>另外有一处不太显眼但影响面最大的技术债：<strong>全站图片走 public/ 原图直出</strong>，既没有 WebP/AVIF，也没有 srcset 和宽高声明，还把 356 KB 的 banner 放在首屏；同时所有静态资源的 <code>cache-control</code> 都是 <code>max-age=0</code>，等于每次访问都要回源验证。这三件加起来，比任何新功能都更值得先做。</p>
+  </div>
+
+  <!-- ================= 01 ================= -->
+  <section>
+    <h2><span class="num">01</span>现状体检：实测数据</h2>
+    <p class="sub">全部数字来自 2026-11-08 对线上站点的实际请求与本地构建产物统计，不是估算。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>体检项</th><th>实测值</th><th>判断</th><th>说明</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>页面与构建</td>
+            <td class="num">58 页 / 9.1 MB</td>
+            <td><span class="tag ok">健康</span></td>
+            <td>纯 SSG，无客户端框架；HTML 单页 26–60 KB 属正常</td>
+          </tr>
+          <tr>
+            <td>首页首屏传输</td>
+            <td class="num">≈ 1.06 MB</td>
+            <td><span class="tag warn">偏重</span></td>
+            <td>图片 716 KB + 图标字体 228 KB + CSS 92 KB + HTML 52 KB</td>
+          </tr>
+          <tr>
+            <td>图片格式与响应式</td>
+            <td class="num">0 处 srcset / WebP</td>
+            <td><span class="tag bad">需改</span></td>
+            <td><span class="path">banner-1.jpg</span> 356 KB、<span class="path">banner-2.jpg</span> 205 KB，原图直出</td>
+          </tr>
+          <tr>
+            <td>图片宽高声明（CLS）</td>
+            <td class="num">1 / 16 有</td>
+            <td><span class="tag bad">需改</span></td>
+            <td>15 张图无 <code>width/height</code>，加载时会推动布局</td>
+          </tr>
+          <tr>
+            <td>静态资源缓存策略</td>
+            <td class="num">max-age=0</td>
+            <td><span class="tag bad">需改</span></td>
+            <td>无 <span class="path">public/_headers</span>，带哈希的 <code>/_astro/*</code> 也没长缓存</td>
+          </tr>
+          <tr>
+            <td>图标字体</td>
+            <td class="num">97 + 131 KB</td>
+            <td><span class="tag warn">偏重</span></td>
+            <td>全站引完整 Bootstrap Icons，实际用到约 40 个字形</td>
+          </tr>
+          <tr>
+            <td>SEO 基础</td>
+            <td class="num">canonical / OG / JSON-LD 齐全</td>
+            <td><span class="tag ok">已达标</span></td>
+            <td>BlogPosting + WebSite 结构化数据已就位</td>
+          </tr>
+          <tr>
+            <td>sitemap</td>
+            <td class="num">57 条 / 无 lastmod</td>
+            <td><span class="tag warn">可加强</span></td>
+            <td>缺 <code>lastmod</code>，搜索引擎无法判断更新频率</td>
+          </tr>
+          <tr>
+            <td>robots.txt</td>
+            <td class="num">Cloudflare 默认</td>
+            <td><span class="tag warn">可加强</span></td>
+            <td>项目里没有 <span class="path">public/robots.txt</span>，当前是 CF 注入的 content-signals 版，<strong>没有 Sitemap 声明</strong></td>
+          </tr>
+          <tr>
+            <td>搜索覆盖</td>
+            <td class="num">仅文章 4 字段</td>
+            <td><span class="tag warn">偏弱</span></td>
+            <td>只匹配标题/描述/标签/分类；不含正文、说说、收藏；索引内联在页面 HTML 里</td>
+          </tr>
+          <tr>
+            <td>评论</td>
+            <td class="num">全站 0 处</td>
+            <td><span class="tag bad">缺失</span></td>
+            <td>源码搜索 comment / giscus / waline / twikoo 均无命中</td>
+          </tr>
+          <tr>
+            <td>阅读量与点赞</td>
+            <td class="num">frontmatter 静态值</td>
+            <td><span class="tag bad">数据是假的</span></td>
+            <td>「热门文章」按静态 <code>views</code> 排序，排序结果不随访问变化</td>
+          </tr>
+          <tr>
+            <td>文章页交互</td>
+            <td class="num">目录 scrollspy / 阅读进度 / 分享 / 上下篇 / 相关文章</td>
+            <td><span class="tag ok">完整</span></td>
+            <td>灯箱支持 ←→ / 滚轮 / Esc；分享走 Web Share API + 复制兜底</td>
+          </tr>
+          <tr>
+            <td>无障碍</td>
+            <td class="num">alt 16/16 · 无 skip-link</td>
+            <td><span class="tag warn">小缺</span></td>
+            <td>图片 alt 全覆盖；缺跳到主内容链接与 <code>aria-current</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= 02 ================= -->
+  <section>
+    <h2><span class="num">02</span>对照 Mango 官方主题 1.1</h2>
+    <p class="sub">依据 HUiTHEME 官方介绍页列出的 9 项核心特性逐条核对（<a href="https://www.huitheme.com/mango-theme.html" target="_blank" rel="noopener">huitheme.com/mango-theme.html</a>）。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>官方特性</th><th>本站状态</th><th>差距说明</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>类朋友圈风格 + 自动识别图片数量布局</td>
+            <td><span class="tag ok">已一比一</span></td>
+            <td>照搬 <code>.post_img_N</code> 百分比浮动规则，2/3/4/5/6/8/9 图错落均已复刻</td>
+          </tr>
+          <tr>
+            <td>可视化自定义设置</td>
+            <td><span class="tag ok">已超越</span></td>
+            <td>用 Sveltia CMS + <span class="path">src/config/site.ts</span> 取代 WP 自定义器，Git 即数据库</td>
+          </tr>
+          <tr>
+            <td>传统翻页</td>
+            <td><span class="tag ok">已有</span></td>
+            <td><span class="path">src/pages/page/[page].astro</span> 静态分页</td>
+          </tr>
+          <tr>
+            <td>可设定的 ajax 翻页</td>
+            <td><span class="tag bad">缺失</span></td>
+            <td>没有「加载更多 / 无限滚动」选项</td>
+          </tr>
+          <tr>
+            <td>自带的 ajax 评论</td>
+            <td><span class="tag bad">缺失</span></td>
+            <td>最大功能缺口，见 P1-1</td>
+          </tr>
+          <tr>
+            <td>无闪白暗黑模式</td>
+            <td><span class="tag ok">已超越</span></td>
+            <td>head 内同步脚本 + localStorage + URL 参数，无 FOUC</td>
+          </tr>
+          <tr>
+            <td>完美自适应（含手机暗色）</td>
+            <td><span class="tag ok">已达标</span></td>
+            <td>昨日刚修完手机版撑宽与抽屉定位；1440/900/480 三档实测无溢出</td>
+          </tr>
+          <tr>
+            <td>侧栏小工具：热门文章 / 标签云 / 作者信息</td>
+            <td><span class="tag ok">已有</span></td>
+            <td>三个都已移植，另有音乐播放器（原版没有）</td>
+          </tr>
+          <tr>
+            <td>侧栏小工具：最近评论</td>
+            <td><span class="tag bad">缺失</span></td>
+            <td>依赖评论系统，先做 P1-1 再补这个</td>
+          </tr>
+          <tr>
+            <td>HUiTHEME SEO 设置</td>
+            <td><span class="tag warn">部分</span></td>
+            <td>canonical/OG/JSON-LD 都有，缺 sitemap lastmod、面包屑结构、社交分享大图</td>
+          </tr>
+          <tr>
+            <td>缩略图裁剪（WP 自动 340×340 WebP）</td>
+            <td><span class="tag bad">缺失</span></td>
+            <td>原版靠 WP 缩略图缓存，我们是原图直出，长列表页负担最重</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="margin-top:14px">结论：<strong>外观层面已经完成复刻</strong>，剩下的差距集中在「内容生态」——评论、评分、翻页方式、图片管线。这也正好是一个静态站最容易补、也最值得补的部分。</p>
+  </section>
+
+  <!-- ================= 03 ================= -->
+  <section>
+    <h2><span class="num">03</span>对照 Astro 官方能力</h2>
+    <p class="sub">Astro 5 已经内置、但当前项目还没用上的能力（按官方文档「Images / Prefetch / View Transitions / Content」四章核对）。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>官方能力</th><th>用途</th><th>本站</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>astro:assets</code> / <code>getImage()</code></td>
+            <td>构建期转 WebP/AVIF、生成多尺寸 srcset、自动宽高</td>
+            <td><span class="tag bad">未启用</span></td>
+          </tr>
+          <tr>
+            <td>内置 prefetch</td>
+            <td>视口内链接预取，站内跳转近乎瞬时</td>
+            <td><span class="tag bad">未启用</span></td>
+          </tr>
+          <tr>
+            <td>ClientRouter（View Transitions）</td>
+            <td>页面切换过渡动画、保持滚动位置、音乐不断播</td>
+            <td><span class="tag bad">未启用</span></td>
+          </tr>
+          <tr>
+            <td>Content Layer / 定时发布</td>
+            <td>草稿、未来时间自动上线</td>
+            <td><span class="tag warn">部分</span>（只有 draft 过滤）</td>
+          </tr>
+          <tr>
+            <td><code>_headers</code> / <code>_redirects</code></td>
+            <td>Cloudflare 静态资源缓存与重定向规则</td>
+            <td><span class="tag bad">未配置</span></td>
+          </tr>
+          <tr>
+            <td>Pagefind 全文搜索</td>
+            <td>官方推荐方案，构建后生成索引，纯静态可用</td>
+            <td><span class="tag bad">未使用</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= 04 ================= -->
+  <section>
+    <h2><span class="num">04</span>优化与功能清单</h2>
+    <p class="sub">27 项，按「投入产出比」分三档。P0 = 半天到一天就能做完、立刻见效；P1 = 让博客真正「活」起来；P2 = 体验打磨。</p>
+
+    <!-- ---------- P0 ---------- -->
+    <div class="group">
+      <div class="group-head">
+        <span class="badge p0">P0</span>
+        <strong>性能与 SEO 地基</strong>
+        <span class="hint">合计约 1.5 天 · 无新依赖（除 sharp）</span>
+      </div>
+
+      <div class="item">
+        <div class="item-head"><h4>1. 配 <code>_headers</code>，让缓存真正生效</h4><span class="cost">30 分钟</span></div>
+        <p>新建 <span class="path">public/_headers</span>：<code>/_astro/*</code> 用 <code>immutable, max-age=31536000</code>（文件名自带哈希，绝对安全）；<code>/images/*</code> 用 7 天；<code>/fonts/*</code> 用 30 天。</p>
+        <div class="why"><b>收益：</b>回访用户从「每次回源验证 92 KB CSS + 228 KB 字体」变成直接命中本地缓存，二次访问基本零请求。<b>现状：</b>全部 <code>max-age=0, must-revalidate</code>。</div>
+      </div>
+
+      <div class="item">
+        <div class="item-head"><h4>2. 接 <code>astro:assets</code> 图片管线</h4><span class="cost">半天</span></div>
+        <p>安装 <code>sharp</code>，把封面/说说图从 <code>public/</code> 迁到 <code>src/assets/</code>，用 <code>&lt;Image&gt;</code> 或 <code>getImage()</code> 输出 WebP + 三档 srcset（400 / 800 / 1200），自动带 <code>width/height</code>。</p>
+        <ul>
+          <li>banner 两只图先单独压到 &lt; 100 KB（现在 561 KB）</li>
+          <li>列表缩略图按卡片实际尺寸出 340px 版本</li>
+        </ul>
+        <div class="why"><b>收益：</b>首页图片从 716 KB 降到约 200 KB（−70%），CLS 归零。<b>代价：</b>内容里写的是 <code>/images/…</code> 绝对路径，需要一次批量迁移 + 兼容旧路径。</div>
+      </div>
+
+      <div class="item">
+        <div class="item-head"><h4>3. 图标字体子集化</h4><span class="cost">1 小时</span></div>
+        <p>统计实际用到的约 40 个 <code>bi-*</code> 类名，用 <code>fonttools pyftsubset</code> 裁出子集字体，或改用内联 SVG sprite。</p>
+        <div class="why"><b>收益：</b>228 KB → 约 15–25 KB，每个页面都省 200 KB。</div>
+      </div>
+
+      <div class="item">
+        <div class="item-head"><h4>4. robots.txt 接管 + sitemap 加 lastmod</h4><span class="cost">30 分钟</span></div>
+        <p>新建 <span class="path">public/robots.txt</span> 声明 <code>Sitemap: https://…/sitemap.xml</code>；在 <span class="path">src/pages/sitemap.xml.ts</span> 里补 <code>lastmod</code>（取 <code>updatedDate || pubDate</code>）。</p>
+        <div class="why"><b>收益：</b>搜索引擎能识别更新频率，新文章收录更快。<b>现状：</b>robots 是 CF 默认注入的，<strong>完全没提 sitemap</strong>。</div>
+      </div>
+
+      <div class="item">
+        <div class="item-head"><h4>5. 社交分享大图（OG Image）</h4><span class="cost">2 小时</span></div>
+        <p>现在 <code>og:image</code> 指向 <code>logo.svg</code>——分享到微信/Telegram/X 时是一张空白方图。用 satori 或 <code>@vercel/og</code> 在构建期给每篇文章生成 1200×630 的标题卡。</p>
+        <div class="why"><b>收益：</b>分享卡片的点击率差异极大，这是纯视觉收益。</div>
+      </div>
+
+      <div class="item">
+        <div class="item-head"><h4>6. 相关文章改按标签重合度打分</h4><span class="cost">1 小时</span></div>
+        <p>现在只按 <code>category</code> 匹配，没分类时兜底「最新 5 篇」——等于随机推荐。改成 <code>标签交集数 × 2 + 同分类 × 1 + 时间衰减</code> 打分取前 5。</p>
+        <div class="why">落点：<span class="path">src/pages/posts/[slug].astro</span> 第 29–35 行。</div>
+      </div>
+
+      <div class="item">
+        <div class="item-head"><h4>7. 搜索索引外置</h4><span class="cost">45 分钟</span></div>
+        <p>把 <code>searchData</code> 从 <code>define:vars</code> 内联改成构建期输出 <span class="path">/search-index.json</span>，页面首次聚焦搜索框时再 <code>fetch</code>。</p>
+        <div class="why"><b>收益：</b>实测搜索页 HTML 25.8 KB → 21.6 KB，更重要的是索引变成可独立缓存的资源，搜索页重复访问不再重复下载；后续接 Pagefind 或扩到说说/收藏也只需改这个数据出口。</div>
+      </div>
+    </div>
+
+    <!-- ---------- P1 ---------- -->
+    <div class="group">
+      <div class="group-head">
+        <span class="badge p1">P1</span>
+        <strong>让博客「活」起来</strong>
+        <span class="hint">合计约 4–6 天 · 这一步才叫真正的博客</span>
+      </div>
+
+      <div class="item">
+        <div class="item-head"><h4>1. 评论系统 <span class="tag info">最关键</span></h4><span class="cost">2–4 小时接入</span></div>
+        <p>三条路选一条：</p>
+        <ul>
+          <li><strong>giscus</strong>（推荐）：基于 GitHub Discussions，零后端、零成本、有暗色主题、支持反应表情。需要仓库 public + 装 giscus App。</li>
+          <li><strong>Waline</strong>：支持匿名评论、表情、邮件提醒，需要一台小服务器或 Vercel 部署 + 数据库。</li>
+          <li><strong>Twikoo</strong>：国内访问快，可挂 Cloudflare D1（新版已支持）。</li>
+        </ul>
+        <p>挂载点：文章页 <code>.post_author</code> 之后、说说卡片展开后。</p>
+        <div class="why"><b>为什么最关键：</b>没有评论的博客只是「日志展示器」。而且评论一旦有了，最近评论小工具、评论数排序、互动数据全都跟着解锁。</div>
+      </div>
+
+      <div class="item">
+        <div class="item-head"><h4>2. 真实阅读量与点赞</h4><span class="cost">1 天</span></div>
+        <p>用 Cloudflare Pages Functions + KV（或 D1）存计数：<code>POST /api/view/:slug</code> 自增，页面加载时异步读；点赞按 IP+UA 哈希去重。</p>
+        <p>更省事的替代：只接 <strong>Umami / Cloudflare Web Analytics</strong> 拿真实 PV，前端数字仍静态——但至少「热门文章」能基于真实数据。</p>
+        <div class="why"><b>现状：</b><code>views: 19428</code> 这类数字写死在 frontmatter 里，热门排行永远不变。</div>
+      </div>
+
+      <div class="item">
+        <div class="item-head"><h4>3. Pagefind 全文搜索</h4><span class="cost">半天</span></div>
+        <p>构建后跑 <code>pagefind --site dist</code>，前端 <code>/pagefind/pagefind.js</code> 懒加载。中文需要开 <code>--force-language zh</code> 并接受单字分词，或配 jieba 预处理。</p>
+        <div class="why"><b>收益：</b>搜索从「标题+描述」升级到「正文全文」，支持中文分词、结果高亮摘要、按标签过滤。索引按需分片加载，不拖慢首屏。</div>
+      </div>
+
+      <div class="item">
+        <div class="item-head"><h4>4. 「加载更多」替代纯翻页</h4><span class="cost">半天</span></div>
+        <p>复用 <span class="path">src/pages/page/[page].astro</span> 的静态分页：滚动到底时 <code>fetch('/page/2/')</code> 解析 DOM 取卡片追加，URL 用 <code>history.replaceState</code> 同步。保留 <code>&lt;noscript&gt;</code> 与原分页链接做 SEO 兜底。</p>
+        <div class="why">这是官方主题的 ajax 翻页特性，纯前端即可实现，不需要后端。</div>
+      </div>
+
+      <div class="item">
+        <div class="item-head"><h4>5. 最近评论小工具</h4><span class="cost">依赖第 1 项</span></div>
+        <p>giscus 提供 GraphQL 接口，构建期或客户端拉最近 5 条，塞进侧栏「热门文章」下面。</p>
+        <div class="why">补齐 Mango 官方四个小工具的最后一块。</div>
+      </div>
+
+      <div class="item">
+        <div class="item-head"><h4>6. 说说详情页 + 独立互动</h4><span class="cost">半天</span></div>
+        <p>现在说说只有列表，<code>⋯</code> 跳到 <code>/moments/#id</code>。加 <span class="path">src/pages/moments/[id].astro</span> 生成独立页，带 OG 图、评论、点赞，也是「单条说说」可分享的前提。</p>
+      </div>
+
+      <div class="item">
+        <div class="item-head"><h4>7. 邮件订阅</h4><span class="cost">1 小时</span></div>
+        <p>RSS 之外给不想用阅读器的人一条路：Buttondown / follow.it 嵌入表单，或 Cloudflare Worker + Resend 自建。</p>
+      </div>
+
+      <div class="item">
+        <div class="item-head"><h4>8. 代码块体验</h4><span class="cost">2 小时</span></div>
+        <p>右上角「复制」按钮 + 语言标签 + 可选行号。现在文章页只有「复制链接」，代码块里没有复制入口——技术博客的高频操作。</p>
+        <div class="why">落点：<span class="path">src/styles/global.css</span> 里 <code>.prose pre</code> 附近 + 一段内联脚本。</div>
+      </div>
+
+      <div class="item">
+        <div class="item-head"><h4>9. 图片 LQIP 占位</h4><span class="cost">半天</span></div>
+        <p>构建期为每张图生成 20px 的 base64 缩略图或主色，作为 <code>background-image</code> 垫在 <code>&lt;img&gt;</code> 下面，图片到达时淡入。</p>
+        <div class="why">图片博客的观感差异主要来自这里——从「白块逐个弹出」变成「先看模糊轮廓」。</div>
+      </div>
+    </div>
+
+    <!-- ---------- P2 ---------- -->
+    <div class="group">
+      <div class="group-head">
+        <span class="badge p2">P2</span>
+        <strong>体验打磨与长期运营</strong>
+        <span class="hint">按兴趣挑，随时可停</span>
+      </div>
+
+      <div class="item">
+        <div class="item-head"><h4>10. View Transitions + prefetch</h4><span class="cost">1 小时</span></div>
+        <p>两行配置就能让站内跳转从「白屏刷新」变成原生 App 式的过渡，还能让侧栏音乐播放器跨页不断播。</p>
+        <div class="why">注意：<code>ClientRouter</code> 会接管脚本执行，现有内联 <code>&lt;script&gt;</code> 需要改成 <code>astro:page-load</code> 事件，否则灯箱/目录在二次跳转后失效。</div>
+      </div>
+
+      <div class="item">
+        <div class="item-head"><h4>11. ⌘K 搜索弹层</h4><span class="cost">半天</span></div>
+        <p>全局快捷键唤出搜索浮层，输入即出结果，↑↓ 选择、Enter 进入。比跳转 <code>/search</code> 顺手一个量级。</p>
+      </div>
+
+      <div class="item">
+        <div class="item-head"><h4>12. 移动端底部 Tab 栏</h4><span class="cost">半天</span></div>
+        <p>朋友圈风格在手机上天然适合「首页 / 说说 / 收藏 / 我的」四宫格底栏，替代现在的汉堡抽屉。</p>
+      </div>
+
+      <div class="item">
+        <div class="item-head"><h4>13. 文章系列 / 专栏</h4><span class="cost">半天</span></div>
+        <p>给 frontmatter 加 <code>series</code> 字段，文章底部渲染「本篇是《NAS 折腾记》第 3 篇」，自动生成系列目录页。</p>
+      </div>
+
+      <div class="item">
+        <div class="item-head"><h4>14. 长文分页</h4><span class="cost">1–2 天</span></div>
+        <p>Mango 官方特性（演示站那篇 NAS 长文就是分页的）。用 <code>&lt;!-- pagebreak --&gt;</code> 切分，生成 <code>/posts/xxx/2/</code>。</p>
+      </div>
+
+      <div class="item">
+        <div class="item-head"><h4>15. 阅读体验细节</h4><span class="cost">半天</span></div>
+        <ul>
+          <li>文章过期提示：「本文发布于 800 天前，部分内容可能已过时」</li>
+          <li>字号调节（小/中/大，存 localStorage）</li>
+          <li>打印样式：隐藏侧栏与浮动按钮，正文单栏</li>
+        </ul>
+      </div>
+
+      <div class="item">
+        <div class="item-head"><h4>16. 无障碍补齐</h4><span class="cost">2 小时</span></div>
+        <ul>
+          <li>「跳到主内容」skip-link（键盘 Tab 第一下出现）</li>
+          <li>导航加 <code>aria-current="page"</code></li>
+          <li>浮动按钮组统一 <code>:focus-visible</code> 描边</li>
+        </ul>
+      </div>
+
+      <div class="item">
+        <div class="item-head"><h4>17. PWA manifest + 离线</h4><span class="cost">半天</span></div>
+        <p>加 <code>manifest.webmanifest</code>（图标、主题色、standalone），配一个极简 Service Worker 缓存壳与 404 兜底，手机可「添加到主屏」。</p>
+      </div>
+
+      <div class="item">
+        <div class="item-head"><h4>18. 主动推送收录</h4><span class="cost">2 小时</span></div>
+        <p>IndexNow（Bing/Yandex 秒收录）+ 百度站长 API 推送。部署后自动跑一次，新文章几小时内进索引。</p>
+      </div>
+
+      <div class="item">
+        <div class="item-head"><h4>19. llms.txt</h4><span class="cost">30 分钟</span></div>
+        <p>给 AI 爬虫一份站点结构说明（标题 + 摘要 + 链接），AI 搜索时代的基础礼貌。</p>
+      </div>
+
+      <div class="item">
+        <div class="item-head"><h4>20. GitHub Actions 自动部署</h4><span class="cost">1 小时</span></div>
+        <p>现在每次都是手动 <code>wrangler pages deploy</code>。改成 push 触发：<code>check:content</code> → <code>astro build</code> → <code>wrangler</code>，PR 出预览环境。</p>
+        <div class="why">顺带解决「改了忘部署」和「部署了忘检查」两个老大难。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 05 ================= -->
+  <section>
+    <h2><span class="num">05</span>建议的实施顺序</h2>
+    <p class="sub">不建议一次全上。按下面三批推进，每批结束站点都处于「可上线」状态。</p>
+
+    <div class="road">
+      <div class="step">
+        <div class="n">01</div>
+        <div>
+          <h4>第一批 · 半天到一天：把地基补平</h4>
+          <p>P0 的 1、3、4、6、7（缓存头、图标子集、robots+sitemap、相关文章、搜索索引外置）。这五项互不依赖，可以并行做。</p>
+          <div class="accept"><b>验收：</b>首页传输从 1.06 MB 降到 &lt; 700 KB；<code>curl -I</code> 看到 <code>/_astro/*</code> 带 <code>immutable</code>；robots.txt 里有 Sitemap 行。</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="n">02</div>
+        <div>
+          <h4>第二批 · 两三天：图片管线 + 评论</h4>
+          <p>P0-2（astro:assets 全量迁移、banner 压缩、srcset）+ P1-1（giscus 接入）。图片改动会碰到所有内容文件，适合单独一个提交；评论是纯增量，互不干扰。</p>
+          <div class="accept"><b>验收：</b>Lighthouse 移动端 Performance ≥ 90；文章页底部出现评论区且暗色正常。</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="n">03</div>
+        <div>
+          <h4>第三批 · 按需：真实数据与体验</h4>
+          <p>P1-2（浏览量/点赞）、P1-3（Pagefind）、P1-4（加载更多）挑着做；P2 里优先 View Transitions + prefetch（一小时见效）与 GitHub Actions（省心）。</p>
+          <div class="accept"><b>验收：</b>「热门文章」随真实访问变化；搜索能命中正文；push 即自动部署。</div>
+        </div>
+      </div>
+    </div>
+
+    <h3>如果只想做一件事</h3>
+    <p>做 <strong>图片管线</strong>。它是唯一同时改善「加载速度、CLS、移动端流量、长列表滚动流畅度」的一项，而且图片博客的成色几乎全押在图上。第二件事是<strong>评论</strong>——它决定这个站是「作品集」还是「博客」。</p>
+  </section>
+
+  <!-- ================= 06 ================= -->
+  <section>
+    <h2><span class="num">06</span>附：数据来源</h2>
+    <p class="sub">以下命令可复现本报告的每一个数字。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>指标</th><th>取证方式</th></tr></thead>
+        <tbody>
+          <tr><td>页面数 / 产物体积</td><td class="num">find dist -name "index.html" | wc -l · du -sh dist</td></tr>
+          <tr><td>首屏资源体积</td><td class="num">curl -s 首页 → 提取 /_astro/* 与 /images/* → 逐个 size_download 求和</td></tr>
+          <tr><td>图片宽高缺失</td><td class="num">正则匹配 &lt;img&gt; 是否同时含 width= 与 height=</td></tr>
+          <tr><td>缓存策略</td><td class="num">curl -I https://…/_astro/*.css 查看 cache-control</td></tr>
+          <tr><td>评论系统</td><td class="num">grep -ri "giscus|waline|twikoo|comment" src/ → 0 命中</td></tr>
+          <tr><td>sitemap 条目</td><td class="num">grep -o "&lt;loc&gt;" dist/sitemap.xml | wc -l</td></tr>
+          <tr><td>官方特性对照</td><td class="num">huitheme.com/mango-theme.html（Mango 主题 1.1 介绍页）</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <span>Mango Astro · 博客能力体检与优化路线图</span>
+    <span>体检时间 2026-11-08 · 基于 commit 54ccbb5 / 线上 855a440c</span>
+  </footer>
+</div>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    var btn = document.getElementById('themeToggle');
+    var label = document.getElementById('themeLabel');
+
+    function sync() {
+      var dark = root.getAttribute('data-theme') === 'dark';
+      label.textContent = dark ? '日间' : '夜间';
+      btn.setAttribute('aria-pressed', dark ? 'true' : 'false');
+    }
+
+    btn.addEventListener('click', function () {
+      var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem('mango-report-theme', next); } catch (e) {}
+      sync();
+    });
+
+    sync();
+  })();
+</script>
+</body>
+</html>

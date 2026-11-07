@@ -10,6 +10,7 @@
  */
 import { musicPlaylist } from '@/config/music';
 import { siteConfig } from '@/config/site';
+import { imageAttrs } from '@/utils/image-attrs';
 
 const cfg = siteConfig.music;
 const tracks = musicPlaylist || [];
@@ -35,7 +36,7 @@ function fmt(sec: number): string {
 
     <div class="mw-body">
       <div class="mw-cover" data-playing="false">
-        <img src={first.cover} alt="" class="mw-cover-img" />
+        <img {...imageAttrs(first.cover, { sizes: '64px' })} alt="" class="mw-cover-img" />
         <i class="bi bi-music-note mw-cover-fallback"></i>
       </div>
       <div class="mw-info">

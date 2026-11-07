@@ -1,4 +1,6 @@
 ---
+import { imageAttrs } from '@/utils/image-attrs';
+
 interface Post {
   title: string;
   slug: string;
@@ -33,7 +35,7 @@ function formatDay(date?: string | Date): string {
           {index === 0 && post.heroImage ? (
             <!-- First post with large image -->
             <div class="relative rounded overflow-hidden mb-3">
-              <img src={post.heroImage} alt={post.title} class="w-full object-cover" style="aspect-ratio: 4 / 3;" />
+              <img {...imageAttrs(post.heroImage, { sizes: '(max-width: 1024px) 90vw, 281px' })} alt={post.title} class="w-full object-cover" style="aspect-ratio: 4 / 3;" />
               <div class="hot_post_info absolute inset-0 flex flex-col justify-end p-3">
                 <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                 <h4 class="relative text-white text-[14px] font-medium line-clamp-3 group-hover:text-mango transition-colors duration-200 z-10">
@@ -48,7 +50,7 @@ function formatDay(date?: string | Date): string {
             <!-- Other posts with thumbnail -->
             <div class="flex items-start">
               {post.heroImage && (
-                <img src={post.heroImage} alt={post.title} class="hot-post-thumb mr-[15px]" />
+                <img {...imageAttrs(post.heroImage, { sizes: '80px' })} alt={post.title} class="hot-post-thumb mr-[15px]" />
               )}
               <div class="flex-1 min-w-0">
                 <h4 class="text-[14px] text-[#333] dark:text-[#ccc] group-hover:text-mango transition-colors duration-200 line-clamp-3">

@@ -6,13 +6,16 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "npm run check:content && astro build",
+    "build": "npm run check:content && npm run images && npm run og && astro build",
     "check:content": "node scripts/check-content.mjs",
     "preview": "astro preview",
     "astro": "astro",
     "fav": "node scripts/fav-add.mjs",
     "fav:ui": "node scripts/fav-ui.mjs",
-    "fav:cover": "node scripts/fav-cover.mjs"
+    "fav:cover": "node scripts/fav-cover.mjs",
+    "icons": "/Users/ming/.workbuddy/binaries/python/envs/default/bin/python scripts/subset-icons.py",
+    "images": "node scripts/optimize-images.mjs",
+    "og": "node scripts/gen-og.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.0.0",
@@ -25,6 +28,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "sharp": "^0.35.5",
     "typescript": "^5.7.0"
   }
 }

@@ -1,6 +1,7 @@
 import { defineConfig } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
 import mdx from '@astrojs/mdx';
+import { rehypeOptimizeImages } from './src/utils/rehype-images.mjs';
 
 export default defineConfig({
   // 站点正式地址：影响 canonical / sitemap / RSS / OG 里的绝对链接。
@@ -12,12 +13,14 @@ export default defineConfig({
     tailwind({
       applyBaseStyles: false,
     }),
-    mdx(),
+    mdx({ rehypePlugins: [rehypeOptimizeImages] }),
   ],
   markdown: {
     shikiConfig: {
       theme: 'github-dark',
     },
+    // 正文图片走同一份构建期 WebP 清单，补齐 srcset / width / height
+    rehypePlugins: [rehypeOptimizeImages],
   },
   vite: {
     build: {

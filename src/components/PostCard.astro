@@ -14,6 +14,7 @@
  */
 import { siteConfig } from '@/config/site';
 import { formatWords } from '@/utils/reading';
+import { imageAttrs } from '@/utils/image-attrs';
 
 interface Props {
   title: string;
@@ -156,7 +157,7 @@ const coverStyle = `--cover-w:${cfg.coverWidth};--desc-lines:${cfg.descriptionLi
   <!-- 封面 -->
   {hasCover && (
     <a href={href} class="post-row-cover" aria-label={title} tabindex="-1">
-      <img src={cover} alt={title} loading="lazy" decoding="async" />
+      <img {...imageAttrs(cover, { sizes: '(max-width: 640px) 90vw, 260px' })} alt={title} />
       <span class="cover-mask"></span>
       <i class="bi bi-chevron-right cover-arrow"></i>
     </a>

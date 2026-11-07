@@ -1,0 +1,8 @@
+# https://mango-astro.pages.dev
+# 允许所有搜索引擎抓取整站；后台与 API 不需要暴露给爬虫。
+
+User-agent: *
+Allow: /
+Disallow: /admin/
+
+Sitemap: https://mango-astro.pages.dev/sitemap.xml

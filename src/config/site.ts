@@ -117,6 +117,8 @@ export function isNavActive(item: NavItem, pathname: string): boolean {
 export const siteConfig = {
   /** 站名：显示在 Logo 旁、页脚版权、RSS 标题 */
   name: 'Mango',
+  /** 站点默认社交分享大图（1200×630，由 npm run og 生成） */
+  ogImage: '/og/home.jpg',
   /** Logo：public 下的绝对路径 */
   logo: '/images/logo.svg',
   /** 站点描述：meta description 与 RSS 摘要 */

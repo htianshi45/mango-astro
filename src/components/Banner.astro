@@ -1,5 +1,6 @@
 ---
 import { banners } from '@/config/banner';
+import { imageAttrs } from '@/utils/image-attrs';
 
 interface Props {
   banners?: typeof banners;
@@ -14,7 +15,11 @@ const { banners: bannerList = banners } = Astro.props;
       {bannerList.map((banner, index) => (
         <a href={banner.url || '#'} class:list={['banlist relative block', { active: index === 0 }]}>
           <img
-            src={banner.image}
+            {...imageAttrs(banner.image, {
+              sizes: '(max-width: 900px) 100vw, 844px',
+              loading: index === 0 ? 'eager' : 'lazy',
+              fetchpriority: index === 0 ? 'high' : undefined,
+            })}
             alt={banner.title}
             class="w-full object-cover"
           />

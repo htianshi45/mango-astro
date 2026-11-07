@@ -12,6 +12,7 @@ import type { CollectionEntry } from 'astro:content';
 import type { FavoriteCategoryMeta } from '@/config/favorites';
 import { getStatusLabel } from '@/config/favorites';
 import { renderMomentText } from '@/utils/mini-markdown';
+import { imageAttrs } from '@/utils/image-attrs';
 
 interface Props {
   item: CollectionEntry<'favorites'>;
@@ -45,7 +46,7 @@ if (meta.showProgress && d.progress > 0) hoverInfo.push(`进度 ${Math.min(100, 
 >
   <div class="fav-cover">
     {d.cover ? (
-      <img src={d.cover} alt={d.title} loading="lazy" decoding="async" />
+      <img {...imageAttrs(d.cover, { sizes: '(max-width: 640px) 45vw, 218px' })} alt={d.title} />
     ) : (
       <span class="fav-cover-letter">{letter}</span>
     )}

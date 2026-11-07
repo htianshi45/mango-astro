@@ -1,4 +1,6 @@
 ---
+import { imageAttrs } from '@/utils/image-attrs';
+
 interface Props {
   images: string[];
   slug: string;
@@ -47,9 +49,10 @@ function getLayoutClass(count: number): string {
       aria-label={`查看大图 ${index + 1}`}
     >
       <img
-        src={image}
+        {...imageAttrs(image, {
+          sizes: '(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 280px',
+        })}
         alt={`图片 ${index + 1}`}
-        loading="lazy"
       />
       {index === displayImages.length - 1 && remainingCount > 0 && (
         <div class="img-overlay">

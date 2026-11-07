@@ -4,6 +4,7 @@ import Sidebar from '@/components/Sidebar.astro';
 import { getCollection } from 'astro:content';
 import { siteConfig } from '@/config/site';
 import { getSidebarData } from '@/utils/sidebar';
+import { imageAttrs } from '@/utils/image-attrs';
 
 export async function getStaticPaths() {
   const posts = await getCollection('posts');
@@ -26,13 +27,26 @@ const currentIndex = sortedPosts.findIndex((p) => p.slug === post.slug);
 const newerPost = currentIndex > 0 ? sortedPosts[currentIndex - 1] : null;
 const olderPost = currentIndex >= 0 && currentIndex < sortedPosts.length - 1 ? sortedPosts[currentIndex + 1] : null;
 
-const relatedPosts = allPosts
-  .filter((p) => p.slug !== post.slug && p.data.category === post.data.category)
-  .slice(0, 5);
-const fallbackRelated = relatedPosts.length < 2
-  ? allPosts.filter((p) => p.slug !== post.slug).slice(0, 5 - relatedPosts.length)
-  : [];
-const displayRelated = [...relatedPosts, ...fallbackRelated].slice(0, 5);
+// 相关文章：标签重合度优先，其次同分类，最后用时间衰减打破同分。
+// 旧逻辑只按 category 过滤，未分类文章会退化成「最新 5 篇」，推荐质量很不稳定。
+const ownTags = new Set(post.data.tags || []);
+const ownTime = new Date(post.data.pubDate).getTime();
+const displayRelated = allPosts
+  .filter((p) => p.slug !== post.slug)
+  .map((candidate) => {
+    const sharedTags = (candidate.data.tags || []).filter((tag) => ownTags.has(tag)).length;
+    const sameCategory = post.data.category && candidate.data.category === post.data.category ? 1 : 0;
+    const ageDays = Math.abs(ownTime - new Date(candidate.data.pubDate).getTime()) / 86_400_000;
+    const proximity = Math.max(0, 1 - ageDays / 1080); // 3 年内线性衰减
+    return {
+      candidate,
+      score: sharedTags * 3 + sameCategory * 2 + proximity,
+      time: new Date(candidate.data.pubDate).getTime(),
+    };
+  })
+  .sort((a, b) => b.score - a.score || b.time - a.time)
+  .slice(0, 5)
+  .map(({ candidate }) => candidate);
 
 // 字数与阅读时间：剥离代码块、图片、链接与 Markdown 标记后统计
 const plain = post.body
@@ -49,7 +63,8 @@ const readingMinutes = Math.max(1, Math.ceil(wordCount / 300));
 const tocItems = headings.filter((h) => h.depth >= 2 && h.depth <= 3);
 const publishedTime = new Date(post.data.pubDate).toISOString();
 const shareUrl = new URL(`/posts/${post.slug}`, siteConfig.url).href;
-const ogImage = post.data.heroImage || post.data.images?.[0];
+// 文章分享卡用 1200×630 的构建期生成图（npm run og），比封面原图更适配社交平台
+const ogImage = `/og/posts/${post.slug}.jpg`;
 
 // 文章页侧栏：目录 + 热门文章 + 标签（作者信息正文下方已有，不再重复）
 const sidebar = await getSidebarData();
@@ -137,7 +152,7 @@ const sidebar = await getSidebarData();
       <!-- Section 3: Author Card (independent) -->
       <div class="post_author">
         <div class="flex items-center space-x-3">
-          <img src={post.data.avatar} alt={post.data.author} class="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+          <img {...imageAttrs(post.data.avatar, { sizes: '28px', loading: 'eager' })} alt={post.data.author} class="w-7 h-7 rounded-full object-cover flex-shrink-0" />
           <div>
             <div class="text-sm font-medium text-[#333] dark:text-[#ccc]">{post.data.author}</div>
             <div class="text-xs text-[#999]">

@@ -1,17 +1,6 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import PostCard from '@/components/PostCard.astro';
-import { getCollection } from 'astro:content';
-
-const allPosts = await getCollection('posts', ({ data }) => data.draft !== true);
-
-const searchData = allPosts.map(post => ({
-  title: post.data.title,
-  slug: post.slug,
-  description: post.data.description || '',
-  tags: post.data.tags || [],
-  category: post.data.category || '',
-}));
+// 搜索索引已外置为 /search-index.json endpoint（见 src/pages/search-index.json.ts）
 ---
 
 <BaseLayout title="搜索结果 - Mango">
@@ -44,8 +33,30 @@ const searchData = allPosts.map(post => ({
     </div>
   </div>
 
-  <script define:vars={{ searchData }}>
-    const posts = searchData;
+  <script>
+    // 索引从 /search-index.json 按需加载（P0-7）：HTML 更瘦，索引可独立缓存。
+    let posts = [];
+    let indexPromise = null;
+    let searchSeq = 0;
+
+    function loadIndex() {
+      if (!indexPromise) {
+        indexPromise = fetch('/search-index.json')
+          .then((res) => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
+          })
+          .then((data) => {
+            posts = Array.isArray(data.posts) ? data.posts : [];
+            return posts;
+          })
+          .catch((err) => {
+            indexPromise = null; // 允许下一次输入重试
+            throw err;
+          });
+      }
+      return indexPromise;
+    }
 
     function getQueryParam(name) {
       const params = new URLSearchParams(window.location.search);
@@ -53,17 +64,22 @@ const searchData = allPosts.map(post => ({
     }
 
     function escapeHtml(str) {
-      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
 
     function searchPosts(query) {
       const q = query.toLowerCase().trim();
       if (!q) return [];
-      return posts.filter(post => {
+      return posts.filter((post) => {
         return post.title.toLowerCase().includes(q)
           || post.description.toLowerCase().includes(q)
-          || post.tags.some(tag => tag.toLowerCase().includes(q))
-          || post.category.toLowerCase().includes(q);
+          || (post.tags || []).some((tag) => tag.toLowerCase().includes(q))
+          || (post.category || '').toLowerCase().includes(q);
       });
     }
 
@@ -71,6 +87,7 @@ const searchData = allPosts.map(post => ({
       const container = document.getElementById('search-results');
       const status = document.getElementById('search-status');
       const noResults = document.getElementById('no-results');
+      if (!container || !status || !noResults) return;
 
       if (!query.trim()) {
         container.innerHTML = '';
@@ -89,54 +106,71 @@ const searchData = allPosts.map(post => ({
 
       noResults.classList.add('hidden');
 
-      container.innerHTML = results.map(post => `
+      container.innerHTML = results.map((post) => {
+        const postUrl = `/posts/${encodeURIComponent(post.slug)}`;
+        const tagLinks = (post.tags || []).map((tag) => `
+          <a href="/tags/${encodeURIComponent(tag)}" class="post-tag">
+            <i class="bi bi-hash" style="font-size:12px"></i>${escapeHtml(tag)}
+          </a>`).join('');
+        return `
         <article class="post-loop">
-          <a href="/posts/${post.slug}" class="block">
+          <a href="${postUrl}" class="block">
             <h2 class="text-base font-bold text-[#333] dark:text-[#ccc] hover:text-mango transition-colors duration-200 mb-2">
               ${escapeHtml(post.title)}
             </h2>
           </a>
           ${post.description ? `<p class="text-sm text-[#999] mb-3">${escapeHtml(post.description)}</p>` : ''}
           <div class="flex items-center flex-wrap gap-1">
-            ${post.tags.map(tag => `
-              <a href="/tags/${tag}" class="post-tag">
-                <i class="bi bi-hash" style="font-size:12px"></i>${escapeHtml(tag)}
-              </a>
-            `).join('')}
+            ${tagLinks}
             ${post.category ? `<span class="text-xs text-[#999] ml-2"><i class="bi bi-folder mr-1"></i>${escapeHtml(post.category)}</span>` : ''}
           </div>
           <div class="mt-3">
-            <a href="/posts/${post.slug}" class="text-xs text-mango hover:underline">
+            <a href="${postUrl}" class="text-xs text-mango hover:underline">
               阅读全文 <i class="bi bi-arrow-right"></i>
             </a>
           </div>
-        </article>
-      `).join('');
+        </article>`;
+      }).join('');
     }
 
     const input = document.getElementById('search-input');
     const form = document.getElementById('search-form');
-    const initialQuery = getQueryParam('q');
+    const status = document.getElementById('search-status');
 
-    if (initialQuery) {
-      input.value = initialQuery;
-      const results = searchPosts(initialQuery);
-      renderResults(results, initialQuery);
+    async function runSearch(query, updateUrl) {
+      const seq = ++searchSeq;
+      if (status) status.innerHTML = '<p class="text-sm text-[#999] mb-4">正在加载搜索索引…</p>';
+      try {
+        await loadIndex();
+      } catch (err) {
+        if (seq !== searchSeq) return;
+        if (status) status.innerHTML = '<p class="text-sm text-[#b23c34] mb-4">索引加载失败，请刷新页面重试</p>';
+        return;
+      }
+      // 输入过程中只保留最后一次请求的结果，避免旧响应覆盖新输入
+      if (seq !== searchSeq) return;
+      if (updateUrl) {
+        window.history.replaceState({}, '', `/search?q=${encodeURIComponent(query)}`);
+      }
+      renderResults(searchPosts(query), query);
     }
 
-    form.addEventListener('submit', (e) => {
+    const initialQuery = getQueryParam('q');
+    if (input && initialQuery) {
+      input.value = initialQuery;
+      runSearch(initialQuery, false);
+    } else if (input) {
+      // 没有 ?q 时不占用首屏带宽，聚焦搜索框才预取索引
+      input.addEventListener('focus', () => { loadIndex().catch(() => {}); }, { once: true });
+    }
+
+    form?.addEventListener('submit', (e) => {
       e.preventDefault();
-      const query = input.value;
-      const results = searchPosts(query);
-      window.history.replaceState({}, '', `/search?q=${encodeURIComponent(query)}`);
-      renderResults(results, query);
+      if (input) runSearch(input.value, true);
     });
 
-    input.addEventListener('input', () => {
-      const query = input.value;
-      const results = searchPosts(query);
-      window.history.replaceState({}, '', `/search?q=${encodeURIComponent(query)}`);
-      renderResults(results, query);
+    input?.addEventListener('input', () => {
+      runSearch(input.value, true);
     });
   </script>
 
