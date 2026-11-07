@@ -136,6 +136,7 @@ const server = http.createServer(async (req, res) => {
         tags: Array.isArray(body.tags) ? body.tags : [],
         note: body.note || '',
         cover,
+        url: body.url || '',
       });
       json(res, 200, { ok: true, ...saved, cover });
     } catch (error) {

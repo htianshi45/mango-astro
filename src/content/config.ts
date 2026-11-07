@@ -64,6 +64,8 @@ const favoritesCollection = defineCollection({
     /** 0–100，用于书籍阅读页数 / 剧集进度 */
     progress: z.number().min(0).max(100).optional().default(0),
     url: z.string().optional().default(''),
+    /** 豆瓣详情页链接：url 为空时卡片按钮跳这里（豆瓣导入自动写入） */
+    doubanUrl: z.string().optional().default(''),
     /** 作者 / 导演 / 歌手 / 站点 */
     creator: z.string().optional().default(''),
     year: z.string().optional().default(''),

@@ -2,12 +2,11 @@
 /**
  * 收藏卡片 — 参考 Firefly 的 BilibiliCard.svelte（哔哩哔哩追番卡）
  *
- * 卡片结构完全对齐它：
- *   海报（按分类比例）→ 左上状态角标 + 右上评分角标 + 左下来源色块
- *   → hover 时从底部升起渐变遮罩，露出简介与「查看详情」按钮
- *   → 卡片下方只有标题、副标题（作者 / 年份）和一行进度或标签
- *
- * 四个库（收藏夹 / 书架 / 片库 / 音乐库）共用，差异由 meta 驱动。
+ * 2026-11-07 二次调整：正文区只保留作品名，其余信息全部收进封面的 hover 遮罩：
+ *   - 遮罩里：信息行（年份 / 作者 / 进度 / 标签）+ 简介 + 「查看详情」按钮；
+ *   - 按钮跳转分两种：条目填了 url → 自定义链接（主色）；
+ *     没填 url 但有 doubanUrl → 跳豆瓣详情页（豆瓣绿），两种样式不同；
+ *   - 正文区的「标题」也是链接，跳转目标与按钮一致。
  */
 import type { CollectionEntry } from 'astro:content';
 import type { FavoriteCategoryMeta } from '@/config/favorites';
@@ -24,7 +23,18 @@ const d = item.data;
 const statusLabel = getStatusLabel(meta, d.status);
 const review = renderMomentText(item.body || '');
 const letter = (d.title.trim()[0] || '#').toUpperCase();
-const isExternal = /^https?:/i.test(d.url || '');
+
+const isExternal = (u = '') => /^https?:/i.test(u);
+const hasCustomUrl = !!d.url;
+const detailHref = d.url || d.doubanUrl || '';
+const detailKind = hasCustomUrl ? 'custom' : detailHref ? 'douban' : '';
+
+/** 遮罩里的正文：简介优先，没有简介就显示短评（Markdown 渲染结果） */
+const hasDesc = !!d.description;
+
+const infoParts = [d.creator, d.year].filter(Boolean);
+const hoverInfo: string[] = [...infoParts];
+if (meta.showProgress && d.progress > 0) hoverInfo.push(`进度 ${Math.min(100, d.progress)}%`);
 ---
 
 <article
@@ -49,57 +59,44 @@ const isExternal = /^https?:/i.test(d.url || '');
     <!-- 左下：分类色块（对应 B 站卡的「来源」标签） -->
     <span class="fav-source">{meta.name}</span>
 
-    <!-- hover 遮罩：简介 + 查看详情 -->
+    <!-- hover 遮罩：年份 / 作者 / 进度 + 简介 + 跳转按钮 -->
     <div class="fav-mask">
-      <p class="fav-mask-desc">{d.description || '还没有写简介'}</p>
-      {d.url && (
+      {hoverInfo.length > 0 && <p class="fav-mask-info">{hoverInfo.join(' · ')}</p>}
+      {hasDesc && <p class="fav-mask-desc">{d.description}</p>}
+      {!hasDesc && review && <p class="fav-mask-desc" set:html={review}></p>}
+      {detailKind === 'custom' && (
         <a
           class="fav-mask-btn"
           href={d.url}
-          {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+          {...(isExternal(d.url) ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
         >
-          查看详情 <i class="bi bi-arrow-up-right"></i>
+          查看详情 <i class="bi bi-box-arrow-up-right"></i>
+        </a>
+      )}
+      {detailKind === 'douban' && (
+        <a
+          class="fav-mask-btn fav-mask-btn-douban"
+          href={detailHref}
+          {...(isExternal(detailHref) ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+        >
+          豆瓣详情 <i class="bi bi-arrow-up-right"></i>
         </a>
       )}
     </div>
   </div>
 
+  <!-- 图片下面只保留作品名（点击跳转逻辑与遮罩按钮一致） -->
   <div class="fav-body">
     <h3 class="fav-title" title={d.title}>
-      {d.url ? (
-        <a href={d.url} {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{d.title}</a>
+      {detailHref ? (
+        <a
+          href={detailHref}
+          {...(isExternal(detailHref) ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+        >{d.title}</a>
       ) : (
         d.title
       )}
     </h3>
-
-    {(d.creator || d.year) && (
-      <div class="fav-sub">
-        {d.creator && <span>{d.creator}</span>}
-        {d.creator && d.year && <span class="dot">·</span>}
-        {d.year && <span>{d.year}</span>}
-      </div>
-    )}
-
-    {meta.showProgress && d.progress > 0 ? (
-      <div class="fav-progress">
-        <div class="fav-progress-bar"><i style={`width:${Math.min(100, d.progress)}%`}></i></div>
-        <span>{d.progress}%</span>
-      </div>
-    ) : (
-      d.tags.length > 0 && (
-        <div class="fav-tags">
-          {d.tags.slice(0, 2).map((tag) => <span>#{tag}</span>)}
-        </div>
-      )
-    )}
-
-    {review && (
-      <details class="fav-review">
-        <summary>短评 <i class="bi bi-chevron-down"></i></summary>
-        <div class="fav-review-text" set:html={review}></div>
-      </details>
-    )}
   </div>
 </article>
 
@@ -198,26 +195,40 @@ const isExternal = /^https?:/i.test(d.url || '');
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    gap: 8px;
+    gap: 6px;
     padding: 12px;
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.86), rgba(0, 0, 0, 0.35) 52%, transparent);
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.88), rgba(0, 0, 0, 0.4) 55%, transparent);
     opacity: 0;
     transition: opacity 0.3s ease;
     z-index: 3;
   }
   .fav-card:hover .fav-mask,
   .fav-card:focus-within .fav-mask { opacity: 1; }
+  .fav-mask-info {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.85);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   .fav-mask-desc {
     margin: 0;
     font-size: 11.5px;
     line-height: 1.6;
     color: rgba(255, 255, 255, 0.92);
     display: -webkit-box;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+  .fav-mask-desc :global(p) { margin: 0 0 4px; }
+  .fav-mask-desc :global(p:last-child) { margin-bottom: 0; }
+  .fav-mask-desc :global(img) { display: none; }
+
+  /* 自定义链接：主色 */
   .fav-mask-btn {
     display: inline-flex;
     align-items: center;
@@ -234,14 +245,12 @@ const isExternal = /^https?:/i.test(d.url || '');
   }
   .fav-mask-btn:hover { filter: brightness(1.12); }
 
-  /* ===== 卡片文字区 ===== */
-  .fav-body {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 10px 11px 12px;
-    flex: 1;
-  }
+  /* 豆瓣详情：豆瓣绿，与自定义链接区分 */
+  .fav-mask-btn-douban { background: #2ba257; }
+  .fav-mask-btn-douban:hover { background: #33b765; }
+
+  /* ===== 卡片文字区：只留作品名 ===== */
+  .fav-body { padding: 9px 11px 11px; }
   .fav-title {
     margin: 0;
     font-size: 13.5px;
@@ -257,53 +266,4 @@ const isExternal = /^https?:/i.test(d.url || '');
   .fav-title a { color: inherit; text-decoration: none; }
   .fav-title a:hover { color: var(--accent); }
   :global(.dark) .fav-title { color: #e6e6e6; }
-
-  .fav-sub {
-    display: flex;
-    gap: 4px;
-    font-size: 11.5px;
-    color: #9aa3af;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .fav-sub .dot { opacity: 0.6; }
-
-  .fav-progress { display: flex; align-items: center; gap: 7px; margin-top: 3px; }
-  .fav-progress-bar { flex: 1; height: 4px; border-radius: 99px; background: #eceef2; overflow: hidden; }
-  :global(.dark) .fav-progress-bar { background: #3a3a3b; }
-  .fav-progress-bar i { display: block; height: 100%; border-radius: 99px; background: var(--accent); }
-  .fav-progress span { font-size: 10.5px; color: #9aa3af; min-width: 28px; text-align: right; }
-
-  .fav-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 3px; }
-  .fav-tags span {
-    font-size: 10.5px;
-    color: var(--accent);
-    background: color-mix(in srgb, var(--accent) 10%, transparent);
-    padding: 1px 6px;
-    border-radius: 5px;
-  }
-
-  .fav-review {
-    margin-top: auto;
-    padding-top: 6px;
-    border-top: 1px dashed #f0f1f4;
-    font-size: 11.5px;
-  }
-  :global(.dark) .fav-review { border-color: #3a3a3b; }
-  .fav-review summary {
-    list-style: none;
-    cursor: pointer;
-    color: #9aa3af;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-  .fav-review summary::-webkit-details-marker { display: none; }
-  .fav-review summary i { font-size: 10px; transition: transform 0.2s ease; }
-  .fav-review[open] summary i { transform: rotate(180deg); }
-  .fav-review-text { margin-top: 6px; color: #666; line-height: 1.7; }
-  .fav-review-text :global(p) { margin: 0 0 8px; }
-  .fav-review-text :global(a) { color: var(--accent); }
-  :global(.dark) .fav-review-text { color: #b0b6be; }
 </style>

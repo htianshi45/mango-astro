@@ -197,7 +197,8 @@ collections:
           - { label: "精选 / 最爱", value: "favorite" }
       - { label: "评分（0–10，0 为未评分）", name: "rating", widget: "number", default: 0, min: 0, max: 10, required: false }
       - { label: "进度（0–100）", name: "progress", widget: "number", default: 0, min: 0, max: 100, required: false }
-      - { label: "外链", name: "url", widget: "string", required: false }
+      - { label: "外链", name: "url", widget: "string", required: false, hint: "卡片「查看详情」跳这里；留空则跳豆瓣详情页" }
+      - { label: "豆瓣详情页", name: "doubanUrl", widget: "string", required: false, hint: "豆瓣导入自动填；外链留空时卡片跳这里" }
       - { label: "作者 / 导演 / 歌手 / 站点", name: "creator", widget: "string", required: false }
       - { label: "年份", name: "year", widget: "string", required: false }
       - label: "标签"

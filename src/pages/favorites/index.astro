@@ -97,12 +97,11 @@ const recent = [...items]
   .fav-section-title { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; font-size: 16px; font-weight: 700; color: #333; }
   .fav-section-title i { color: #4270f5; }
   :global(.dark) .fav-section-title { color: #e6e6e6; }
-  .fav-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; align-items: stretch; }
+  .fav-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: stretch; }
   .fav-all-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 18px; font-size: 13px; color: #4270f5; text-decoration: none; }
   .fav-all-link:hover { text-decoration: underline; }
 
   @media (max-width: 640px) {
     .fav-overview-grid { grid-template-columns: 1fr; }
-    .fav-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  }
+    .fav-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }  }
 </style>

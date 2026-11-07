@@ -34,12 +34,6 @@ const statusCounts = meta.statuses.map((status) => ({
   ...status,
   count: items.filter((item) => item.data.status === status.key).length,
 }));
-const rated = items.filter((item) => item.data.rating > 0);
-const avgRating = rated.length
-  ? (rated.reduce((sum, item) => sum + item.data.rating, 0) / rated.length).toFixed(1)
-  : '—';
-const doneCount = items.filter((item) => item.data.status === 'done' || item.data.status === 'favorite').length;
-const doingCount = items.filter((item) => item.data.status === 'doing').length;
 ---
 
 <BaseLayout
@@ -83,13 +77,6 @@ const doingCount = items.filter((item) => item.data.status === 'doing').length;
       <span class="fav-result" id="fav-result"></span>
     </div>
   </PageHeader>
-
-  <div class="fav-stats" style={`--accent:${meta.accent}`}>
-    <div><strong>{avgRating}</strong><span>平均评分</span></div>
-    <div><strong>{doneCount}</strong><span>已完成</span></div>
-    <div><strong>{doingCount}</strong><span>进行中</span></div>
-    <div><strong>{rated.length}</strong><span>已评分</span></div>
-  </div>
 
   <div class="fav-grid" id="fav-grid">
     {items.map((item) => <FavoriteCard item={item} meta={meta} />)}
@@ -164,21 +151,11 @@ const doingCount = items.filter((item) => item.data.status === 'doing').length;
   :global(.dark) .fav-status-pill { background: #262627; border-color: #3a3a3b; color: #bbb; }
   .fav-result { font-size: 12px; color: #4270f5; margin-left: auto; }
 
-  .fav-stats {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
-    background: #eceef2; border: 1px solid #eceef2; border-radius: 10px;
-    overflow: hidden; margin-bottom: 20px;
-  }
-  :global(.dark) .fav-stats { background: #333; border-color: #333; }
-  .fav-stats div { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 14px 6px; background: #fff; }
-  :global(.dark) .fav-stats div { background: #212121; }
-  .fav-stats strong { font-size: 20px; font-weight: 700; color: var(--accent, #4270f5); line-height: 1.1; }
-  .fav-stats span { font-size: 11px; color: #9aa3af; }
-
-  .fav-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; align-items: stretch; }
+  /* 网格固定每行 3 个（桌面 / 平板），窄屏退回 2 列 */
+  .fav-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
   .fav-empty { text-align: center; color: #999; padding: 40px 0; font-size: 14px; }
 
-  @media (max-width: 640px) {
+  @media (max-width: 767px) {
     .fav-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   }
 </style>

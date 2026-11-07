@@ -49,8 +49,9 @@ export function findExisting(url) {
  * @param {string[]} p.tags
  * @param {string} p.note       正文短评（Markdown）
  * @param {string} p.cover      站内封面路径，空表示没封面
+ * @param {string} p.url        自定义跳转链接（卡片「查看详情」优先用它）
  */
-export function writeFavorite({ item, status = 'wish', rating = 0, tags = [], note = '', cover = '' }) {
+export function writeFavorite({ item, status = 'wish', rating = 0, tags = [], note = '', cover = '', url = '' }) {
   const slug = slugFor(item);
   const safeStatus = STATUS_KEYS.includes(status) ? status : 'wish';
   const safeRating = Number.isFinite(Number(rating)) ? Math.min(10, Math.max(0, Number(rating))) : 0;
@@ -65,7 +66,9 @@ export function writeFavorite({ item, status = 'wish', rating = 0, tags = [], no
     `status: ${safeStatus}`,
     `rating: ${safeRating}`,
     'progress: 0',
-    `url: ${yamlStr(item.url)}`,
+    // url = 自定义跳转；doubanUrl = 豆瓣详情页（卡片跳转的兜底）
+    `url: ${yamlStr(url)}`,
+    `doubanUrl: ${yamlStr(item.url)}`,
     `creator: ${yamlStr(item.creator)}`,
     `year: ${yamlStr(item.year)}`,
     `tags: ${yamlList(tags)}`,

@@ -16,7 +16,7 @@ import { fetchDoubanItem, downloadCover, KIND_MAP } from './lib/douban.mjs';
 import { findExisting, writeFavorite, slugFor, STATUS_KEYS, STATUS_LABEL } from './lib/fav-store.mjs';
 
 function parseArgs(argv) {
-  const args = { text: '', status: 'wish', rating: null, tags: [], note: '', force: false, dry: false, kind: '', cover: true };
+  const args = { text: '', status: 'wish', rating: null, tags: [], note: '', force: false, dry: false, kind: '', cover: true, url: '' };
   const rest = [];
   for (let i = 0; i < argv.length; i += 1) {
     const token = argv[i];
@@ -47,6 +47,9 @@ function parseArgs(argv) {
         break;
       case '--no-cover':
         args.cover = false;
+        break;
+      case '--url':
+        args.url = argv[++i] || '';
         break;
       case '-h':
       case '--help':
@@ -145,9 +148,7 @@ async function main() {
     }
   }
 
-  const saved = writeFavorite({ item, status, rating, tags, note: args.note, cover });
-
-  console.log(`✅ 已写入 ${saved.file}`);
+  const saved = writeFavorite({ item, status, rating, tags, note: args.note, cover, url: args.url });  console.log(`✅ 已写入 ${saved.file}`);
   console.log(`   分类：${KIND_MAP[item.kind].category} · 状态：${STATUS_LABEL[saved.status]}`);
   console.log('   下一步：npm run dev 预览，或直接 npm run build 发布会自动带上。\n');
 }

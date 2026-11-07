@@ -200,6 +200,11 @@ https://book.douban.com/subject/26953606/
     </div>
 
     <div class="field">
+      <label>自定义跳转链接（选填；不填则卡片跳豆瓣详情页）</label>
+      <input id="f-url" placeholder="https://example.com/post/..." />
+    </div>
+
+    <div class="field">
       <label>短评（可选，Markdown）</label>
       <textarea id="f-note" rows="3" placeholder="读完 / 看完想说两句的话，会作为条目正文"></textarea>
     </div>
@@ -330,6 +335,7 @@ https://book.douban.com/subject/26953606/
     $('f-rating').value = item.rating || 0;
     $('f-tags').value = '';
     $('f-note').value = '';
+    $('f-url').value = '';
     status = 'wish';
     renderPills(item.category, status);
     const cover = $('cover');
@@ -362,6 +368,7 @@ https://book.douban.com/subject/26953606/
         .map((t) => t.trim())
         .filter(Boolean),
       note: $('f-note').value.trim(),
+      url: $('f-url').value.trim(),
       status,
     };
     try {

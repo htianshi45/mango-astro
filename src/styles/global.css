@@ -193,10 +193,15 @@
     @apply text-mango;
   }
 
-  /* Halo 优化：取消原版 60px 缩进，标题/摘要/图片与头像左对齐 */
+  /* 内容占用比例回原版 Mango：正文/图片缩进 60px，与作者名左对齐
+     （头像 40px + 间距 20px）；窄屏空间有限，保持满宽 */
   .moment-content-area {
-    margin-left: 0;
     min-width: 0;
+  }
+  @media (min-width: 769px) {
+    .moment-content-area {
+      margin-left: 60px;
+    }
   }
 
   /* +N overlay */
