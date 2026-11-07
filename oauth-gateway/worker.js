@@ -59,6 +59,22 @@ function allowedOrigins(env) {
     .split(',').map((s) => s.trim().replace(/\/$/, '')).filter(Boolean);
 }
 
+/**
+ * 白名单匹配，支持一级通配符：https://*.mango-astro.pages.dev
+ * （Cloudflare Pages 的每次预览部署都是 <hash>.mango-astro.pages.dev，
+ *  逐个写死既麻烦又容易漏，所以这里允许单层子域通配）
+ */
+function isAllowedOrigin(origin, env) {
+  if (!origin) return false;
+  return allowedOrigins(env).some((pattern) => {
+    if (!pattern.includes('*')) return pattern === origin;
+    const re = new RegExp(
+      '^' + pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^.]+') + '$',
+    );
+    return re.test(origin);
+  });
+}
+
 function baseHeaders(gatewayOrigin) {
   return { 'Cache-Control': 'no-store, no-cache, must-revalidate', 'Referrer-Policy': 'no-referrer' };
 }
@@ -111,17 +127,17 @@ function randomHex(bytes) {
 
 /** 从 Referer 推断 CMS 页面 origin，并限制在白名单内 */
 function originFromReferer(request, env) {
-  const list = allowedOrigins(env);
   const ref = request.headers.get('Referer') || '';
   let candidate = '';
   try { candidate = new URL(ref).origin; } catch (_) { /* ignore */ }
-  return list.includes(candidate) ? candidate : '';
+  return isAllowedOrigin(candidate, env) ? candidate : '';
 }
 
-/** 兼容旧调用：没有 Referer 时退回白名单首项 */
-function resolveCmsOrigin(request, env) {
-  return originFromReferer(request, env) || allowedOrigins(env)[0];
-}
+/**
+ * 说明：origin 的来源顺序见 handleAuth —— 请求参数（握手回传，浏览器验证过）→ Referer。
+ * 2026-11-07 实测：Chrome 从后台页面 window.open 打开本网关时不带 Referer
+ * （document.referrer 为空），所以 Referer 只能当兜底，不能当唯一来源。
+ */
 
 /**
  * state 里塞 CMS origin：GitHub 会把 state 原样回传，
@@ -168,7 +184,8 @@ function handleAuth(request, env, gatewayOrigin) {
       'authorization:' + PROVIDER + ':error:' + JSON.stringify({
         error: 'gateway_not_configured', message: '缺少 GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET',
       }),
-      resolveCmsOrigin(request, env), gatewayOrigin,
+      allowedOrigins(env)[0], gatewayOrigin,
+      { error: 'gateway_not_configured', message: '缺少 GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET' },
     );
   }
 
@@ -177,12 +194,43 @@ function handleAuth(request, env, gatewayOrigin) {
   if (provider !== PROVIDER) {
     return resultPage(
       'authorization:' + PROVIDER + ':error:' + JSON.stringify({ error: 'unsupported_provider' }),
-      resolveCmsOrigin(request, env), gatewayOrigin,
+      allowedOrigins(env)[0], gatewayOrigin,
+      { error: 'unsupported_provider', message: '只支持 provider=github' },
     );
   }
 
-  const state = encodeState(resolveCmsOrigin(request, env));
-  const cmsOrigin = resolveCmsOrigin(request, env);
+  // 握手带回来的 origin 优先（浏览器验证过，最可靠）
+  const explicit = url.searchParams.get('origin') || '';
+  if (explicit) {
+    if (!isAllowedOrigin(explicit, env)) {
+      // 注意：这里必须直接报错。若退回「学习 origin」页，会拿到同一个 origin 再来一次，形成死循环
+      return resultPage(
+        'authorization:' + PROVIDER + ':error:' + JSON.stringify({
+          error: 'origin_not_allowed',
+          message: `后台来源 ${explicit} 不在网关白名单里`,
+        }),
+        allowedOrigins(env)[0], gatewayOrigin,
+        {
+          error: 'origin_not_allowed',
+          message: `后台来源 ${explicit} 不在白名单里。把这个地址加到 Worker 的 ALLOWED_ORIGINS（wrangler.toml）后重新部署即可。`,
+        },
+      );
+    }
+    return redirectPage(request, env, gatewayOrigin, explicit);
+  }
+
+  // 没有 origin 参数时，退一步看 Referer（本机 curl / 部分浏览器会给）
+  const fromReferer = originFromReferer(request, env);
+  if (fromReferer) return redirectPage(request, env, gatewayOrigin, fromReferer);
+
+  // 两者都没有：渲染「学习 origin」页，向 opener 发握手消息
+  return learnOriginPage(request, env, gatewayOrigin);
+}
+
+/** 第二段：origin 已知，写 state Cookie 并跳 GitHub */
+function redirectPage(request, env, gatewayOrigin, cmsOrigin) {
+  const url = new URL(request.url);
+  const state = encodeState(cmsOrigin);
   const redirectUri = gatewayOrigin + '/callback';
 
   const gh = new URL(AUTHORIZE_URL);
@@ -209,8 +257,8 @@ function handleAuth(request, env, gatewayOrigin) {
   });
   try { window.opener && window.opener.postMessage(MSG, TARGET); }
   catch(err) { go(); }
-  // 兜底：某些旧版 CMS 不回发握手，2.5s 后仍然继续
-  setTimeout(go, 2500);
+  // 兜底：某些旧版 CMS 不回发握手，1.5s 后仍然继续
+  setTimeout(go, 1500);
 })();
 </script></body></html>`;
 
@@ -229,6 +277,55 @@ function handleAuth(request, env, gatewayOrigin) {
   });
 }
 
+/**
+ * 第一段：还不知道后台是哪个 origin（Chrome 打开弹窗不带 Referer）。
+ *
+ * 原理：CMS 的监听器收到 `authorizing:github` 后会把它原样回发给弹窗，
+ * 而这条回传消息的 event.origin 由浏览器保证 = CMS 页面自己的 origin，伪造不了。
+ * 拿到之后带上 ?origin=...&handshake=1 重新请求本 Worker，第二段就能写出正确 state。
+ */
+function learnOriginPage(request, env, gatewayOrigin) {
+  const html = `<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>正在识别后台来源…</title></head>
+<body style="font:14px/1.6 -apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif;padding:32px;color:#333">
+<p id="tip" style="margin:0">正在识别后台来源…</p>
+<script>
+(function(){
+  var MSG = ${JSON.stringify('authorizing:' + PROVIDER)};
+  var SELF = location.origin + location.pathname;
+  var params = new URLSearchParams(location.search);
+  var done = false;
+  function go(origin){
+    if(done) return; done = true;
+    params.set('handshake', '1');
+    params.set('origin', origin);
+    location.replace(SELF + '?' + params.toString());
+  }
+  window.addEventListener('message', function(e){
+    if(e.data !== MSG) return;
+    if(window.opener && e.source !== window.opener) return;
+    if(!/^https?:\\/\\/[^\\s/]+$/.test(e.origin)) return;
+    go(e.origin);
+  });
+  try { window.opener && window.opener.postMessage(MSG, '*'); } catch(err) {}
+  setTimeout(function(){
+    if(done) return;
+    var tip = document.getElementById('tip');
+    if(tip) tip.innerHTML = '<b style="color:#c0392b">无法识别后台来源</b>：这个页面需要在 CMS 后台里点「登录」打开，<br>直接把地址贴到浏览器里是拿不到来源的。';
+  }, 4000);
+})();
+</script></body></html>`;
+
+  return new Response(html, {
+    status: 200,
+    headers: {
+      ...baseHeaders(gatewayOrigin),
+      'Content-Type': 'text/html; charset=utf-8',
+      'Content-Security-Policy': "default-src 'none'; script-src 'unsafe-inline'; base-uri 'none'",
+    },
+  });
+}
+
 async function handleCallback(request, env, gatewayOrigin) {
   const url = new URL(request.url);
   const cookies = parseCookies(request.headers.get('Cookie'));
@@ -241,9 +338,8 @@ async function handleCallback(request, env, gatewayOrigin) {
     try { return decodeURIComponent(cookies[ORIGIN_COOKIE] || ''); } catch { return ''; }
   })();
   const cmsOrigin =
-    [stateData?.o, cookieOrigin, originFromReferer(request, env)].find(
-      (o) => o && list.includes(o),
-    ) || list[0];
+    [stateData?.o, cookieOrigin, originFromReferer(request, env)].find((o) => isAllowedOrigin(o, env)) ||
+    list[0];
 
   const ghError = url.searchParams.get('error');
   if (ghError) {
@@ -254,7 +350,9 @@ async function handleCallback(request, env, gatewayOrigin) {
   const savedState = cookies[STATE_COOKIE];
   // Cookie 还在就必须和 state 完全一致；Cookie 被浏览器/隐私插件丢掉时，
   // 只要 state 能解出白名单内的 origin 就放行（否则用户只会看到「认证已终止」）
-  const stateOk = savedState ? stateParam === savedState : Boolean(stateData);
+  const stateOk = savedState
+    ? stateParam === savedState
+    : Boolean(stateData && isAllowedOrigin(stateData.o, env));
   if (!code || !stateParam || !stateOk) {
     return fail(
       'invalid_state',

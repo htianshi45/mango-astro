@@ -15,7 +15,7 @@ routes = [
 [vars]
 # CMS 页面所在 origin 白名单，逗号分隔。
 # 本地验证用 localhost，站点上线后把 https://mango.840428.xyz 加进去。
-ALLOWED_ORIGINS = "http://localhost:4321,http://localhost:4322,http://localhost:4323,http://127.0.0.1:4321,http://127.0.0.1:4322,http://127.0.0.1:4323,https://mango-astro.pages.dev,https://mango.840428.xyz"
+ALLOWED_ORIGINS = "http://localhost:4321,http://localhost:4322,http://localhost:4323,http://127.0.0.1:4321,http://127.0.0.1:4322,http://127.0.0.1:4323,https://mango-astro.pages.dev,https://*.mango-astro.pages.dev,https://mango.840428.xyz"
 
 # ⚠️ 不要把 GitHub 凭据写在这里！用：
 #   wrangler secret put GITHUB_CLIENT_ID
