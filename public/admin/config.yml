@@ -26,21 +26,43 @@ media_folder: public/images/uploads
 public_folder: /images/uploads
 
 collections:
+  # ---------------- 使用说明（放在最前面，随时能翻） ----------------
+  # files 类型：直接编辑仓库根目录那两份说明文档，改完提交即可。
+  # 只是「文档」，不参与站点构建，随便改不会影响页面。
+  - name: guide
+    label: "📖 使用说明"
+    description: >-
+      找到东西的地方：豆瓣书影音一键导入、站点管理与设置教程都在这两份文档里。
+      只读文档，改了不影响站点页面。
+    files:
+      - name: douban-import
+        label: 豆瓣书影音一键导入
+        file: 豆瓣一键导入-使用说明.md
+        fields:
+          - { label: 标题, name: title, widget: string, required: false }
+          - { label: 正文, name: body, widget: markdown }
+      - name: site-guide
+        label: 站点管理与设置教程
+        file: 站点管理与设置教程.md
+        fields:
+          - { label: 标题, name: title, widget: string, required: false }
+          - { label: 正文, name: body, widget: markdown }
+
   # ---------------- 站点设置（单文件集合） ----------------
   # files 类型 = 编辑仓库里某个单独的数据文件，而不是一整个文件夹。
   # 这里只挂导航栏：数据在 src/data/navigation.json，site.ts 直接 import 它，
   # 所以后台改完 → 提交 → 重新构建就生效，不需要碰任何 .ts 源码。
   - name: settings
     label: 站点设置
+    description: >-
+      导航分「一级项」和「子菜单」。href 填 /archive 这类站内路径，
+      只想当分组标题时填 # ；page 选页面开关键（留空 = 不受开关控制）。
+      子菜单里也能单独设 page，整组子项都被关掉时该分组会自动隐藏。
+      这是 JSON 数据不是文章，保存后需要等一次构建才生效。
     files:
       - name: navigation
         label: 导航栏
         file: src/data/navigation.json
-        # 说明：这是 JSON 数据，不是文章；改完记得等一次构建
-        description: >-
-          导航分「一级项」和「子菜单」。href 填 /archive 这类站内路径，
-          只想当分组标题时填 # ；page 选页面开关键（留空 = 不受开关控制）。
-          子菜单里也能单独设 page，整组子项都被关掉时该分组会自动隐藏。
         fields:
           - label: 一级导航项
             name: items
@@ -98,6 +120,13 @@ collections:
     # 让作者显式填英文短名做文件名，避免中文标题被 slugify 成空文件名
     slug: "{{fields.slug}}"
     summary: "{{title}} · {{pubDate}}"
+    # 条目多了以后按分类/年份分组，找文章快很多
+    view_groups:
+      - { label: 按分类, field: category }
+      - { label: 按年份, field: pubDate, pattern: "\\d{4}" }
+    view_filters:
+      - { label: 只看草稿, field: draft, pattern: true }
+      - { label: 只看置顶, field: sticky, pattern: "1" }
     editor:
       preview: true
     fields:
@@ -163,6 +192,14 @@ collections:
     create: true
     slug: "{{fields.slug}}"
     summary: "{{title}} · {{category}} · {{status}}"
+    # 收藏条目会越攒越多：先按库分组，再按状态筛
+    view_groups:
+      - { label: 按库, field: category }
+    view_filters:
+      - { label: 想读 / 想看, field: status, pattern: wish }
+      - { label: 进行中, field: status, pattern: doing }
+      - { label: 已完成, field: status, pattern: done }
+      - { label: 精选 / 最爱, field: status, pattern: favorite }
     editor:
       preview: true
     description: >-
