@@ -39,9 +39,9 @@
       ]
     },
     {
-      "name": "发现",
-      "href": "#",
-      "icon": "bi-compass",
+      "name": "收藏夹",
+      "href": "/favorites",
+      "icon": "bi-stars",
       "page": "",
       "external": false,
       "children": [
@@ -50,13 +50,6 @@
           "href": "/bookmarks",
           "icon": "bi-bookmarks",
           "page": "bookmarks",
-          "external": false
-        },
-        {
-          "name": "收藏总览",
-          "href": "/favorites",
-          "icon": "bi-stars",
-          "page": "favorites",
           "external": false
         },
         {
