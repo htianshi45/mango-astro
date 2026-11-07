@@ -9,7 +9,7 @@
 
 backend:
   name: github
-  repo: REPLACE_ME_OWNER/REPLACE_ME_REPO
+  repo: htianshi45/mango-astro
   branch: main
   base_url: https://auth.840428.xyz
   auth_endpoint: auth

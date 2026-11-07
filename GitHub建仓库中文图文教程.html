@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GitHub 建仓库 · 中文图文教程</title>
+<script>
+(function () {
+  try {
+    var saved = localStorage.getItem('tut-theme');
+    var q = new URLSearchParams(location.search).get('theme');
+    var mode = q || saved || 'system';
+    var dark = mode === 'dark' || (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    if (dark) document.documentElement.setAttribute('data-theme', 'dark');
+    document.documentElement.setAttribute('data-mode', mode);
+  } catch (e) {}
+})();
+</script>
+<style>
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --ink: #1f2328; --ink-2: #57606a; --ink-3: #8b949e;
+  --line: #d8dee4; --accent: #185FA5; --accent-bg: #E6F1FB;
+  --warn-bg: #FAEEDA; --warn-line: #EF9F27; --warn-ink: #854F0B;
+  --ok-bg: #EAF3DE; --ok-line: #97C459; --ok-ink: #3B6D11;
+  --code-bg: #f0f2f5; --code-ink: #24292f;
+}
+:root[data-theme="dark"] {
+  --bg: #0d1117; --panel: #161b22; --ink: #e6edf3; --ink-2: #9da7b3; --ink-3: #6e7681;
+  --line: #30363d; --accent: #85B7EB; --accent-bg: #0C447C;
+  --warn-bg: #412402; --warn-line: #BA7517; --warn-ink: #FAC775;
+  --ok-bg: #173404; --ok-line: #639922; --ok-ink: #C0DD97;
+  --code-bg: #21262d; --code-ink: #e6edf3;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 15px/1.75 -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+.wrap { max-width: 860px; margin: 0 auto; padding: 32px 20px 80px; }
+.switch { position: sticky; top: 12px; z-index: 10; display: flex; justify-content: flex-end; gap: 6px; margin-bottom: -34px; }
+.switch button {
+  font: inherit; font-size: 13px; padding: 5px 12px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--panel); color: var(--ink-2);
+}
+.switch button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+h1 { font-size: 26px; line-height: 1.35; margin: 18px 0 6px; font-weight: 600; }
+.sub { color: var(--ink-2); font-size: 14px; margin: 0 0 28px; }
+h2 { font-size: 19px; margin: 40px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line); font-weight: 600; }
+h3 { font-size: 16px; margin: 24px 0 8px; font-weight: 600; }
+p { margin: 10px 0; }
+ul, ol { margin: 10px 0; padding-left: 24px; }
+li { margin: 6px 0; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; margin: 16px 0; }
+table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--ink-2); font-weight: 500; background: var(--code-bg); }
+td code, p code, li code { background: var(--code-bg); color: var(--code-ink); padding: 1px 6px; border-radius: 5px; font-size: 13px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+pre { background: var(--code-bg); color: var(--code-ink); padding: 14px 16px; border-radius: 10px; overflow-x: auto; font-size: 13px; line-height: 1.6; }
+pre code { background: none; padding: 0; }
+.note { border-left: 3px solid var(--accent); background: var(--accent-bg); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 16px 0; font-size: 14px; }
+.warn { border-left: 3px solid var(--warn-line); background: var(--warn-bg); color: var(--warn-ink); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 16px 0; font-size: 14px; }
+.ok { border-left: 3px solid var(--ok-line); background: var(--ok-bg); color: var(--ok-ink); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 16px 0; font-size: 14px; }
+.en { color: var(--ink-3); font-size: 13px; }
+.step { display: inline-block; min-width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 50%; background: var(--accent); color: #fff; font-size: 13px; margin-right: 8px; }
+@media print {
+  :root { --bg: #fff; --panel: #fff; --ink: #000; --ink-2: #333; --line: #ccc; }
+  .switch { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="switch" role="group" aria-label="主题">
+    <button type="button" data-set="light">日间</button>
+    <button type="button" data-set="dark">夜间</button>
+    <button type="button" data-set="system">跟随系统</button>
+  </div>
+
+  <h1>GitHub 建仓库 · 中文图文教程</h1>
+  <p class="sub">给不熟悉英文界面的你：每个英文按钮都标了中文含义，以及「这里到底该填什么」。</p>
+
+  <div class="note">
+    本教程只解决一件事：<strong>在 GitHub 上建好一个空仓库</strong>，让本地代码能推上去。建完之后配 remote、推送、填 CMS 配置这些，我可以直接帮你做。
+  </div>
+
+  <h2>第 0 步 · 你有没有 GitHub 账号</h2>
+  <p><strong>已经有账号</strong>：直接跳到第 1 步。</p>
+  <p><strong>没有账号</strong>：打开 <code>https://github.com/signup</code>，逐字段对照：</p>
+  <table>
+    <thead><tr><th style="width:38%">英文原文</th><th style="width:22%">中文含义</th><th>你要填什么</th></tr></thead>
+    <tbody>
+      <tr><td><code>Email</code></td><td>邮箱</td><td>常用邮箱，后面要收验证码</td></tr>
+      <tr><td><code>Password</code></td><td>密码</td><td>至少 15 位，或 8 位以上含数字和小写字母</td></tr>
+      <tr><td><code>Username</code></td><td>用户名</td><td>英文/数字/连字符，<strong>这个就是你的 GitHub 账号名，记下来</strong></td></tr>
+      <tr><td><code>Enter code</code></td><td>输入验证码</td><td>邮箱里收到的 8 位数字</td></tr>
+    </tbody>
+  </table>
+  <div class="warn">
+    用户名很关键。后面仓库地址是 <code>https://github.com/你的用户名/仓库名</code>，我配 remote 时需要它。
+  </div>
+
+  <h2>第 1 步 · 打开「新建仓库」页面</h2>
+  <p>登录后，任选一种：</p>
+  <ul>
+    <li>点页面右上角的 <strong>+</strong> 号 → 菜单里选 <code>New repository</code>（中文：新建仓库）</li>
+    <li>或者直接在地址栏输入：<code>https://github.com/new</code></li>
+  </ul>
+
+  <h2>第 2 步 · 填表单（只有 4 处要动）</h2>
+  <table>
+    <thead><tr><th style="width:36%">英文字段</th><th style="width:22%">中文含义</th><th>填什么 / 怎么选</th></tr></thead>
+    <tbody>
+      <tr><td><code>Repository name *</code></td><td>仓库名</td><td>填 <code>mango-astro</code>（必填，别用中文和空格）</td></tr>
+      <tr><td><code>Description</code></td><td>描述</td><td>留空就行，可选</td></tr>
+      <tr><td><code>Public</code> / <code>Private</code></td><td>公开 / 私有</td><td>选 <strong>Private</strong>（私有），代码不公开</td></tr>
+      <tr><td><code>Create repository</code></td><td>创建仓库</td><td>绿色按钮，最后点它</td></tr>
+    </tbody>
+  </table>
+
+  <h3>最容易错的地方：中间那三个复选框</h3>
+  <p>表单中间有一行 <code>Initialize this repository with:</code>（中文：用以下内容初始化仓库），下面有三个复选框：</p>
+  <table>
+    <thead><tr><th style="width:44%">英文原文</th><th style="width:22%">中文含义</th><th>要不要勾</th></tr></thead>
+    <tbody>
+      <tr><td><code>Add a README file</code></td><td>添加 README 文件</td><td><strong>不要勾</strong></td></tr>
+      <tr><td><code>Add .gitignore</code></td><td>添加 .gitignore</td><td><strong>不要勾</strong></td></tr>
+      <tr><td><code>Choose a license</code></td><td>选择开源许可证</td><td><strong>不要勾</strong></td></tr>
+    </tbody>
+  </table>
+  <div class="warn">
+    为什么三个都不能勾：你本地已经有两个 commit 了。如果 GitHub 那边也生成一次初始提交，就会变成「两套互不相关的历史」，推送时会被拒绝（报 <code>rejected / fetch first</code>），还得额外处理。保持空仓库最省事。
+  </div>
+
+  <h2>第 3 步 · 创建成功，复制仓库地址</h2>
+  <p>点完 <code>Create repository</code> 后会跳到一个空仓库页面，地址类似：</p>
+  <pre><code>https://github.com/你的用户名/mango-astro</code></pre>
+  <p>把这个地址（或用户名）发给我，我就能接着配 remote、推送、填 CMS 配置。</p>
+
+  <h2>第 4 步 · 我接手做什么</h2>
+  <ol>
+    <li>把 <code>origin</code> 指到你的仓库，检查连通性</li>
+    <li>把本地 2 个 commit 推上去（认证时你只需输入一次用户名 + PAT）</li>
+    <li>把 <code>public/admin/config.yml</code> 里的 <code>repo</code>、<code>site_domain</code> 填好并提交</li>
+  </ol>
+
+  <h2>附录 A · 更省事：用命令行一步建好</h2>
+  <p>如果你愿意在终端粘贴命令，这条路最快（我已经在帮你装 <code>gh</code>）：</p>
+  <pre><code>brew install gh
+gh auth login
+# 依次用方向键选：
+#   ? What account do you want to log into?        → GitHub.com
+#   ? What is your preferred protocol for Git?      → HTTPS
+#   ? Authenticate Git with your GitHub credentials? → Yes
+#   ? How would you like to authenticate?           → Login with a web browser
+# 然后复制终端里的一次性代码，粘贴到打开的网页里授权</code></pre>
+  <p>授权成功后，一条命令就能建仓库 + 推送 + 设好 remote：</p>
+  <pre><code>cd /Users/ming/mango-astro
+gh repo create mango-astro --private --source=. --remote=origin --push</code></pre>
+  <div class="ok">
+    或者：你只完成 <code>gh auth login</code>，然后告诉我一声，这条 <code>gh repo create</code> 由我来执行。
+  </div>
+
+  <h2>附录 B · 后面还要建 OAuth App（同样全英文，先给对照）</h2>
+  <p>仓库建好后，后台登录还需要一个 OAuth App。打开 <code>https://github.com/settings/developers</code> → 点 <code>OAuth Apps</code> → <code>New OAuth App</code>，逐字段填：</p>
+  <table>
+    <thead><tr><th style="width:40%">英文字段</th><th style="width:20%">中文含义</th><th>填什么</th></tr></thead>
+    <tbody>
+      <tr><td><code>Application name</code></td><td>应用名称</td><td><code>Mango CMS</code></td></tr>
+      <tr><td><code>Homepage URL</code></td><td>主页地址</td><td><code>https://mango.840428.xyz</code></td></tr>
+      <tr><td><code>Authorization callback URL</code></td><td>授权回调地址</td><td><code>https://auth.840428.xyz/callback</code>（<strong>一字不差</strong>）</td></tr>
+      <tr><td><code>Register application</code></td><td>注册应用</td><td>绿色按钮，点它</td></tr>
+    </tbody>
+  </table>
+  <p>创建后页面上：</p>
+  <ul>
+    <li><code>Client ID</code> → 直接复制</li>
+    <li><code>Generate a new client secret</code> → 点它生成密钥，<strong>只显示一次</strong>，立刻复制</li>
+  </ul>
+
+  <h2>附录 C · PAT 怎么生成（推送认证要用，也是英文）</h2>
+  <p>GitHub 早就不支持用账号密码推送了，必须用 Personal Access Token（个人访问令牌）：</p>
+  <ol>
+    <li>打开 <code>https://github.com/settings/tokens</code></li>
+    <li>点 <code>Generate new token</code> → <code>Generate new token (classic)</code></li>
+    <li><code>Note</code>（备注）填 <code>mango-astro</code>；<code>Expiration</code>（有效期）选 90 days</li>
+    <li><code>Select scopes</code>（权限范围）勾选 <strong><code>repo</code></strong>（这一整块）</li>
+    <li>拉到底点 <code>Generate token</code>，复制以 <code>ghp_</code> 开头的字符串（只显示一次）</li>
+  </ol>
+  <p>推送时提示 <code>Username</code> 填你的 GitHub 用户名，<code>Password</code> 处<strong>粘贴这个 token</strong>（不是账号密码）。macOS 钥匙串会记住。</p>
+
+  <h2>附录 D · 常见报错对照</h2>
+  <table>
+    <thead><tr><th style="width:42%">报错</th><th>原因与处理</th></tr></thead>
+    <tbody>
+      <tr><td><code>Fastly error: unknown domain: github.com</code></td><td>代理软件把 github.com 转发到了 GitHub Pages 的 IP（185.199.x）。关掉「GitHub 加速」规则，或让 github.com 走直连</td></tr>
+      <tr><td><code>Failed to connect to 127.0.0.1 port 7890</code></td><td>git 全局代理指向了没启动的 7890 端口。本仓库我已设空代理绕过；其他工程可 <code>git config --global --unset http.proxy</code></td></tr>
+      <tr><td><code>remote: Repository not found</code></td><td>仓库没建、名字拼错，或 token 没有该仓库权限</td></tr>
+      <tr><td><code>Authentication failed</code></td><td>在 Password 处填了账号密码。要填 PAT（<code>ghp_</code> 开头）</td></tr>
+      <tr><td><code>src refspec main does not match any</code></td><td>本地分支不叫 main。执行 <code>git branch -M main</code></td></tr>
+      <tr><td><code>rejected ... fetch first</code></td><td>建仓库时勾了 README/.gitignore。删掉仓库重建（三个都不勾），或 <code>git pull --rebase origin main</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2>一句话总结</h2>
+  <div class="card">
+    <p style="margin:0">打开 <code>https://github.com/new</code> → 仓库名填 <code>mango-astro</code> → 选 <code>Private</code> → <strong>中间三个复选框全部不勾</strong> → 点 <code>Create repository</code> → 把地址发我。</p>
+  </div>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btns = document.querySelectorAll('.switch button');
+  function apply(mode) {
+    var dark = mode === 'dark' || (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    if (dark) root.setAttribute('data-theme', 'dark'); else root.removeAttribute('data-theme');
+    root.setAttribute('data-mode', mode);
+    btns.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.set === mode)); });
+    try { localStorage.setItem('tut-theme', mode); } catch (e) {}
+  }
+  btns.forEach(function (b) {
+    b.addEventListener('click', function () { apply(b.dataset.set); });
+  });
+  apply(root.getAttribute('data-mode') || 'system');
+  if (window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
+      if ((root.getAttribute('data-mode') || 'system') === 'system') apply('system');
+    });
+  }
+})();
+</script>
+</body>
+</html>
