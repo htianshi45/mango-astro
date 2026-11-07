@@ -1,7 +1,13 @@
 ---
 /**
- * 说说卡片 — 参考 Firefly 的 dynamic 时间线样式，但沿用 Mango 的 post_loop 卡片，
- * 这样在首页混合时间流里和文章卡片能自然交替而不割裂。
+ * 说说卡片 — 照搬 Mango 原主题首页的 post_loop「朋友圈」结构：
+ *
+ *   .post_loop_head      头像(40px 圆) + 昵称/时间 + 右上 ⋯
+ *   .post_loop_conter    正文缩进 60px 与昵称对齐
+ *     ├ 文字（说说正文）
+ *     ├ 图片（Mango 朋友圈式错落九宫格，PostImages variant="mango"）
+ *     ├ #标签 胶囊行
+ *     └ 底部 meta 行（地点 / 全部说说），浅蓝色 12px，样式同 .post_info_footer
  */
 import PostImages from './PostImages.astro';
 import { renderMomentText } from '@/utils/mini-markdown';
@@ -43,38 +49,53 @@ function formatDate(date: string | Date): string {
 }
 
 const html = renderMomentText(text);
+const permalink = `/moments/#moment-${id}`;
 ---
 
-<article class="post-loop moment-card">
-  <!-- 作者行 -->
-  <div class="flex items-start mb-3">
-    <img src={avatar} alt={author} class="w-10 h-10 rounded-full object-cover flex-shrink-0" />
-    <div class="ml-3 flex-1 min-w-0">
-      <h3 class="text-sm font-medium text-[#333] dark:text-[#ccc]">{author}</h3>
-      <div class="text-xs text-[#C6C6C6]">{formatDate(published)}</div>
+<article class="post-loop moment-card" id={`moment-${id}`}>
+  <!-- 头部：头像 + 昵称/时间 + 右上操作 -->
+  <div class="moment-head">
+    <div class="moment-author">
+      <img src={avatar} alt={author} class="moment-avatar" loading="lazy" />
+      <div class="moment-author-name">
+        <h3>{author}</h3>
+        <span>{formatDate(published)}</span>
+      </div>
     </div>
-    <div class="moment-badges">
-      {pinned && <span class="moment-badge pinned"><i class="bi bi-pin-angle-fill"></i> 置顶</span>}
-      {showTypeBadge && <span class="moment-badge"><i class="bi bi-chat-square-dots"></i> 说说</span>}
+    <div class="moment-head-right">
+      {pinned && <span class="moment-badge pinned"><i class="bi bi-pin-angle-fill"></i>置顶</span>}
+      {showTypeBadge && <span class="moment-badge"><i class="bi bi-chat-square-dots"></i>说说</span>}
+      <a class="moment-more" href={permalink} title="查看这条说说" aria-label="查看这条说说">
+        <i class="bi bi-three-dots"></i>
+      </a>
     </div>
   </div>
 
-  <div class="moment-content-area">
+  <!-- 正文区：缩进与昵称对齐 -->
+  <div class="moment-conter">
     <div class="moment-text" set:html={html}></div>
 
     {images.length > 0 && (
       <div class="moment-images">
-        <PostImages images={images} slug={`moment-${id}`} />
+        <PostImages images={images} slug={`moment-${id}`} variant="mango" />
       </div>
     )}
 
-    <div class="moment-footer">
+    {tags.length > 0 && (
+      <div class="moment-tagrow">
+        {tags.map((tag) => (
+          <em>
+            <i class="bi bi-hash"></i>
+            <a href={`/tags/${encodeURIComponent(tag)}`}>{tag}</a>
+          </em>
+        ))}
+      </div>
+    )}
+
+    <div class="moment-meta">
       {location && (
-        <span class="moment-location"><i class="bi bi-geo-alt"></i>{location}</span>
+        <span class="moment-location"><i class="bi bi-geo-alt-fill"></i>{location}</span>
       )}
-      {tags.map((tag) => (
-        <a href={`/tags/${encodeURIComponent(tag)}`} class="moment-tag">#{tag}</a>
-      ))}
       {showArchiveLink && (
         <a href="/moments" class="moment-archive-link">全部说说 <i class="bi bi-arrow-right"></i></a>
       )}
@@ -84,29 +105,67 @@ const html = renderMomentText(text);
 
 <style>
   .moment-card {
-    position: relative;
-    /* 比文章卡略松一点，但不再像原来那样上下各 30px 白边 */
-    padding: 24px 30px 22px;
+    padding: 30px;
   }
-  .moment-card::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 3px;
-    background: linear-gradient(180deg, #4270f5, #6ba0ff);
+
+  /* ===== 头部 ===== */
+  .moment-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
   }
-  .moment-badges { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .moment-author { display: flex; align-items: center; }
+  .moment-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    display: block;
+  }
+  .moment-author-name { margin-left: 15px; line-height: 1; }
+  .moment-author-name h3 {
+    margin: 0 0 2px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+  }
+  .moment-author-name span { font-size: 12px; color: #c6c6c6; font-weight: 300; }
+  :global(.dark) .moment-author-name h3 { color: #d9d9d9; }
+  :global(.dark) .moment-author-name span { color: #6e6e6e; }
+
+  .moment-head-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .moment-more {
+    display: inline-flex;
+    color: #4270f5;
+    text-decoration: none;
+    line-height: 1;
+  }
+  .moment-more i { font-size: 24px; }
+  .moment-more:hover { opacity: 0.75; }
+  :global(.dark) .moment-more { color: #8ab0ff; }
+
   .moment-badge {
-    display: inline-flex; align-items: center; gap: 4px;
-    padding: 3px 9px; border-radius: 999px;
-    background: rgba(66, 112, 245, 0.1); color: #4270f5;
-    font-size: 11px; font-weight: 600; white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: rgba(66, 112, 245, 0.1);
+    color: #4270f5;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
   }
   .moment-badge.pinned { background: rgba(255, 159, 28, 0.14); color: #c98214; }
   :global(.dark) .moment-badge { background: rgba(138, 176, 255, 0.15); color: #8ab0ff; }
   :global(.dark) .moment-badge.pinned { background: rgba(255, 193, 7, 0.14); color: #ffc861; }
 
-  .moment-text { font-size: 14px; line-height: 1.8; color: #444; margin-bottom: 12px; }
+  /* ===== 正文区：缩进 60px 与昵称对齐（照抄 .post_loop_conter） ===== */
+  .moment-conter { margin-left: 60px; min-width: 0; }
+
+  .moment-text { font-size: 15px; line-height: 1.8; color: #444; margin-bottom: 14px; }
   .moment-text :global(p) { margin: 0 0 10px; }
   .moment-text :global(p:last-child) { margin-bottom: 0; }
   .moment-text :global(h3) { font-size: 16px; font-weight: 600; margin: 0 0 10px; color: #333; }
@@ -123,18 +182,52 @@ const html = renderMomentText(text);
   :global(.dark) .moment-text :global(a) { color: #8ab0ff; }
   :global(.dark) .moment-text :global(code) { background: #2a2a2b; color: #a8c7ff; }
 
-  .moment-images { margin-top: 4px; }
-  .moment-footer {
-    display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
-    margin-top: 16px; padding-top: 12px;
-    border-top: 1px solid #f0f0f0;
+  .moment-images { margin: 0; }
+
+  /* ===== #标签 胶囊行（照抄 .post_loop_tag） ===== */
+  .moment-tagrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 18px; }
+  .moment-tagrow em {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    border-radius: 5px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-style: inherit;
+    background: #f5f7f9;
+    color: #9bc2d9;
+  }
+  .moment-tagrow em a { color: inherit; text-decoration: none; }
+  .moment-tagrow em:hover { background: #eef3f6; }
+  :global(.dark) .moment-tagrow em { background: #343435; color: #9bc2d9; }
+  :global(.dark) .moment-tagrow em:hover { background: #3d3d3f; }
+
+  /* ===== 底部 meta（照抄 .post_info_footer） ===== */
+  .moment-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px 25px;
+    margin-top: 18px;
+    margin-left: 2px;
     font-size: 12px;
   }
-  :global(.dark) .moment-footer { border-color: #333; }
-  .moment-location { color: #8c96a3; display: inline-flex; align-items: center; gap: 4px; }
-  .moment-tag { color: #4270f5; text-decoration: none; }
-  .moment-tag:hover { text-decoration: underline; }
-  .moment-archive-link { margin-left: auto; color: #a8a8a8; text-decoration: none; }
-  .moment-archive-link:hover { color: #4270f5; }
-  :global(.dark) .moment-archive-link { color: #777; }
+  .moment-meta span,
+  .moment-meta a {
+    color: #a8c2d2;
+    font-weight: 300;
+    text-decoration: none;
+  }
+  .moment-meta span { display: inline-flex; align-items: center; gap: 6px; }
+  .moment-meta a { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; }
+  .moment-meta a:hover { color: #4270f5; }
+  :global(.dark) .moment-meta span,
+  :global(.dark) .moment-meta a { color: #6f89a3; }
+  :global(.dark) .moment-meta a:hover { color: #8ab0ff; }
+
+  /* ===== 窄屏：缩进取消，跟原文一致 ===== */
+  @media (max-width: 640px) {
+    .moment-card { padding: 20px; }
+    .moment-conter { margin-left: 0; }
+  }
 </style>

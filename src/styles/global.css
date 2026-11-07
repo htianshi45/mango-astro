@@ -358,6 +358,45 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+/* ============================================================
+   Mango 首页「朋友圈」式排布（说说专用，variant="mango"）
+   规则照抄原主题 .post_img_*：百分比浮动 + 错落大小
+   （2/4 张两列，3/6 张 1 大 2 小，5/8 张 2 大 + 小图，9 张 3×3）
+   ============================================================ */
+.post-images.post-images--mango {
+  display: flow-root;
+  width: 88% !important;
+  margin: 4px 0 0;
+  font-size: 0;
+}
+.post-images.post-images--mango > a.post-img {
+  float: left;
+  width: 29.33% !important;
+  margin: 2% !important;
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
+}
+.post-images.post-images--mango.post-img-1 > a.post-img,
+.post-images.post-images--mango.post-img-2 > a.post-img,
+.post-images.post-images--mango.post-img-4 > a.post-img {
+  width: 46% !important;
+}
+.post-images.post-images--mango.post-img-3 > a.post-img:nth-child(1),
+.post-images.post-images--mango.post-img-6 > a.post-img:nth-child(1) {
+  width: 62.67% !important;
+}
+.post-images.post-images--mango.post-img-5 > a.post-img:nth-child(1),
+.post-images.post-images--mango.post-img-5 > a.post-img:nth-child(2),
+.post-images.post-images--mango.post-img-8 > a.post-img:nth-child(1),
+.post-images.post-images--mango.post-img-8 > a.post-img:nth-child(2) {
+  width: 46% !important;
+}
+@media (max-width: 640px) {
+  .post-images.post-images--mango {
+    width: 100% !important;
+  }
+}
+
 /* ---- 响应式：窄版紧凑、宽版放大 ---- */
 @media (min-width: 1400px) {
   .post-loop {

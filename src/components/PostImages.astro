@@ -2,9 +2,15 @@
 interface Props {
   images: string[];
   slug: string;
+  /**
+   * grid    = 全站默认：所有张数一律三列正方形（文章九宫格）
+   * mango   = Mango 首页「朋友圈」式排布：2/4 张两列、3 张 1 大 2 小、
+   *           5/8 张 2 大 + 小图、9 张 3×3（与原主题 .post_img_* 一致）
+   */
+  variant?: 'grid' | 'mango';
 }
 
-const { images, slug } = Astro.props;
+const { images, slug, variant = 'grid' } = Astro.props;
 const maxDisplay = 9;
 const displayImages = images.slice(0, maxDisplay);
 const remainingCount = images.length - maxDisplay;
@@ -28,7 +34,7 @@ function getLayoutClass(count: number): string {
   data-images 保存完整列表（含被 +N 折叠的），灯箱可一路翻到最后一张。
 -->
 <div
-  class:list={['post-images', getLayoutClass(displayImages.length)]}
+  class:list={['post-images', variant === 'mango' && 'post-images--mango', getLayoutClass(displayImages.length)]}
   data-gallery={slug}
   data-images={JSON.stringify(images)}
 >
