@@ -22,7 +22,7 @@ const { tags, postData } = buildSidebarData(posts);
   <div class="layout-sidebar">
     <!-- 混合时间流（主栏 : 边栏 = 3 : 1，边栏 281px 固定） -->
     <div>
-      <FeedList entries={entries} showTypeBadge={siteConfig.home.showTypeBadge} />
+      <FeedList entries={entries} showTypeBadge={siteConfig.home.showTypeBadge && siteConfig.home.includeMoments} />
       {totalPages > 1 && (
         <Pagination currentPage={currentPage} totalPages={totalPages} baseUrl="/" />
       )}

@@ -225,11 +225,17 @@ export const siteConfig = {
   /** 首页混合时间流 */
   home: {
     /**
-     * timeline  = 文章与说说严格按发布时间倒序合并（默认，更贴近「按发布时间」）
+     * 首页是否把「说说」混进文章流。
+     * false（默认）= 首页只放文章，说说独立成一级栏目 /moments；
+     * true = 文章与说说按发布时间混排（旧行为）。
+     */
+    includeMoments: false,
+    /**
+     * timeline  = 文章与说说严格按发布时间倒序合并（includeMoments 为 true 时生效）
      * alternate = 文章 / 说说强制一比一交替，同类型内部仍按时间倒序
      */
     mixMode: 'timeline' as 'timeline' | 'alternate',
-    /** 是否在卡片上显示「文章 / 说说」类型徽标 */
+    /** 是否在卡片上显示「文章 / 说说」类型徽标（只有混排时才有意义） */
     showTypeBadge: true,
     /**
      * 置顶文章 / 置顶说说是否插队到最前。

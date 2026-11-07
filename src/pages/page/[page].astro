@@ -27,7 +27,7 @@ const { tags, postData } = buildSidebarData(posts);
 <BaseLayout title={`第 ${currentPage} 页 - ${siteConfig.name}`} wide>
   <div class="layout-sidebar">
     <div>
-      <FeedList entries={entries} showTypeBadge={siteConfig.home.showTypeBadge} />
+      <FeedList entries={entries} showTypeBadge={siteConfig.home.showTypeBadge && siteConfig.home.includeMoments} />
       <Pagination currentPage={currentPage} totalPages={totalPages} baseUrl="/page" />
     </div>
     <div>

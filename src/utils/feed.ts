@@ -46,8 +46,9 @@ export function stripImages(body: string): string {
 export async function getMixedFeed(): Promise<FeedEntry[]> {
   const [posts, moments] = await Promise.all([
     getCollection('posts', ({ data }) => data.draft !== true),
-    // 页面开关关闭时，首页也必须回到纯文章流，否则会留下一堆指向 404 的说说卡片
-    isPageEnabled('moments')
+    // 首页可以在配置里关掉说说（说说独立成一级栏目 /moments 时用）；
+    // 页面开关关闭时同理，否则会留下一堆指向 404 的说说卡片
+    siteConfig.home.includeMoments && isPageEnabled('moments')
       ? getCollection('moments', ({ data }) => data.draft !== true)
       : Promise.resolve([] as MomentEntry[]),
   ]);

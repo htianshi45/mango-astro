@@ -9,6 +9,14 @@
       "children": []
     },
     {
+      "name": "说说",
+      "href": "/moments",
+      "icon": "bi-chat-square-dots",
+      "page": "moments",
+      "external": false,
+      "children": []
+    },
+    {
       "name": "文章",
       "href": "#",
       "icon": "bi-journal-text",
@@ -28,13 +36,6 @@
           "icon": "bi-tags",
           "page": "tags",
           "external": false
-        },
-        {
-          "name": "说说",
-          "href": "/moments",
-          "icon": "bi-chat-square-dots",
-          "page": "moments",
-          "external": false
         }
       ]
     },
@@ -45,13 +46,6 @@
       "page": "",
       "external": false,
       "children": [
-        {
-          "name": "书签导航",
-          "href": "/bookmarks",
-          "icon": "bi-bookmarks",
-          "page": "bookmarks",
-          "external": false
-        },
         {
           "name": "收藏夹",
           "href": "/favorites/bookmarks",
@@ -83,6 +77,14 @@
       ]
     },
     {
+      "name": "导航",
+      "href": "/bookmarks",
+      "icon": "bi-bookmarks",
+      "page": "bookmarks",
+      "external": false,
+      "children": []
+    },
+    {
       "name": "我的",
       "href": "#",
       "icon": "bi-person",
@@ -97,7 +99,7 @@
           "external": false
         },
         {
-          "name": "主题下载去",
+          "name": "主题下载",
           "href": "/download",
           "icon": "bi-download",
           "page": "download",
