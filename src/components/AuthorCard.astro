@@ -1,29 +1,188 @@
 ---
-/* Halo 优化：首页侧栏顶部的站点作者卡
-   对应 /themes/theme-mango/assets/css/style.css:324-332 的 .author_show_box。 */
+/**
+ * 作者信息卡 — 参考 Firefly 的 widget/Profile.astro
+ *
+ * 结构：大图头像（点击进关于页，hover 出现名片图标）→ 居中姓名 → 主色短横线
+ *      → 一句话简介 → 社交按钮行 → 文章/标签统计。
+ * 头像从旧的 70px 小圆图换成整块方图，是这次视觉变化最大的一处。
+ */
+import { siteConfig } from '@/config/site';
+
 interface Props {
   name?: string;
   avatar?: string;
   link?: string;
+  bio?: string;
   postCount?: number;
+  tagCount?: number;
 }
 
+const profile = siteConfig.profile;
 const {
-  name = 'Mango',
-  avatar = '/images/avatar-1.svg',
-  link = '/about',
+  name = profile.name,
+  avatar = profile.avatar,
+  link = profile.link,
+  bio = profile.bio,
   postCount = 0,
+  tagCount = 0,
 } = Astro.props;
+
+const links = profile.links || [];
+const isExternal = (url: string) => /^https?:/i.test(url);
 ---
 
-<div class="author-show-box">
-  <div class="author-show-head">
-    <a href={link} aria-label={name}>
-      <img src={avatar} alt={name} width="70" height="70" />
-    </a>
-    <h3><a href={link}>{name}</a></h3>
-  </div>
-  <div class="author-show-info">
-    <span><i class="bi bi-book"></i><b>文章</b>{postCount}</span>
+<div class="widget author-card">
+  <a class="author-avatar" href={link} aria-label={`关于 ${name}`}>
+    <img src={avatar} alt={name} width="600" height="600" loading="eager" decoding="async" />
+    <span class="author-avatar-mask">
+      <i class="bi bi-person-vcard"></i>
+    </span>
+  </a>
+
+  <h3 class="author-name"><a href={link}>{name}</a></h3>
+  <span class="author-bar" aria-hidden="true"></span>
+  {bio && <p class="author-bio">{bio}</p>}
+
+  {links.length > 0 && (
+    <div class="author-links">
+      {links.map((item) => (
+        <a
+          class:list={['author-link', item.showName ? 'with-name' : 'icon-only']}
+          href={item.url}
+          aria-label={item.name}
+          title={item.name}
+          {...(isExternal(item.url) ? { target: '_blank', rel: 'noopener noreferrer me' } : { rel: 'me' })}
+        >
+          <i class={item.icon}></i>
+          {item.showName && <span>{item.name}</span>}
+        </a>
+      ))}
+    </div>
+  )}
+
+  <div class="author-stats">
+    <span><b>{postCount}</b><em>文章</em></span>
+    <span><b>{tagCount}</b><em>标签</em></span>
   </div>
 </div>
+
+<style>
+  .author-card {
+    text-align: center;
+    padding: 16px 16px 18px;
+  }
+
+  /* 头像：整块方图 + hover 遮罩 */
+  .author-avatar {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 12px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #eef2ff, #dbe4fb);
+    transition: transform 0.25s ease;
+  }
+  .author-avatar:active { transform: scale(0.98); }
+  .author-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.5s ease;
+  }
+  :global(.dark) .author-avatar { background: linear-gradient(135deg, #262b3a, #1d2130); }
+  .author-avatar-mask {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0);
+    color: #fff;
+    font-size: 42px;
+    opacity: 0;
+    transition: background-color 0.28s ease, opacity 0.28s ease;
+  }
+  .author-avatar-mask i { transform: scale(0.88); transition: transform 0.28s ease; }
+  .author-avatar:hover .author-avatar-mask { background: rgba(0, 0, 0, 0.3); opacity: 1; }
+  .author-avatar:hover .author-avatar-mask i { transform: scale(1); }
+  .author-avatar:hover img { transform: scale(1.04); }
+
+  .author-name {
+    margin: 14px 0 0;
+    font-size: 19px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: #2f3238;
+  }
+  .author-name a { color: inherit; text-decoration: none; }
+  .author-name a:hover { color: #4270f5; }
+  :global(.dark) .author-name { color: #e6e6e6; }
+
+  .author-bar {
+    display: block;
+    width: 22px;
+    height: 3px;
+    margin: 8px auto 10px;
+    border-radius: 999px;
+    background: #4270f5;
+  }
+
+  .author-bio {
+    margin: 0 0 12px;
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: #9aa3af;
+  }
+
+  .author-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .author-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 34px;
+    border-radius: 9px;
+    background: #f2f4f8;
+    color: #58616f;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  }
+  .author-link.icon-only { width: 34px; font-size: 16px; }
+  .author-link.with-name { padding: 0 12px; }
+  .author-link:hover { background: #4270f5; color: #fff; }
+  .author-link:active { transform: scale(0.94); }
+  :global(.dark) .author-link { background: #2c2c2e; color: #b3b8c0; }
+  :global(.dark) .author-link:hover { background: #4270f5; color: #fff; }
+
+  .author-stats {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding-top: 12px;
+    border-top: 1px solid #f0f1f4;
+  }
+  :global(.dark) .author-stats { border-color: #333; }
+  .author-stats span {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    flex: 1;
+  }
+  .author-stats span + span { border-left: 1px solid #f0f1f4; }
+  :global(.dark) .author-stats span + span { border-color: #333; }
+  .author-stats b { font-size: 16px; font-weight: 700; color: #2f3238; line-height: 1.2; }
+  .author-stats em { font-style: normal; font-size: 11.5px; color: #a2a9b3; }
+  :global(.dark) .author-stats b { color: #e2e2e2; }
+</style>

@@ -8,7 +8,11 @@
  *
  * 注意：修改 site.url 时，必须同步修改 astro.config.mjs 的 site，
  * 否则 canonical、RSS、sitemap 里的绝对链接会不一致。
+ *
+ * 导航栏数据单独放在 src/data/navigation.json：
+ * 它由 Sveltia CMS 的「站点设置 → 导航栏」直接编辑，避免 CMS 去改 .ts 源码。
  */
+import navigationData from '../data/navigation.json';
 
 export type PageKey =
   | 'download'
@@ -36,6 +40,36 @@ export interface FooterLink {
   href: string;
   page?: PageKey;
 }
+
+export interface ProfileLink {
+  name: string;
+  url: string;
+  /** Bootstrap Icons 类名 */
+  icon: string;
+  /** true = 按钮带文字；false = 只显示图标 */
+  showName?: boolean;
+}
+
+/**
+ * 版心宽度
+ *
+ * baseWidth  = 单人阅读版心（文章页、关于页等单栏页面）
+ * wideWidth  = 主栏 + 边栏的总宽（首页 / 分页 / 分类页）
+ *
+ * 三栏比例 3:1 且「边栏绝对宽度不变」的推导：
+ *   旧版心 900 - 左右内边距 32 = 868；列间距 24 → 可用 844；侧栏 = 844 × 4/12 ≈ 281
+ *   侧栏锁定 281 → 主栏 = 281 × 3 = 844 → 总宽 = 844 + 24 + 281 + 32 ≈ 1181
+ * 所以 wideWidth 取 1180，主栏 844 / 侧栏 281，正好 3:1。
+ */
+export const layout = {
+  baseWidth: 900,
+  wideWidth: 1180,
+  /** 主栏与边栏之间的间距（px），与 Tailwind 的 gap-6 保持一致 */
+  gap: 24,
+  /** 侧栏在宽版下的固定宽度（px），改这个值要同步改 wideWidth */
+  sidebarWidth: 281,
+};
+
 
 /** 页面开关：false 会隐藏导航/页脚入口，并让对应模板页返回 404 */
 export const pageToggles: Record<PageKey, boolean> = {
@@ -97,46 +131,31 @@ export const siteConfig = {
   locale: 'zh_CN',
 
   /**
+   * 作者信息卡 — 参考 Firefly 的 config/profileConfig.ts
+   * 头像不再是小圆点，而是整块大图（点击进关于页），下面是姓名 / 简介 / 社交按钮。
+   * links 里的 icon 用 Bootstrap Icons 类名（本站已内置该字体）。
+   */
+  profile: {
+    name: 'Mango',
+    avatar: '/images/default-avatar.svg',
+    link: '/about',
+    bio: '一个爱拍照、爱折腾博客的人',
+    /** showName: true 时按钮显示文字，false 时只显示图标 */
+    links: [
+      { name: 'GitHub', url: 'https://github.com/htianshi45', icon: 'bi-github', showName: false },
+      { name: 'RSS', url: '/rss.xml', icon: 'bi-rss', showName: false },
+      { name: '关于我', url: '/about', icon: 'bi-person-badge', showName: true },
+    ] as ProfileLink[],
+  },
+
+  /**
    * 导航：参考 Firefly 的「分组下拉」结构。
    * href 为 '#' 表示只作为下拉父级；children 里每项同样可带 page 开关。
+   *
+   * 数据源：src/data/navigation.json（后台「站点设置 → 导航栏」可可视化编辑）。
+   * 改完不用动这个文件，TS 类型在下面用 as NavItem[] 兜住。
    */
-  navItems: [
-    { name: '主页', href: '/', icon: 'bi-house' },
-    {
-      name: '文章',
-      href: '#',
-      icon: 'bi-journal-text',
-      children: [
-        { name: '文章归档', href: '/archive', icon: 'bi-archive', page: 'archive' },
-        { name: '标签云', href: '/tags', icon: 'bi-tags', page: 'tags' },
-        { name: '说说', href: '/moments', icon: 'bi-chat-square-dots', page: 'moments' },
-        { name: '站内搜索', href: '/search', icon: 'bi-search', page: 'search' },
-      ],
-    },
-    {
-      name: '发现',
-      href: '#',
-      icon: 'bi-compass',
-      children: [
-        { name: '书签导航', href: '/bookmarks', icon: 'bi-bookmarks', page: 'bookmarks' },
-        { name: '收藏总览', href: '/favorites', icon: 'bi-stars', page: 'favorites' },
-        { name: '收藏夹', href: '/favorites/bookmarks', icon: 'bi-bookmark-star', page: 'favorites' },
-        { name: '书架', href: '/favorites/books', icon: 'bi-book', page: 'favorites' },
-        { name: '片库', href: '/favorites/movies', icon: 'bi-film', page: 'favorites' },
-        { name: '音乐库', href: '/favorites/music', icon: 'bi-music-note-beamed', page: 'favorites' },
-      ],
-    },
-    {
-      name: '我的',
-      href: '#',
-      icon: 'bi-person',
-      children: [
-        { name: '关于我', href: '/about', icon: 'bi-info-circle' },
-        { name: '主题下载', href: '/download', icon: 'bi-download', page: 'download' },
-        { name: '旅游地图', href: '/map', icon: 'bi-geo-alt', page: 'map' },
-      ],
-    },
-  ] as NavItem[],
+  navItems: navigationData.items as unknown as NavItem[],
 
   footerLinks: [
     { name: '关于我们', href: '/about' },
@@ -153,6 +172,55 @@ export const siteConfig = {
 
   /** 首页与分页每页条目数（首页混合流里「文章 + 说说」一起计数） */
   postsPerPage: 8,
+
+  /**
+   * 文章列表卡片布局 — 参考 Firefly 的 siteConfig.postListLayout
+   *
+   * 卡片形态：
+   *   list  = 横向图文卡，封面在右（默认，Firefly 的列表态）
+   *   grid  = 竖向卡，封面在上，两列并排
+   * 其余开关控制元信息长什么样，卡片本身不用改。
+   */
+  postListLayout: {
+    mode: 'list' as 'list' | 'grid',
+    /** 封面放下侧（'right'）还是放在左侧（'left'） */
+    coverSide: 'right' as 'right' | 'left',
+    /** 封面占卡片宽度的百分比 */
+    coverWidth: '30%',
+    /** 摘要行数，0 = 不截断 */
+    descriptionLines: 2,
+    /** 元信息行：日期 / 分类 / 标签 / 字数 / 阅读时长 */
+    meta: {
+      showPublished: true,
+      showCategory: true,
+      showTags: true,
+      /** 标签最多显示几个，0 = 全部 */
+      tagCount: 2,
+      showWords: false,
+      showReadingTime: false,
+    },
+    /** 底部统计行：浏览 / 点赞 */
+    showViews: true,
+    showLikes: true,
+    /** 标签放在元信息行（'meta'）还是卡片底部（'bottom'） */
+    tagsPosition: 'meta' as 'meta' | 'bottom',
+  },
+
+  /**
+   * 侧栏音乐播放器 — 参考 Firefly 的 config/musicConfig.ts
+   * 实际播放列表在 src/config/music.ts 里维护，这里只放行为开关。
+   */
+  music: {
+    enabled: true,
+    /** 侧栏组件标题 */
+    title: '正在听',
+    /** 默认音量 0-1 */
+    volume: 0.6,
+    /** 播放模式：list 列表循环 / one 单曲循环 / random 随机 */
+    playMode: 'list' as 'list' | 'one' | 'random',
+    /** 是否把播放状态记到 localStorage（刷新后续播） */
+    remember: true,
+  },
 
   /** 首页混合时间流 */
   home: {

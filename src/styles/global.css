@@ -668,3 +668,34 @@ html.lightbox-open body {
   .mango-lightbox-counter { top: 20px; }
   .mango-lightbox-hint { display: none; }
 }
+
+/* ==========================================================================
+   版式（2026-11-07）：主栏 : 边栏 = 3 : 1，边栏绝对宽度固定 281px
+   宽版心 1180px - 左右内边距 32 = 1148；减去列间距 24 与侧栏 281，主栏 843。
+   843 : 281 ≈ 3 : 1，且侧栏宽度与旧版（900 版心 / 8:4）的 281.33px 完全一致。
+   ========================================================================== */
+.layout-sidebar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+}
+@media (min-width: 1024px) {
+  .layout-sidebar {
+    grid-template-columns: minmax(0, 1fr) 281px;
+  }
+}
+.layout-sidebar > * {
+  min-width: 0;
+}
+
+/* 宽版心下的列表容器：窄屏保持单列，宽屏排两列（grid 模式用） */
+.post-grid-2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+}
+@media (min-width: 1280px) {
+  .post-grid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

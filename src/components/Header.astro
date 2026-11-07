@@ -76,7 +76,7 @@ const navItems = visibleNavItems(siteConfig.navItems);
         </ul>
       </nav>
 
-      <!-- 右：工具按钮 -->
+      <!-- 右：工具按钮（日夜切换已挪到右下角浮动按钮组，见 FloatingTools.astro） -->
       <div class="navbar-tools">
         {isPageEnabled('search') && (
           <button id="search-toggle" class="tool-btn" aria-label="搜索" aria-expanded="false" aria-controls="c_sousuo">
@@ -88,10 +88,6 @@ const navItems = visibleNavItems(siteConfig.navItems);
             <i class="bi bi-rss"></i>
           </a>
         )}
-        <button id="theme-toggle" class="tool-btn" aria-label="切换主题">
-          <i class="bi bi-lightbulb-fill dark-icon"></i>
-          <i class="bi bi-lightbulb light-icon"></i>
-        </button>
         <button id="mobile-menu-toggle" class="tool-btn menu-btn" aria-label="打开菜单" aria-expanded="false" aria-controls="nav-drawer">
           <i class="bi bi-list"></i>
         </button>
@@ -157,15 +153,6 @@ const navItems = visibleNavItems(siteConfig.navItems);
 </header>
 
 <script>
-  // 主题切换：沿用 Halo 的 isDarkMode 状态键，兼容旧 theme 键
-  document.getElementById('theme-toggle')?.addEventListener('click', () => {
-    const html = document.documentElement;
-    const isDark = html.classList.contains('dark');
-    html.classList.toggle('dark', !isDark);
-    localStorage.setItem('isDarkMode', isDark ? '0' : '1');
-    localStorage.setItem('theme', isDark ? 'light' : 'dark');
-  });
-
   // 展开式搜索条
   const searchToggle = document.getElementById('search-toggle');
   const searchBar = document.getElementById('c_sousuo');
@@ -216,15 +203,61 @@ const navItems = visibleNavItems(siteConfig.navItems);
     setDrawer(false);
   });
 
-  // 滚动时给胶囊卡片加投影（仿 Firefly navbar-sticky-shadow）
+  // 滚动：加深投影 + 下滑隐藏 / 上滑显示（仿 Firefly 的 navbar 收起）
   const header = document.getElementById('site-header');
-  const onScroll = () => header?.classList.toggle('scrolled', window.scrollY > 12);
-  onScroll();
-  window.addEventListener('scroll', onScroll, { passive: true });
+  let lastY = window.scrollY;
+  let ticking = false;
+
+  const applyScrollState = () => {
+    const y = Math.max(0, window.scrollY);
+    header?.classList.toggle('scrolled', y > 12);
+
+    // 顶部 140px 内始终显示；向下超过 8px 才收起，向上超过 4px 立刻展开，
+    // 这样触控板的小抖动不会让导航栏反复闪。
+    if (y <= 140) {
+      header?.classList.remove('nav-hidden');
+    } else if (y > lastY + 8) {
+      header?.classList.add('nav-hidden');
+      // 收起时顺手关掉展开的下拉，避免露出半截菜单
+      document.querySelectorAll('.nav-item.open').forEach((el) => el.classList.remove('open'));
+    } else if (y < lastY - 4) {
+      header?.classList.remove('nav-hidden');
+    }
+
+    lastY = y;
+    ticking = false;
+  };
+
+  const requestScrollState = () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(applyScrollState);
+  };
+
+  applyScrollState();
+  window.addEventListener('scroll', requestScrollState, { passive: true });
 </script>
 
 <style>
-  .navbar-shell { position: relative; }
+  /* 需求：导航栏不再满屏，宽度 = 主栏 + 边栏（1180px，与 main 的 max-w-mango-wide 对齐） */
+  .navbar-shell {
+    position: relative;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 16px;
+  }
+
+  /* 下滑收起 / 上滑展开 */
+  :global(.site-header) {
+    transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+  }
+  :global(.site-header.nav-hidden) {
+    transform: translateY(-130%);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.site-header) { transition: none; }
+  }
 
   .navbar-card {
     display: grid;
@@ -372,10 +405,6 @@ const navItems = visibleNavItems(siteConfig.navItems);
   .tool-btn:active { transform: scale(0.92); }
   :global(.dark) .tool-btn { background: #333; color: #ccc; }
   :global(.dark) .tool-btn:hover { background: #4270f5; color: #fff; }
-  .dark-icon { display: none; color: #ffc008; }
-  .light-icon { display: block; }
-  :global(.dark) .dark-icon { display: block; }
-  :global(.dark) .light-icon { display: none; }
   .menu-btn { display: none; }
 
   /* 搜索条 */

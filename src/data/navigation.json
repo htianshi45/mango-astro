@@ -1,0 +1,43 @@
+{
+  "items": [
+    {
+      "name": "主页",
+      "href": "/",
+      "icon": "bi-house"
+    },
+    {
+      "name": "文章",
+      "href": "#",
+      "icon": "bi-journal-text",
+      "children": [
+        { "name": "文章归档", "href": "/archive", "icon": "bi-archive", "page": "archive" },
+        { "name": "标签云", "href": "/tags", "icon": "bi-tags", "page": "tags" },
+        { "name": "说说", "href": "/moments", "icon": "bi-chat-square-dots", "page": "moments" },
+        { "name": "站内搜索", "href": "/search", "icon": "bi-search", "page": "search" }
+      ]
+    },
+    {
+      "name": "发现",
+      "href": "#",
+      "icon": "bi-compass",
+      "children": [
+        { "name": "书签导航", "href": "/bookmarks", "icon": "bi-bookmarks", "page": "bookmarks" },
+        { "name": "收藏总览", "href": "/favorites", "icon": "bi-stars", "page": "favorites" },
+        { "name": "收藏夹", "href": "/favorites/bookmarks", "icon": "bi-bookmark-star", "page": "favorites" },
+        { "name": "书架", "href": "/favorites/books", "icon": "bi-book", "page": "favorites" },
+        { "name": "片库", "href": "/favorites/movies", "icon": "bi-film", "page": "favorites" },
+        { "name": "音乐库", "href": "/favorites/music", "icon": "bi-music-note-beamed", "page": "favorites" }
+      ]
+    },
+    {
+      "name": "我的",
+      "href": "#",
+      "icon": "bi-person",
+      "children": [
+        { "name": "关于我", "href": "/about", "icon": "bi-info-circle" },
+        { "name": "主题下载", "href": "/download", "icon": "bi-download", "page": "download" },
+        { "name": "旅游地图", "href": "/map", "icon": "bi-geo-alt", "page": "map" }
+      ]
+    }
+  ]
+}

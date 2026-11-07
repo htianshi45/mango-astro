@@ -20,6 +20,8 @@ export default {
       },
       maxWidth: {
         'mango': '900px',
+        // 主栏 + 边栏的总宽（3:1，侧栏 281px 不变），与 src/config/site.ts 的 layout.wideWidth 一致
+        'mango-wide': '1180px',
       },
       typography: (theme) => ({
         DEFAULT: {

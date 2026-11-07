@@ -4,6 +4,8 @@ import PostCard from '@/components/PostCard.astro';
 import Sidebar from '@/components/Sidebar.astro';
 import { getCollection } from 'astro:content';
 import { extractImages } from '@/utils/post-images';
+import { countWords, readingMinutes } from '@/utils/reading';
+import { siteConfig } from '@/config/site';
 
 export async function getStaticPaths() {
   const posts = await getCollection('posts');
@@ -42,41 +44,48 @@ const postData = allPosts.map(post => ({
   heroImage: post.data.heroImage ?? extractImages(post.body)[0],
   excerpt: post.data.description,
 }));
+
+const isGrid = siteConfig.postListLayout.mode === 'grid';
 ---
 
-<BaseLayout title={`${categoryName} - Mango`}>
+<BaseLayout title={`${categoryName} - Mango`} wide>
   <div class="mb-6">
     <h1 class="text-xl font-bold text-[#333] dark:text-[#ccc]">
       <i class="bi bi-folder2-open mr-2 text-mango"></i>{categoryName}
     </h1>
     <p class="text-sm text-[#999] mt-1">共 {posts.length} 篇文章</p>
   </div>
-  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-    <div class="lg:col-span-8">
-      <div class="space-y-5">
+  <div class="layout-sidebar">
+    <div>
+      <div class={isGrid ? 'post-grid-2' : 'space-y-5'}>
         {posts.length === 0 && (
           <div class="post-loop text-center py-12 text-[#999]">
             <i class="bi bi-inbox text-4xl block mb-3"></i>
             <p>该分类暂无文章</p>
           </div>
         )}
-        {posts.map((post) => (
-          <PostCard
-            title={post.data.title}
-            slug={post.slug}
-            author={post.data.author}
-            avatar={post.data.avatar}
-            content={post.data.description || ''}
-            images={extractImages(post.body)}
-            timestamp={post.data.pubDate}
-            tags={post.data.tags}
-            likes={post.data.likes || 0}
-            views={post.data.views || 0}
-          />
-        ))}
+        {posts.map((post) => {
+          const words = countWords(post.body || '');
+          return (
+            <PostCard
+              title={post.data.title}
+              slug={post.slug}
+              content={post.data.description || ''}
+              cover={post.data.heroImage || extractImages(post.body)[0] || ''}
+              images={extractImages(post.body)}
+              timestamp={post.data.pubDate}
+              tags={post.data.tags}
+              category={post.data.category || ''}
+              likes={post.data.likes || 0}
+              views={post.data.views || 0}
+              words={words}
+              readingTime={readingMinutes(words)}
+            />
+          );
+        })}
       </div>
     </div>
-    <div class="lg:col-span-4">
+    <div>
       <Sidebar posts={postData} tags={tags} />
     </div>
   </div>

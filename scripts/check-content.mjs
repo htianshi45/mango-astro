@@ -127,6 +127,65 @@ for (const spec of SPECS) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// 导航栏数据（后台「站点设置 → 导航栏」直接写这个 JSON）
+// 背景：CMS 的 list 控件允许留空，很容易写出 href 为空或 page 拼错 的导航项，
+// 结果就是页面上多出一个点击没反应的菜单，构建期很难发现。这里提前拦。
+// ---------------------------------------------------------------------------
+const PAGE_KEYS = ['download', 'map', 'archive', 'tags', 'search', 'moments', 'bookmarks', 'favorites'];
+const NAV_FILE = 'src/data/navigation.json';
+
+function checkNavItems(items, trail) {
+  if (!Array.isArray(items)) {
+    errors.push(`${NAV_FILE}: ${trail} 不是数组`);
+    return 0;
+  }
+  let count = 0;
+  items.forEach((item, i) => {
+    const where = `${NAV_FILE}: ${trail}[${i}]${item?.name ? ` (${item.name})` : ''}`;
+    if (!item || typeof item !== 'object') {
+      errors.push(`${where} 不是对象`);
+      return;
+    }
+    if (!item.name || !String(item.name).trim()) errors.push(`${where} 缺少名称`);
+    const href = String(item.href ?? '').trim();
+    if (!href) {
+      errors.push(`${where} 缺少链接 href（只想当分组标题请填 #）`);
+    } else if (!/^(#|\/|https?:\/\/|mailto:)/.test(href)) {
+      errors.push(`${where} href="${href}" 必须以 / 或 # 或 http(s):// 开头`);
+    }
+    if (item.page && !PAGE_KEYS.includes(item.page)) {
+      errors.push(`${where} page="${item.page}" 不是合法开关键 [${PAGE_KEYS.join(', ')}]`);
+    }
+    count += 1;
+    if (Array.isArray(item.children) && item.children.length) {
+      count += checkNavItems(item.children, `${trail}[${i}].children`);
+    }
+  });
+  return count;
+}
+
+let navCount = 0;
+try {
+  const navRaw = readFileSync(join(root, NAV_FILE), 'utf8');
+  let nav;
+  try {
+    nav = JSON.parse(navRaw);
+  } catch (e) {
+    errors.push(`${NAV_FILE}: JSON 解析失败 —— ${e.message}（常见原因：多了一个逗号或少了引号）`);
+    nav = null;
+  }
+  if (nav) {
+    if (!Array.isArray(nav.items) || nav.items.length === 0) {
+      errors.push(`${NAV_FILE}: items 不能为空，否则导航栏会整条消失`);
+    } else {
+      navCount = checkNavItems(nav.items, 'items');
+    }
+  }
+} catch {
+  errors.push(`${NAV_FILE}: 文件不存在或不可读`);
+}
+
 if (notices.length) {
   console.log(`[check-content] 提示 ${notices.length} 条：`);
   for (const notice of notices) console.log(`  · ${notice}`);
@@ -141,4 +200,6 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log(`[check-content] ✓ ${summary} 全部通过（URL 别名、日期、必填字段、枚举与数值范围）`);
+console.log(
+  `[check-content] ✓ ${summary} · 导航 ${navCount} 项 全部通过（URL 别名、日期、必填字段、枚举与数值范围）`
+);

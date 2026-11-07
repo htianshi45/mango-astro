@@ -24,13 +24,13 @@ const posts = await getCollection('posts', ({ data }) => data.draft !== true);
 const { tags, postData } = buildSidebarData(posts);
 ---
 
-<BaseLayout title={`第 ${currentPage} 页 - ${siteConfig.name}`}>
-  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-    <div class="lg:col-span-8">
+<BaseLayout title={`第 ${currentPage} 页 - ${siteConfig.name}`} wide>
+  <div class="layout-sidebar">
+    <div>
       <FeedList entries={entries} showTypeBadge={siteConfig.home.showTypeBadge} />
       <Pagination currentPage={currentPage} totalPages={totalPages} baseUrl="/page" />
     </div>
-    <div class="lg:col-span-4">
+    <div>
       <Sidebar posts={postData} tags={tags} />
     </div>
   </div>

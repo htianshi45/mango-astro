@@ -26,6 +26,70 @@ media_folder: public/images/uploads
 public_folder: /images/uploads
 
 collections:
+  # ---------------- 站点设置（单文件集合） ----------------
+  # files 类型 = 编辑仓库里某个单独的数据文件，而不是一整个文件夹。
+  # 这里只挂导航栏：数据在 src/data/navigation.json，site.ts 直接 import 它，
+  # 所以后台改完 → 提交 → 重新构建就生效，不需要碰任何 .ts 源码。
+  - name: settings
+    label: 站点设置
+    files:
+      - name: navigation
+        label: 导航栏
+        file: src/data/navigation.json
+        # 说明：这是 JSON 数据，不是文章；改完记得等一次构建
+        description: >-
+          导航分「一级项」和「子菜单」。href 填 /archive 这类站内路径，
+          只想当分组标题时填 # ；page 选页面开关键（留空 = 不受开关控制）。
+          子菜单里也能单独设 page，整组子项都被关掉时该分组会自动隐藏。
+        fields:
+          - label: 一级导航项
+            name: items
+            widget: list
+            summary: "{{fields.name}} → {{fields.href}}"
+            fields:
+              - { label: "名称", name: name, widget: string }
+              - { label: "链接（/archive 或 #）", name: href, widget: string, default: "#" }
+              - { label: "图标类名（bi-house 等）", name: icon, widget: string, required: false }
+              - label: 页面开关
+                name: page
+                widget: select
+                required: false
+                hint: 留空表示不受页面开关控制
+                options:
+                  - { label: 主题下载, value: download }
+                  - { label: 旅游地图, value: map }
+                  - { label: 文章归档, value: archive }
+                  - { label: 标签云, value: tags }
+                  - { label: 站内搜索, value: search }
+                  - { label: 说说, value: moments }
+                  - { label: 书签导航, value: bookmarks }
+                  - { label: 收藏四库, value: favorites }
+              - { label: "外链（新窗口打开）", name: external, widget: boolean, default: false, required: false }
+              - label: 子菜单
+                name: children
+                widget: list
+                required: false
+                summary: "{{fields.name}} → {{fields.href}}"
+                hint: 留空就是普通链接，不显示下拉箭头
+                fields:
+                  - { label: "名称", name: name, widget: string }
+                  - { label: "链接", name: href, widget: string }
+                  - { label: "图标类名", name: icon, widget: string, required: false }
+                  - label: 页面开关
+                    name: page
+                    widget: select
+                    required: false
+                    options:
+                      - { label: 主题下载, value: download }
+                      - { label: 旅游地图, value: map }
+                      - { label: 文章归档, value: archive }
+                      - { label: 标签云, value: tags }
+                      - { label: 站内搜索, value: search }
+                      - { label: 说说, value: moments }
+                      - { label: 书签导航, value: bookmarks }
+                      - { label: 收藏四库, value: favorites }
+                  - { label: "外链（新窗口打开）", name: external, widget: boolean, default: false, required: false }
+
   # ---------------- 文章 ----------------
   - name: posts
     label: 文章

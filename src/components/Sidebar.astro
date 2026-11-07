@@ -2,6 +2,7 @@
 import AuthorCard from './AuthorCard.astro';
 import HotPostsWidget from './HotPostsWidget.astro';
 import TagsWidget from './TagsWidget.astro';
+import MusicWidget from './MusicWidget.astro';
 
 interface Post {
   title: string;
@@ -30,8 +31,10 @@ const hotPosts = [...posts]
 ---
 
 <aside class="space-y-5 sidebar_sticky">
-  <!-- Halo 优化：侧栏第一块是站点作者卡，之后才是热门文章 -->
-  <AuthorCard postCount={posts.length} />
+  <!-- 作者卡（Firefly Profile 风） -->
+  <AuthorCard postCount={posts.length} tagCount={tags.length} />
+  <!-- 音乐播放器（Firefly Music 风） -->
+  <MusicWidget />
   <HotPostsWidget posts={hotPosts} />
   <TagsWidget {tags} />
 </aside>

@@ -1,137 +1,413 @@
 ---
-import PostImages from './PostImages.astro';
+/**
+ * 文章卡片 — 参考 Firefly 的 layout/PostCard.astro
+ *
+ * 与旧版（Halo 风格头像行 + 九宫格）的区别：
+ *   1. 封面从「九宫格」收成右侧一整块缩略图（hover 放大 + 箭头遮罩）；
+ *   2. 标题左上加主色竖条，字号更大；
+ *   3. 头像行去掉，改成一行元信息：日期 / 分类 / 标签 / 置顶与类型徽标；
+ *   4. 底部是统计行：字数、阅读时长、浏览、点赞。
+ *
+ * 两种形态由 siteConfig.postListLayout 驱动：
+ *   list（默认）= 横向图文卡，封面在右（可切到左侧）
+ *   grid        = 竖向卡，封面在上，配合 .post-grid-2 两列排布
+ */
+import { siteConfig } from '@/config/site';
+import { formatWords } from '@/utils/reading';
 
 interface Props {
   title: string;
   slug: string;
-  author: string;
-  avatar: string;
-  content: string;
-  images: string[];
+  /** 摘要（frontmatter description） */
+  content?: string;
+  /** 封面：heroImage 或正文第一张图 */
+  cover?: string;
+  images?: string[];
   timestamp: string | Date;
   sticky?: boolean;
   tags?: string[];
+  category?: string;
   likes?: number;
   views?: number;
   /** 混合时间流里显示的类型徽标，例如「文章」；不传则不显示 */
   typeBadge?: string;
+  /** 正文字数（用于阅读时长展示） */
+  words?: number;
+  readingTime?: number;
+  /** 覆盖全局布局：list / grid */
+  mode?: 'list' | 'grid';
 }
 
 const {
   title,
   slug,
-  author,
-  avatar,
-  content,
-  images,
+  content = '',
+  cover = '',
   timestamp,
   sticky = false,
   tags = [],
+  category = '',
   likes = 0,
   views = 0,
   typeBadge = '',
+  words = 0,
+  readingTime = 0,
+  mode = siteConfig.postListLayout.mode,
 } = Astro.props;
 
-/* Halo 优化：显示绝对日期 YYYY-MM-DD HH:mm，替代原版「X 年前」。
+const cfg = siteConfig.postListLayout;
+const href = `/posts/${slug}`;
+
+/* Halo 优化：显示绝对日期 YYYY-MM-DD，替代原版「X 年前」。
    使用 UTC 分量可避免构建机时区把「只有日期」的 frontmatter 整体偏移 8 小时。 */
 function formatDate(date: string | Date): string {
   const d = new Date(date);
   if (Number.isNaN(d.getTime())) return '';
   const p = (n: number) => String(n).padStart(2, '0');
-  return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
+  return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())}`;
 }
+
+const hasCover = !!cover;
+const shownTags = cfg.meta.tagCount > 0 ? tags.slice(0, cfg.meta.tagCount) : tags;
+const hiddenTagCount = Math.max(0, tags.length - shownTags.length);
+const coverStyle = `--cover-w:${cfg.coverWidth};--desc-lines:${cfg.descriptionLines}`;
 ---
 
-<article class="post-loop">
-  <!-- Author Row -->
-  <div class="flex items-start mb-4">
-    <img src={avatar} alt={author} class="w-10 h-10 rounded-full object-cover flex-shrink-0" />
-    <div class="ml-3 flex-1">
-      <h3 class="text-sm font-medium text-[#333] dark:text-[#ccc]">{author}</h3>
-      <div class="text-xs text-[#C6C6C6]">{formatDate(timestamp)}</div>
-    </div>
-    <div class="flex items-center gap-2">
-      {sticky && <span class="post-sticky-badge"><i class="bi bi-pin-angle-fill"></i>置顶</span>}
-      {typeBadge && <span class="post-type-badge"><i class="bi bi-journal-text"></i>{typeBadge}</span>}
-      <a href={`/posts/${slug}`} class="more-btn" aria-label="更多选项">
-        <i class="bi bi-three-dots"></i>
-      </a>
-    </div>
-  </div>
-
-  <!-- Content Area：Halo 优化，取消 60px 缩进 -->
-  <div class="moment-content-area">
-    <!-- Title -->
-    <h2 class="post-loop-title text-lg font-medium text-[#333] dark:text-[#ccc] mb-4">
-      <a href={`/posts/${slug}`} class="hover:text-mango transition-colors duration-200">
-        {title}
-      </a>
+<article
+  class:list={[
+    'post-row',
+    hasCover && 'has-cover',
+    mode === 'grid' && 'is-grid',
+    cfg.coverSide === 'left' && 'cover-left',
+    sticky && 'is-sticky',
+  ]}
+  style={coverStyle}
+>
+  <div class="post-row-content">
+    <!-- 标题（左上角主色竖条由 ::before 绘制） -->
+    <h2 class="post-row-title">
+      <a href={href}>{title}</a>
     </h2>
 
-    <!-- Excerpt：Halo 优化，3 行截断 + 弱化色 -->
-    {content && (
-      <p class="post-excerpt">{content}</p>
-    )}
+    <!-- 元信息行 -->
+    <div class="post-row-meta">
+      {cfg.meta.showPublished && (
+        <span class="meta-item">
+          <i class="bi bi-calendar3"></i>{formatDate(timestamp)}
+        </span>
+      )}
+      {cfg.meta.showCategory && category && (
+        <a class="meta-item meta-cat" href={`/categories/${encodeURIComponent(category)}`}>
+          <i class="bi bi-folder2"></i>{category}
+        </a>
+      )}
+      {cfg.meta.showTags && cfg.tagsPosition === 'meta' &&
+        shownTags.map((tag) => (
+          <a class="meta-tag" href={`/tags/${encodeURIComponent(tag)}`}>#{tag}</a>
+        ))}
+      {cfg.meta.showTags && cfg.tagsPosition === 'meta' && hiddenTagCount > 0 && (
+        <span class="meta-tag meta-more" title={tags.slice(shownTags.length).map((t) => `#${t}`).join(' ')}>
+          +{hiddenTagCount}
+        </span>
+      )}
+      {sticky && (
+        <span class="post-sticky-badge"><i class="bi bi-pin-angle-fill"></i>置顶</span>
+      )}
+      {typeBadge && (
+        <span class="post-type-badge"><i class="bi bi-journal-text"></i>{typeBadge}</span>
+      )}
+    </div>
 
-    <!-- Images -->
-    {images.length > 0 && (
-      <PostImages images={images} slug={slug} />
-    )}
+    <!-- 摘要 -->
+    {content && <p class="post-row-desc">{content}</p>}
 
-    <!-- Tags -->
-    {tags.length > 0 && (
-      <div class="post-loop-tag" style="margin-top: 30px;">
-        {tags.map((tag) => (
-          <a href={`/tags/${tag}`} class="post-tag">
-            <i class="bi bi-hash" style="font-size: 12px;"></i>{tag}
+    <!-- 底部标签（tagsPosition = 'bottom' 时才出现） -->
+    {cfg.tagsPosition === 'bottom' && tags.length > 0 && (
+      <div class="post-row-tags">
+        {shownTags.map((tag) => (
+          <a href={`/tags/${encodeURIComponent(tag)}`} class="post-tag">
+            <i class="bi bi-hash"></i>{tag}
           </a>
         ))}
+        {hiddenTagCount > 0 && <span class="post-tag post-tag-static">+{hiddenTagCount}</span>}
       </div>
     )}
 
-    <!-- Footer Data: Views / Likes -->
-    <div class="post-info-footer">
-      <span class="flex items-center">
-        <i class="bi bi-eye-fill mr-1"></i>
-        {views.toLocaleString()} 浏览
-      </span>
-      <span class="flex items-center">
-        <i class="bi bi-heart-fill mr-1"></i>
-        {likes.toLocaleString()} 点赞
-      </span>
+    <!-- 统计行 -->
+    <div class="post-row-stats">
+      {cfg.meta.showWords && words > 0 && (
+        <span><i class="bi bi-file-text"></i>{formatWords(words)} 字</span>
+      )}
+      {cfg.meta.showReadingTime && readingTime > 0 && (
+        <span><i class="bi bi-clock"></i>{readingTime} 分钟</span>
+      )}
+      {cfg.showViews && (
+        <span><i class="bi bi-eye"></i>{views.toLocaleString()}</span>
+      )}
+      {cfg.showLikes && (
+        <span><i class="bi bi-heart"></i>{likes.toLocaleString()}</span>
+      )}
+      <a href={href} class="post-row-enter">
+        阅读全文 <i class="bi bi-arrow-right-short"></i>
+      </a>
     </div>
   </div>
+
+  <!-- 封面 -->
+  {hasCover && (
+    <a href={href} class="post-row-cover" aria-label={title} tabindex="-1">
+      <img src={cover} alt={title} loading="lazy" decoding="async" />
+      <span class="cover-mask"></span>
+      <i class="bi bi-chevron-right cover-arrow"></i>
+    </a>
+  )}
 </article>
 
 <style>
-  .more-btn {
-    color: #3473fb;
-    font-size: 24px;
-    line-height: 1;
-    transition: opacity 0.2s;
+  .post-row {
+    position: relative;
+    display: block;
+    background: #fff;
+    border-radius: 12px;
+    padding: 22px;
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+    overflow: hidden;
   }
-
-  .more-btn:hover {
-    opacity: 0.7;
+  .post-row:hover {
+    box-shadow: 0 8px 28px -10px rgba(8, 8, 8, 0.18);
   }
+  :global(.dark) .post-row { background: #212121; }
 
-  .post-type-badge {
-    display: inline-flex; align-items: center; gap: 4px;
+  .post-row-content {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    /* 移动端：右侧留 96px 给封面 */
+    width: 100%;
+  }
+  .post-row.has-cover .post-row-content { padding-right: 96px; }
+
+  /* 标题 */
+  .post-row-title {
+    position: relative;
+    margin: 0 0 10px;
+    padding-left: 13px;
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.5;
+    color: #2f3238;
+    word-break: break-word;
+  }
+  .post-row-title::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 4px;
+    width: 3px;
+    height: 17px;
+    border-radius: 3px;
+    background: #4270f5;
+  }
+  .post-row-title a { color: inherit; text-decoration: none; transition: color 0.2s ease; }
+  .post-row-title a:hover { color: #4270f5; }
+  :global(.dark) .post-row-title { color: #e4e4e4; }
+  :global(.dark) .post-row-title a:hover { color: #8ab0ff; }
+
+  /* 元信息行 */
+  .post-row-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    color: #9aa3af;
+  }
+  .meta-item { display: inline-flex; align-items: center; gap: 4px; text-decoration: none; color: inherit; }
+  .meta-item i { font-size: 12px; opacity: 0.85; }
+  a.meta-cat:hover { color: #4270f5; }
+  .meta-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 7px;
+    border-radius: 5px;
+    background: rgba(66, 112, 245, 0.09);
+    color: #5580f7;
+    font-size: 11.5px;
+    text-decoration: none;
+    transition: background-color 0.18s ease, color 0.18s ease;
+  }
+  .meta-tag:hover { background: #4270f5; color: #fff; }
+  .meta-more { background: rgba(140, 150, 163, 0.14); color: #8c96a3; }
+  :global(.dark) .meta-tag { background: rgba(138, 176, 255, 0.14); color: #9dbcff; }
+  :global(.dark) .meta-tag:hover { background: #4270f5; color: #fff; }
+
+  /* 摘要：按配置行数截断 */
+  .post-row-desc {
+    margin: 0 0 12px;
+    font-size: 13.5px;
+    line-height: 1.8;
+    color: #8c8989;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: var(--desc-lines, 2);
+    line-clamp: var(--desc-lines, 2);
+    overflow: hidden;
+  }
+  :global(.dark) .post-row-desc { color: #9a9a9a; }
+
+  /* 底部标签 */
+  .post-row-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .post-tag {
+    display: inline-flex; align-items: center; gap: 2px;
     padding: 3px 9px; border-radius: 999px;
-    background: rgba(120, 130, 145, 0.12); color: #6f7885;
-    font-size: 11px; font-weight: 600; white-space: nowrap;
+    background: #f2f5fa; color: #7d8794;
+    font-size: 11.5px; text-decoration: none;
+    transition: background-color 0.18s ease, color 0.18s ease;
   }
-  :global(.dark) .post-type-badge {
-    background: rgba(160, 170, 185, 0.14); color: #a8b0bc;
-  }
+  .post-tag:hover { background: #4270f5; color: #fff; }
+  .post-tag-static { background: rgba(140, 150, 163, 0.14); }
+  :global(.dark) .post-tag { background: #2c2c2e; color: #9aa0a8; }
 
+  /* 统计行 */
+  .post-row-stats {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+    margin-top: auto;
+    padding-top: 4px;
+    font-size: 12px;
+    color: #a8b0ba;
+  }
+  .post-row-stats span { display: inline-flex; align-items: center; gap: 4px; }
+  .post-row-enter {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    color: #4270f5;
+    font-weight: 600;
+    text-decoration: none;
+    opacity: 0;
+    transform: translateX(-4px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+  .post-row:hover .post-row-enter { opacity: 1; transform: translateX(0); }
+  :global(.dark) .post-row-enter { color: #8ab0ff; }
+
+  /* 封面 */
+  .post-row-cover {
+    position: absolute;
+    top: 12px;
+    bottom: 12px;
+    right: 12px;
+    width: 92px;
+    border-radius: 10px;
+    overflow: hidden;
+    display: block;
+    background: #f0f1f3;
+  }
+  .post-row-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.45s ease;
+  }
+  .post-row-cover:hover img { transform: scale(1.08); }
+  .cover-mask {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0);
+    transition: background 0.3s ease;
+  }
+  .post-row-cover:hover .cover-mask { background: rgba(0, 0, 0, 0.32); }
+  .cover-arrow {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 26px;
+    opacity: 0;
+    transform: scale(0.6);
+    transition: opacity 0.28s ease, transform 0.28s ease;
+  }
+  .post-row-cover:hover .cover-arrow { opacity: 1; transform: scale(1); }
+
+  /* 封面在左 */
+  .post-row.cover-left.has-cover .post-row-content { padding-right: 0; padding-left: 96px; }
+  .post-row.cover-left .post-row-cover { right: auto; left: 12px; }
+  .post-row.cover-left .post-row-title { padding-left: 0; }
+  .post-row.cover-left .post-row-title::before { display: none; }
+
+  /* 徽标 */
+  .post-type-badge,
   .post-sticky-badge {
     display: inline-flex; align-items: center; gap: 4px;
-    padding: 3px 9px; border-radius: 999px;
-    background: rgba(255, 159, 28, 0.14); color: #c98214;
+    padding: 2px 8px; border-radius: 999px;
     font-size: 11px; font-weight: 600; white-space: nowrap;
   }
-  :global(.dark) .post-sticky-badge {
-    background: rgba(255, 193, 7, 0.14); color: #ffc861;
+  .post-type-badge { background: rgba(120, 130, 145, 0.12); color: #6f7885; }
+  .post-sticky-badge { background: rgba(255, 159, 28, 0.14); color: #c98214; }
+  :global(.dark) .post-type-badge { background: rgba(160, 170, 185, 0.14); color: #a8b0bc; }
+  :global(.dark) .post-sticky-badge { background: rgba(255, 193, 7, 0.14); color: #ffc861; }
+
+  /* ===== 桌面：封面占 30%，卡片内边距放大 ===== */
+  @media (min-width: 768px) {
+    .post-row { padding: 26px 28px; }
+    .post-row.has-cover .post-row-content {
+      width: calc(100% - var(--cover-w, 30%) - 24px);
+      padding-right: 0;
+    }
+    .post-row-cover {
+      top: 16px;
+      bottom: 16px;
+      right: 16px;
+      width: var(--cover-w, 30%);
+      border-radius: 10px;
+    }
+    .post-row.cover-left.has-cover .post-row-content {
+      margin-left: calc(var(--cover-w, 30%) + 24px);
+      width: calc(100% - var(--cover-w, 30%) - 24px);
+      padding-left: 0;
+    }
+    .post-row.cover-left .post-row-cover { left: 16px; right: auto; }
+    .post-row.cover-left .post-row-title { padding-left: 13px; }
+    .post-row.cover-left .post-row-title::before { display: block; }
+    .post-row-title { font-size: 21px; line-height: 1.45; margin-bottom: 12px; }
+    .post-row-title::before { top: 5px; height: 20px; width: 4px; }
+    .post-row-meta { margin-bottom: 12px; }
+  }
+
+  /* ===== grid 模式：封面在上，竖向卡 ===== */
+  .post-row.is-grid { padding: 0; display: flex; flex-direction: column-reverse; height: 100%; }
+  .post-row.is-grid .post-row-content,
+  .post-row.is-grid.has-cover .post-row-content {
+    width: 100%;
+    padding: 18px 20px 20px;
+  }
+  .post-row.is-grid .post-row-cover {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    aspect-ratio: 2 / 1;
+    border-radius: 12px 12px 0 0;
+  }
+  .post-row.is-grid .post-row-title { font-size: 17px; }
+  .post-row.is-grid .post-row-title::before { display: none; }
+  .post-row.is-grid .post-row-title { padding-left: 0; }
+  .post-row.is-grid .post-row-enter { display: none; }
+
+  @media (max-width: 480px) {
+    .post-row { padding: 16px; }
+    .post-row.has-cover .post-row-content { padding-right: 84px; }
+    .post-row-cover { width: 80px; top: 10px; bottom: 10px; right: 10px; }
+    .post-row-title { font-size: 16px; padding-left: 11px; }
+    .post-row-title::before { height: 15px; top: 4px; }
+    .post-row-desc { -webkit-line-clamp: 2; margin-bottom: 8px; font-size: 13px; }
+    .post-row-enter { display: none; }
   }
 </style>

@@ -1,0 +1,667 @@
+---
+/**
+ * 侧栏音乐播放器 — 参考 Firefly 的 features/MusicPlayer.astro
+ *
+ * 保留它的交互骨架：圆形旋转封面、歌名/歌手、时间、进度、上一首/播放/下一首、
+ * 循环模式、播放列表抽屉。简化掉的部分：歌词滚动、Meting 在线音源、后台管理器。
+ * 换成纯原生 JS：本站没有 Svelte，用 <audio> + 状态机足够。
+ *
+ * 播放列表在 src/config/music.ts，行为开关在 siteConfig.music。
+ */
+import { musicPlaylist } from '@/config/music';
+import { siteConfig } from '@/config/site';
+
+const cfg = siteConfig.music;
+const tracks = musicPlaylist || [];
+const first = tracks[0];
+const total = tracks.length;
+
+function fmt(sec: number): string {
+  if (!Number.isFinite(sec) || sec < 0) return '0:00';
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+---
+
+{cfg.enabled && total > 0 && (
+  <div class="widget music-widget" id="music-widget" data-volume={cfg.volume} data-mode={cfg.playMode} data-remember={cfg.remember ? '1' : '0'}>
+    <div class="mw-head">
+      <span class="mw-heading"><i class="bi bi-music-note-beamed"></i>{cfg.title}</span>
+      <button class="mw-list-toggle" type="button" aria-label="展开播放列表" aria-expanded="false">
+        <i class="bi bi-list-ul"></i><span>{total}</span>
+      </button>
+    </div>
+
+    <div class="mw-body">
+      <div class="mw-cover" data-playing="false">
+        <img src={first.cover} alt="" class="mw-cover-img" />
+        <i class="bi bi-music-note mw-cover-fallback"></i>
+      </div>
+      <div class="mw-info">
+        <div class="mw-name" title={first.name}>{first.name}</div>
+        <div class="mw-artist" title={first.artist}>{first.artist}</div>
+        <div class="mw-time">
+          <span class="mw-cur">0:00</span>
+          <span class="mw-sep">/</span>
+          <span class="mw-dur">0:00</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="mw-progress" role="slider" tabindex="0" aria-label="播放进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <i class="mw-progress-bar"></i>
+    </div>
+
+    <div class="mw-controls">
+      <button class="mw-btn mw-repeat" type="button" aria-label="播放模式" title="列表循环">
+        <i class="bi bi-repeat"></i>
+      </button>
+      <button class="mw-btn mw-prev" type="button" aria-label="上一首" title="上一首">
+        <i class="bi bi-skip-start-fill"></i>
+      </button>
+      <button class="mw-btn mw-play" type="button" aria-label="播放" title="播放">
+        <i class="bi bi-play-fill"></i>
+      </button>
+      <button class="mw-btn mw-next" type="button" aria-label="下一首" title="下一首">
+        <i class="bi bi-skip-end-fill"></i>
+      </button>
+      <button class="mw-btn mw-vol-toggle" type="button" aria-label="音量" title="音量" aria-expanded="false">
+        <i class="bi bi-volume-up"></i>
+      </button>
+    </div>
+
+    <div class="mw-volume-row">
+      <input class="mw-volume" type="range" min="0" max="100" step="1" value={Math.round(cfg.volume * 100)} aria-label="音量" />
+    </div>
+
+    <ul class="mw-list" aria-label="播放列表">
+      {tracks.map((track, index) => (
+        <li>
+          <button
+            class="mw-track"
+            type="button"
+            data-index={index}
+            data-url={track.url}
+            data-name={track.name}
+            data-artist={track.artist}
+            data-cover={track.cover}
+          >
+            <span class="mw-track-no">{String(index + 1).padStart(2, '0')}</span>
+            <span class="mw-track-text">
+              <b>{track.name}</b>
+              <em>{track.artist}</em>
+            </span>
+            <i class="bi bi-play-fill mw-track-play"></i>
+          </button>
+        </li>
+      ))}
+    </ul>
+
+    <div class="mw-empty" hidden>播放列表是空的，去 src/config/music.ts 加一首吧。</div>
+  </div>
+)}
+
+<audio class="mw-audio" preload="metadata"></audio>
+
+<script>
+  type Mode = 'list' | 'one' | 'random';
+
+  const widget = document.getElementById('music-widget');
+  const audio = document.querySelector<HTMLAudioElement>('.mw-audio');
+
+  if (widget && audio) {
+    const q = <T extends HTMLElement>(sel: string) => widget.querySelector<T>(sel);
+    const cover = q<HTMLElement>('.mw-cover');
+    const coverImg = q<HTMLImageElement>('.mw-cover-img');
+    const nameEl = q<HTMLElement>('.mw-name');
+    const artistEl = q<HTMLElement>('.mw-artist');
+    const curEl = q<HTMLElement>('.mw-cur');
+    const durEl = q<HTMLElement>('.mw-dur');
+    const progress = q<HTMLElement>('.mw-progress');
+    const bar = q<HTMLElement>('.mw-progress-bar');
+    const playBtn = q<HTMLButtonElement>('.mw-play');
+    const prevBtn = q<HTMLButtonElement>('.mw-prev');
+    const nextBtn = q<HTMLButtonElement>('.mw-next');
+    const repeatBtn = q<HTMLButtonElement>('.mw-repeat');
+    const volToggle = q<HTMLButtonElement>('.mw-vol-toggle');
+    const volRow = q<HTMLElement>('.mw-volume-row');
+    const volInput = q<HTMLInputElement>('.mw-volume');
+    const listToggle = q<HTMLButtonElement>('.mw-list-toggle');
+    const listEl = q<HTMLElement>('.mw-list');
+    const trackEls = Array.from(widget.querySelectorAll<HTMLButtonElement>('.mw-track'));
+
+    const remember = widget.dataset.remember === '1';
+    const storeKey = 'mango-music';
+    const modeIcons: Record<Mode, string> = {
+      list: 'bi-repeat',
+      one: 'bi-repeat-1',
+      random: 'bi-shuffle',
+    };
+    const modeLabels: Record<Mode, string> = {
+      list: '列表循环',
+      one: '单曲循环',
+      random: '随机播放',
+    };
+
+    let index = 0;
+    let mode = (widget.dataset.mode as Mode) || 'list';
+    let lastVolume = Number(widget.dataset.volume) || 0.6;
+
+    const fmt = (sec: number) => {
+      if (!Number.isFinite(sec) || sec < 0) return '0:00';
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return `${m}:${String(s).padStart(2, '0')}`;
+    };
+
+    const paintMode = () => {
+      repeatBtn.innerHTML = `<i class="bi ${modeIcons[mode]}"></i>`;
+      repeatBtn.title = modeLabels[mode];
+      repeatBtn.setAttribute('aria-label', modeLabels[mode]);
+      repeatBtn.classList.toggle('is-on', mode !== 'list');
+    };
+
+    const paintPlay = () => {
+      const playing = !audio.paused;
+      playBtn.innerHTML = `<i class="bi ${playing ? 'bi-pause-fill' : 'bi-play-fill'}"></i>`;
+      playBtn.setAttribute('aria-label', playing ? '暂停' : '播放');
+      playBtn.title = playing ? '暂停' : '播放';
+      cover?.setAttribute('data-playing', String(playing));
+      trackEls.forEach((el) => el.classList.toggle('is-playing', Number(el.dataset.index) === index && playing));
+    };
+
+    const paintVolume = () => {
+      const muted = audio.muted || audio.volume === 0;
+      volToggle.innerHTML = `<i class="bi ${muted ? 'bi-volume-mute' : 'bi-volume-up'}"></i>`;
+      volInput.value = String(Math.round((muted ? 0 : audio.volume) * 100));
+    };
+
+    const load = (next: number, autoplay = false) => {
+      if (!trackEls.length) return;
+      index = (next + trackEls.length) % trackEls.length;
+      const el = trackEls[index];
+      audio.src = el.dataset.url || '';
+      nameEl.textContent = el.dataset.name || '';
+      artistEl.textContent = el.dataset.artist || '';
+      nameEl.title = el.dataset.name || '';
+      artistEl.title = el.dataset.artist || '';
+      if (el.dataset.cover) coverImg.src = el.dataset.cover;
+      curEl.textContent = '0:00';
+      durEl.textContent = '0:00';
+      bar.style.width = '0%';
+      progress.setAttribute('aria-valuenow', '0');
+      trackEls.forEach((t) => t.classList.toggle('active', Number(t.dataset.index) === index));
+      if (autoplay) void audio.play().catch(() => paintPlay());
+      paintPlay();
+    };
+
+    const next = (auto = false) => {
+      if (mode === 'random' && trackEls.length > 1) {
+        let pick = index;
+        while (pick === index) pick = Math.floor(Math.random() * trackEls.length);
+        load(pick, true);
+        return;
+      }
+      load(index + 1, auto || !audio.paused);
+    };
+
+    const prev = () => {
+      // 播放超过 3 秒时，上一首先回到本曲开头（和主流播放器一致）
+      if (audio.currentTime > 3) {
+        audio.currentTime = 0;
+        return;
+      }
+      load(index - 1, !audio.paused);
+    };
+
+    // 初始化
+    audio.volume = lastVolume;
+    paintMode();
+    paintVolume();
+    load(0, false);
+
+    playBtn.addEventListener('click', () => {
+      if (audio.paused) void audio.play().catch(() => paintPlay());
+      else audio.pause();
+    });
+    audio.addEventListener('play', paintPlay);
+    audio.addEventListener('pause', paintPlay);
+    nextBtn.addEventListener('click', () => next(false));
+    prevBtn.addEventListener('click', prev);
+
+    repeatBtn.addEventListener('click', () => {
+      mode = mode === 'list' ? 'one' : mode === 'one' ? 'random' : 'list';
+      paintMode();
+      save();
+    });
+
+    audio.addEventListener('ended', () => {
+      if (mode === 'one') {
+        audio.currentTime = 0;
+        void audio.play();
+        return;
+      }
+      next(true);
+    });
+
+    audio.addEventListener('timeupdate', () => {
+      const d = audio.duration;
+      const pct = Number.isFinite(d) && d > 0 ? (audio.currentTime / d) * 100 : 0;
+      bar.style.width = `${pct}%`;
+      progress.setAttribute('aria-valuenow', String(Math.round(pct)));
+      curEl.textContent = fmt(audio.currentTime);
+      save();
+    });
+    audio.addEventListener('loadedmetadata', () => {
+      durEl.textContent = fmt(audio.duration);
+    });
+    audio.addEventListener('error', () => {
+      durEl.textContent = '无法播放';
+      paintPlay();
+    });
+
+    // 进度条：点击 / 拖动 / 键盘
+    const seek = (clientX: number) => {
+      const rect = progress.getBoundingClientRect();
+      const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+      if (Number.isFinite(audio.duration)) audio.currentTime = ratio * audio.duration;
+    };
+    let dragging = false;
+    progress.addEventListener('pointerdown', (e) => {
+      dragging = true;
+      progress.setPointerCapture(e.pointerId);
+      seek(e.clientX);
+    });
+    progress.addEventListener('pointermove', (e) => dragging && seek(e.clientX));
+    progress.addEventListener('pointerup', () => (dragging = false));
+    progress.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 5);
+      if (e.key === 'ArrowLeft') audio.currentTime = Math.max(0, audio.currentTime - 5);
+    });
+
+    // 音量：点图标展开，滑块调节
+    volToggle.addEventListener('click', () => {
+      const open = volRow.classList.toggle('open');
+      volToggle.setAttribute('aria-expanded', String(open));
+      if (open) volInput.focus();
+    });
+    volInput.addEventListener('input', () => {
+      const v = Number(volInput.value) / 100;
+      audio.volume = v;
+      audio.muted = v === 0;
+      if (v > 0) lastVolume = v;
+      paintVolume();
+      save();
+    });
+    volInput.addEventListener('change', paintVolume);
+
+    // 播放列表
+    listToggle.addEventListener('click', () => {
+      const open = listEl.classList.toggle('open');
+      listToggle.setAttribute('aria-expanded', String(open));
+    });
+    trackEls.forEach((el) => {
+      el.addEventListener('click', () => {
+        const target = Number(el.dataset.index);
+        if (target === index) {
+          if (audio.paused) void audio.play().catch(() => paintPlay());
+          else audio.pause();
+          return;
+        }
+        load(target, true);
+      });
+    });
+
+    // 记住进度（本地存储，刷新后续上）
+    function save() {
+      if (!remember) return;
+      try {
+        localStorage.setItem(
+          storeKey,
+          JSON.stringify({
+            index,
+            mode,
+            volume: audio.volume,
+            time: audio.currentTime,
+          })
+        );
+      } catch {
+        /* 忽略隐私模式报错 */
+      }
+    }
+
+    if (remember) {
+      try {
+        const raw = localStorage.getItem(storeKey);
+        if (raw) {
+          const saved = JSON.parse(raw) as { index?: number; mode?: Mode; volume?: number; time?: number };
+          if (typeof saved.mode === 'string' && saved.mode in modeIcons) mode = saved.mode;
+          paintMode();
+          if (typeof saved.volume === 'number') {
+            audio.volume = Math.min(1, Math.max(0, saved.volume));
+            lastVolume = audio.volume || lastVolume;
+            paintVolume();
+          }
+          if (typeof saved.index === 'number') load(saved.index, false);
+          if (typeof saved.time === 'number' && saved.time > 1) {
+            // 元数据到位后再跳转，否则 currentTime 会被重置
+            audio.addEventListener(
+              'loadedmetadata',
+              () => {
+                if (Number.isFinite(audio.duration) && saved.time! < audio.duration - 2) {
+                  audio.currentTime = saved.time!;
+                }
+              },
+              { once: true }
+            );
+          }
+        }
+      } catch {
+        /* 忽略损坏的存档 */
+      }
+    }
+
+    widget.querySelector('.mw-list')?.setAttribute('data-ready', '1');
+  }
+</script>
+
+<style>
+  .mw-audio { display: none; }
+
+  .music-widget {
+    padding: 16px 16px 14px;
+    overflow: hidden;
+  }
+
+  .mw-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .mw-heading {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #2f3238;
+    letter-spacing: 0.2px;
+  }
+  .mw-heading i { color: #4270f5; font-size: 14px; }
+  :global(.dark) .mw-heading { color: #e2e2e2; }
+
+  .mw-list-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border: 0;
+    border-radius: 999px;
+    background: #f2f4f8;
+    color: #8c96a3;
+    font-size: 11.5px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  .mw-list-toggle:hover,
+  .mw-list-toggle[aria-expanded='true'] { background: #4270f5; color: #fff; }
+  :global(.dark) .mw-list-toggle { background: #2c2c2e; color: #9aa0a8; }
+
+  .mw-body {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  /* 圆形封面：播放时缓慢旋转 */
+  .mw-cover {
+    position: relative;
+    flex: 0 0 auto;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: linear-gradient(135deg, #e8eeff, #cfd9f5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 10px rgba(66, 112, 245, 0.18);
+  }
+  :global(.dark) .mw-cover { background: linear-gradient(135deg, #2b3145, #1f2333); }
+  .mw-cover-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+  }
+  .mw-cover-fallback { position: absolute; color: #4270f5; font-size: 20px; opacity: 0.5; }
+  .mw-cover[data-playing='true'] .mw-cover-img { animation: mw-spin 14s linear infinite; }
+  .mw-cover[data-playing='true']::after {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
+  }
+  @keyframes mw-spin {
+    to { transform: rotate(360deg); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mw-cover[data-playing='true'] .mw-cover-img { animation: none; }
+  }
+
+  .mw-info { flex: 1; min-width: 0; }
+  .mw-name {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #2f3238;
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .mw-artist {
+    font-size: 11.5px;
+    color: #9aa3af;
+    line-height: 1.5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  :global(.dark) .mw-name { color: #e4e4e4; }
+  .mw-time {
+    margin-top: 3px;
+    font-size: 10.5px;
+    font-variant-numeric: tabular-nums;
+    color: #a8b0ba;
+    display: flex;
+    gap: 4px;
+  }
+  .mw-sep { opacity: 0.6; }
+
+  /* 进度条 */
+  .mw-progress {
+    position: relative;
+    height: 4px;
+    border-radius: 999px;
+    background: #eceef2;
+    cursor: pointer;
+    margin-bottom: 10px;
+    touch-action: none;
+  }
+  .mw-progress:focus-visible { outline: 2px solid #4270f5; outline-offset: 4px; }
+  :global(.dark) .mw-progress { background: #3a3a3b; }
+  .mw-progress-bar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 0%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #4270f5, #7ba3ff);
+    transition: width 0.12s linear;
+  }
+  .mw-progress::after {
+    content: '';
+    position: absolute;
+    right: -1px;
+    top: 50%;
+    width: 9px;
+    height: 9px;
+    margin-top: -4.5px;
+    border-radius: 50%;
+    background: #4270f5;
+    box-shadow: 0 0 0 2px #fff;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  .mw-progress:hover::after { opacity: 1; }
+  :global(.dark) .mw-progress::after { box-shadow: 0 0 0 2px #212121; }
+
+  /* 控制行 */
+  .mw-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2px;
+  }
+  .mw-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #8c96a3;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+  }
+  .mw-btn:hover { color: #4270f5; background: rgba(66, 112, 245, 0.09); }
+  .mw-btn:active { transform: scale(0.9); }
+  .mw-btn.is-on { color: #4270f5; }
+  :global(.dark) .mw-btn { color: #9aa0a8; }
+  :global(.dark) .mw-btn:hover { color: #8ab0ff; background: rgba(138, 176, 255, 0.12); }
+
+  .mw-play {
+    width: 40px;
+    height: 40px;
+    background: #4270f5;
+    color: #fff;
+    font-size: 19px;
+    box-shadow: 0 4px 12px rgba(66, 112, 245, 0.35);
+  }
+  .mw-play:hover { background: #3a63e0; color: #fff; }
+  :global(.dark) .mw-play { color: #fff; }
+
+  /* 音量行 */
+  .mw-volume-row {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.28s ease, margin-top 0.28s ease;
+  }
+  .mw-volume-row.open { max-height: 40px; margin-top: 6px; }
+  .mw-volume {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 999px;
+    background: #eceef2;
+    outline: none;
+  }
+  :global(.dark) .mw-volume { background: #3a3a3b; }
+  .mw-volume::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #4270f5;
+    box-shadow: 0 0 0 2px #fff;
+    cursor: pointer;
+  }
+  .mw-volume::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border: 0;
+    border-radius: 50%;
+    background: #4270f5;
+    cursor: pointer;
+  }
+
+  /* 播放列表 */
+  .mw-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, margin-top 0.3s ease;
+    border-top: 0 solid #f0f1f4;
+  }
+  .mw-list.open {
+    max-height: 190px;
+    overflow-y: auto;
+    margin-top: 10px;
+    padding-top: 6px;
+    border-top-width: 1px;
+  }
+  :global(.dark) .mw-list { border-color: #333; }
+
+  .mw-track {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 6px 8px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.18s ease;
+  }
+  .mw-track:hover { background: #f5f7fb; }
+  :global(.dark) .mw-track:hover { background: #2a2a2c; }
+  .mw-track.active { background: rgba(66, 112, 245, 0.08); }
+
+  .mw-track-no {
+    font-size: 10.5px;
+    font-variant-numeric: tabular-nums;
+    color: #b6bcc5;
+    width: 16px;
+    flex: 0 0 auto;
+  }
+  .mw-track-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .mw-track-text b {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #3a3f47;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .mw-track-text em {
+    font-style: normal;
+    font-size: 10.5px;
+    color: #a2a9b3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  :global(.dark) .mw-track-text b { color: #dcdcdc; }
+  .mw-track-play { color: #4270f5; font-size: 13px; opacity: 0; transition: opacity 0.18s ease; }
+  .mw-track:hover .mw-track-play,
+  .mw-track.is-playing .mw-track-play { opacity: 1; }
+  .mw-track.active .mw-track-no { color: #4270f5; font-weight: 700; }
+</style>

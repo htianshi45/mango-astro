@@ -3,7 +3,7 @@ import '@/styles/global.css';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
 import ThemeScript from '@components/ThemeScript.astro';
-import BackToTop from '@components/BackToTop.astro';
+import FloatingTools from '@components/FloatingTools.astro';
 import { siteConfig } from '@/config/site';
 
 interface Props {
@@ -16,6 +16,8 @@ interface Props {
   publishedTime?: string;
   tags?: string[];
   noindex?: boolean;
+  /** true = 宽版心（主栏 + 边栏，1180px）；单栏阅读页保持 900px */
+  wide?: boolean;
 }
 
 const {
@@ -26,6 +28,7 @@ const {
   publishedTime,
   tags = [],
   noindex = false,
+  wide = false,
 } = Astro.props;
 
 const pathname = Astro.url.pathname.replace(/index\.html$/, '');
@@ -106,11 +109,11 @@ const jsonLd =
   <body class="antialiased">
     <div class="min-h-screen flex flex-col">
       <Header />
-      <main class="flex-1 container mx-auto px-4 max-w-mango">
+      <main class:list={['flex-1 container mx-auto px-4', wide ? 'max-w-mango-wide' : 'max-w-mango']}>
         <slot />
       </main>
       <Footer />
-      <BackToTop />
+      <FloatingTools />
     </div>
   </body>
 </html>

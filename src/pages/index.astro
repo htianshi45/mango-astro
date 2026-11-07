@@ -17,11 +17,11 @@ const posts = await getCollection('posts', ({ data }) => data.draft !== true);
 const { tags, postData } = buildSidebarData(posts);
 ---
 
-<BaseLayout title={`首页 - ${siteConfig.name}`}>
+<BaseLayout title={`首页 - ${siteConfig.name}`} wide>
   <Banner />
-  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-    <!-- 混合时间流 -->
-    <div class="lg:col-span-8">
+  <div class="layout-sidebar">
+    <!-- 混合时间流（主栏 : 边栏 = 3 : 1，边栏 281px 固定） -->
+    <div>
       <FeedList entries={entries} showTypeBadge={siteConfig.home.showTypeBadge} />
       {totalPages > 1 && (
         <Pagination currentPage={currentPage} totalPages={totalPages} baseUrl="/" />
@@ -29,7 +29,7 @@ const { tags, postData } = buildSidebarData(posts);
     </div>
 
     <!-- 侧栏 -->
-    <div class="lg:col-span-4">
+    <div>
       <Sidebar posts={postData} tags={tags} />
     </div>
   </div>

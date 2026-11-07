@@ -1,0 +1,129 @@
+---
+/**
+ * 右下角浮动按钮组
+ *
+ * 需求：日夜间切换按钮从导航栏挪到右下角。
+ * 顺手把「返回顶部」并进来，两枚按钮竖排成一条，避免两个 fixed 元素抢同一个角落。
+ *
+ * 行为：
+ *   - 主题按钮常驻，切换 html.dark，写 localStorage（键与 Halo 一致：isDarkMode / theme）；
+ *   - 返回顶部在滚动 300px 后淡入，点击平滑回顶；
+ *   - 窄屏（<=640px）整体缩小并贴边，避免挡住正文。
+ */
+---
+
+<div class="float-tools" id="float-tools">
+  <button
+    id="theme-toggle"
+    class="float-btn"
+    aria-label="切换日间 / 夜间模式"
+    aria-pressed="false"
+    title="切换日间 / 夜间模式"
+  >
+    <i class="bi bi-sun-fill icon-sun"></i>
+    <i class="bi bi-moon-stars-fill icon-moon"></i>
+  </button>
+
+  <button id="back-to-top" class="float-btn float-top" aria-label="返回顶部" title="返回顶部">
+    <i class="bi bi-arrow-up"></i>
+  </button>
+</div>
+
+<style>
+  .float-tools {
+    position: fixed;
+    right: 24px;
+    bottom: 30px;
+    z-index: 45;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .float-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid rgba(8, 8, 8, 0.06);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.92);
+    color: #4b5563;
+    font-size: 17px;
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 4px 16px rgba(8, 8, 8, 0.12);
+    transition: transform 0.22s ease, background-color 0.22s ease, color 0.22s ease,
+      box-shadow 0.22s ease, opacity 0.25s ease, visibility 0.25s;
+  }
+  .float-btn:hover {
+    background: #4270f5;
+    border-color: #4270f5;
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(66, 112, 245, 0.34);
+  }
+  .float-btn:active { transform: scale(0.94); }
+  .float-btn:focus-visible { outline: 2px solid #4270f5; outline-offset: 3px; }
+
+  /* 主题图标：浅色显示太阳（点击去暗），深色显示月亮 */
+  .float-btn .icon-moon { display: none; }
+  :global(.dark) .float-btn .icon-sun { display: none; }
+  :global(.dark) .float-btn .icon-moon { display: inline-block; color: #ffc008; }
+  :global(.dark) .float-btn {
+    background: rgba(33, 33, 34, 0.92);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #d0d0d0;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  }
+  :global(.dark) .float-btn:hover { background: #4270f5; color: #fff; }
+
+  .float-top {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px);
+  }
+  .float-top.visible { opacity: 1; visibility: visible; transform: translateY(0); }
+
+  @media (max-width: 640px) {
+    .float-tools { right: 14px; bottom: 18px; gap: 8px; }
+    .float-btn { width: 40px; height: 40px; font-size: 15px; }
+  }
+
+  @media print {
+    .float-tools { display: none; }
+  }
+</style>
+
+<script>
+  const root = document.documentElement;
+  const themeBtn = document.getElementById('theme-toggle');
+
+  const syncThemeLabel = () => {
+    themeBtn?.setAttribute('aria-pressed', root.classList.contains('dark') ? 'true' : 'false');
+  };
+  syncThemeLabel();
+
+  themeBtn?.addEventListener('click', () => {
+    const isDark = root.classList.contains('dark');
+    root.classList.toggle('dark', !isDark);
+    try {
+      localStorage.setItem('isDarkMode', isDark ? '0' : '1');
+      localStorage.setItem('theme', isDark ? 'light' : 'dark');
+    } catch {
+      /* 隐私模式下 localStorage 会抛错，忽略即可 */
+    }
+    syncThemeLabel();
+  });
+
+  const topBtn = document.getElementById('back-to-top');
+  const onScroll = () => topBtn?.classList.toggle('visible', window.scrollY > 300);
+  onScroll();
+  window.addEventListener('scroll', onScroll, { passive: true });
+
+  topBtn?.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+</script>
