@@ -73,10 +73,18 @@
   async function lookup(query) {
     try {
       return await withZh(async () => {
-        const pf = await wait(loadPagefind(), 3000);
+        // 首次加载 worker + 分片在慢网络下可能要 3-4 秒，超时给足余量；
+        // 之后运行时已缓存，通常 0.4 秒内返回。
+        const pf = await wait(loadPagefind(), 6000);
         if (!pf) return [];
-        const res = await wait(pf.search(query), 3000);
-        return await Promise.all((res?.results || []).slice(0, 6).map((item) => item.data()));
+        const res = await wait(pf.search(query), 6000);
+        // 先多取一些再排序：相关度最高的前几条常常是标签聚合页，
+        // 若先截 6 条再排序，正文页根本没有机会排进来。
+        const data = await Promise.all((res?.results || []).slice(0, 20).map((item) => item.data()));
+        // 标签/分类/归档页只是聚合页，排到正文内容页后面
+        const isAux = (u = '') => /^\/(tags|categories|archive)\//.test(u) || u === '/archive/';
+        data.sort((a, b) => Number(isAux(a.url)) - Number(isAux(b.url)));
+        return data.slice(0, 6);
       });
     } catch {
       pfPromise = Promise.resolve(null);
@@ -90,12 +98,12 @@
     activeIndex = -1;
 
     if (items.length === 0) {
-      const li = document.createElement('li');
-      li.className = 'sp-empty';
-      li.textContent = query ? '没有匹配结果，按 Enter 打开完整搜索页' : '输入关键词开始搜索';
-      results.appendChild(li);
-      return;
-    }
+    const li = document.createElement('li');
+    li.className = 'sp-empty';
+    li.textContent = query ? '没有匹配结果，按 Enter 打开完整搜索页' : '输入关键词开始搜索';
+    results.appendChild(li);
+    return;
+  }
 
     items.forEach((item, index) => {
       const li = document.createElement('li');
@@ -113,6 +121,18 @@
       li.appendChild(a);
       results.appendChild(li);
     });
+  }
+
+  // 必须定义在模块顶层：setTimeout 回调在这里调用它。
+  // 若嵌套在 render() 内部，会被 tree-shake 掉并在运行时抛 ReferenceError。
+  function renderLoading() {
+    if (!results) return;
+    results.replaceChildren();
+    activeIndex = -1;
+    const li = document.createElement('li');
+    li.className = 'sp-empty';
+    li.textContent = '正在搜索…';
+    results.appendChild(li);
   }
 
   function setActive(next) {
@@ -169,6 +189,7 @@
     clearTimeout(timer);
     if (!query) { render([], ''); return; }
     timer = setTimeout(async () => {
+      renderLoading();
       const items = await lookup(query);
       if (my !== seq) return;
       render(items, query);

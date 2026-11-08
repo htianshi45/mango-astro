@@ -10,10 +10,12 @@
  *
  * 版本号改动即会触发新 cache 建立、旧 cache 清理。
  */
-const VERSION = 'mango-v1';
+const VERSION = 'mango-v2';
 const STATIC_CACHE = `${VERSION}-static`;
 const PAGE_CACHE = `${VERSION}-pages`;
-const OFFLINE_URL = '/offline.html';
+// Cloudflare Pages 会把 /offline.html 308 到 /offline，预缓存必须写最终 URL，
+// 否则缓存的是重定向响应，离线时拿不到页面。
+const OFFLINE_URL = '/offline';
 const CACHEABLE_PREFIXES = ['/_astro/', '/opt-images/', '/fonts/', '/icons/', '/js/'];
 
 self.addEventListener('install', (event) => {
