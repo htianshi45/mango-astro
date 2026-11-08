@@ -5,8 +5,9 @@
  * 默认关闭：siteConfig.comments.enabled = false 时这里不输出任何 DOM，
  * 也不会向 giscus.app 发请求，未配置时不拖慢页面、不影响隐私。
  *
- * 主题：giscus 的 preferred_color_scheme 跟随系统设置；本站的手动主题开关
- * 目前不联动 iframe（需要 postMessage 桥接），详见站点管理与设置教程。
+ * 主题：giscus 的 preferred_color_scheme 只认系统设置，不认本站右上角的手动开关。
+ * 这里用 postMessage 桥接——<html class="dark"> 一变就把 light/dark 推给 iframe，
+ * 所以手动切暗色时评论区会跟着变。
  */
 import { siteConfig } from '@/config/site';
 
@@ -46,6 +47,49 @@ const ready = cfg.enabled && cfg.provider === 'giscus' && Boolean(g.repo && g.re
       crossorigin="anonymous"
       async
     ></script>
+    <script is:inline>
+      // giscus 主题联动：本站手动切换暗色时，把主题推给 iframe。
+      // preferred_color_scheme 只跟系统走，不推这一步会导致「页面黑了、评论框还是白的」。
+      (function () {
+        var ORIGIN = 'https://giscus.app';
+        var root = document.documentElement;
+        var last = null;
+
+        function current() {
+          return root.classList.contains('dark') ? 'dark' : 'light';
+        }
+
+        function push(force) {
+          var frame = document.querySelector('iframe.giscus-frame');
+          if (!frame || !frame.contentWindow) return;
+          var theme = current();
+          if (!force && theme === last) return;
+          last = theme;
+          frame.contentWindow.postMessage(
+            { giscus: { setConfig: { theme: theme } } },
+            ORIGIN
+          );
+        }
+
+        // giscus 首次渲染完成会回发 message，此时 iframe 已就绪，必定对齐一次
+        window.addEventListener('message', function (event) {
+          if (event.origin !== ORIGIN) return;
+          push(true);
+        });
+
+        // 手动点主题开关时 <html> 的 class 会变
+        new MutationObserver(function () {
+          push(false);
+        }).observe(root, { attributes: true, attributeFilter: ['class'] });
+
+        // 兜底：iframe 已存在但 message 回调错过的情况
+        window.addEventListener('load', function () {
+          setTimeout(function () {
+            push(true);
+          }, 1200);
+        });
+      })();
+    </script>
   </section>
 )}
 

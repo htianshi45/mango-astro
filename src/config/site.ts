@@ -255,13 +255,13 @@ export const siteConfig = {
    * 未启用时组件不渲染任何 DOM，也不加载第三方脚本。
    */
   comments: {
-    enabled: false,
+    enabled: true,
     provider: 'giscus' as 'giscus',
     giscus: {
-      repo: '',
-      repoId: '',
+      repo: 'htianshi45/mango-astro',
+      repoId: 'R_kgDOVlzmHw',
       category: 'Announcements',
-      categoryId: '',
+      categoryId: 'DIC_kwDOVlzmH84DKocF',
       /** pathname = 按页面路径匹配 discussion；也可填 specific + term */
       mapping: 'pathname' as 'pathname' | 'url' | 'title' | 'og:title' | 'specific',
       term: '',
