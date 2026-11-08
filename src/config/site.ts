@@ -123,8 +123,8 @@ export const siteConfig = {
   logo: '/images/logo.svg',
   /** 站点描述：meta description 与 RSS 摘要 */
   description: 'Mango - 微信朋友圈风格图片博客',
-  /** 站点正式地址（当前 Cloudflare Pages 分配域名） */
-  url: 'https://mango-astro.pages.dev',
+  /** 站点正式地址（Cloudflare Pages 分配域名，2026-11 迁到 Git 集成项目后改用 Git 项目名） */
+  url: 'https://mango-astro-git.pages.dev',
   author: 'Mango',
   avatar: '/images/default-avatar.svg',
   keywords: ['Mango', 'Astro', '图片博客', '摄影', '朋友圈', '说说', '书签'],

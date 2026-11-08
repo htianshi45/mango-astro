@@ -16,7 +16,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const SITE = (process.env.SITE_URL || 'https://mango-astro.pages.dev').replace(/\/+$/, '');
+const SITE = (process.env.SITE_URL || 'https://mango-astro-git.pages.dev').replace(/\/+$/, '');
 const KEY = process.env.INDEXNOW_KEY || '';
 const BAIDU_TOKEN = process.env.BAIDU_TOKEN || '';
 const writeKeyOnly = process.argv.includes('--write-key');

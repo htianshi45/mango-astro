@@ -1,7 +1,16 @@
 # Cloudflare Pages 项目配置（站点本体）
 # 注意：OAuth 网关是独立的 Worker，配置在 oauth-gateway/wrangler.toml，不要混用。
-# 部署命令：wrangler pages deploy dist --project-name mango-astro --branch main
-name = "mango-astro"
+#
+# 2026-11 起本项目走「Git 集成」：push 到 main 由 Cloudflare 构建机执行
+# `npm run build` 并部署。本文件是 Pages 项目配置的 source of truth
+# （pages_build_output_dir 与 kv_namespaces 在 Git 构建时直接生效，
+#  所以换项目不需要去控制台手动重绑 KV）。
+#
+# 手动部署到【当前 Git 项目】：
+#   wrangler pages deploy dist
+# 手动给【旧的 Direct Upload 项目】打补丁（mango-astro，迁移过渡期保留）：
+#   wrangler pages deploy dist --project-name=mango-astro --branch main
+name = "mango-astro-git"
 compatibility_date = "2026-11-07"
 pages_build_output_dir = "dist"
 

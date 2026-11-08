@@ -11,6 +11,7 @@
  */
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 
@@ -23,6 +24,40 @@ const MOMENT_OUT_DIR = path.join(OUT_DIR, 'moments');
 const W = 1200;
 const H = 630;
 const FONT = 'PingFang SC, Heiti SC, sans-serif';
+
+/** 卡片页脚显示的站点地址：跟随 SITE_URL，避免换域名时三处手改漏掉一处 */
+const SITE_LABEL = (process.env.SITE_URL || 'https://mango-astro-git.pages.dev')
+  .replace(/^https?:\/\//, '')
+  .replace(/\/+$/, '');
+
+/**
+ * 中文可用性探测 —— 云端构建的护栏
+ *
+ * sharp 渲染 SVG 文本走的是 librsvg + fontconfig，缺中文字体时中文会变成一排
+ * 「豆腐块」，而且**不会报错**，只有把分享卡发到微信里才会发现。
+ * 本机 macOS 有 PingFang SC；Cloudflare Pages / GitHub Actions 的 Linux 镜像没有。
+ * 所以云端构建时：已存在同名卡片就原样保留（仓库里提交的是本机生成的好版本），
+ * 不拿乱码覆盖。新增文章请在本地跑一次 `npm run og` 再提交。
+ */
+function hasCJKFont() {
+  if (process.env.OG_ASSUME_NO_CJK === '1') return false; // 本地模拟云端环境用
+  try {
+    const out = execFileSync('fc-list', [':lang=zh', 'family'], {
+      encoding: 'utf-8',
+      timeout: 10000,
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+    return out.trim().length > 0;
+  } catch {
+    // macOS 默认不带 fc-list：PingFang 一定在，直接放行
+    return process.platform === 'darwin';
+  }
+}
+
+const CJK_OK = hasCJKFont() || process.argv.includes('--force');
+let rendered = 0;
+let kept = 0;
+let missing = [];
 
 const esc = (s) => String(s)
   .replace(/&/g, '&amp;')
@@ -130,12 +165,23 @@ async function baseLayer(cover) {
 }
 
 async function render(outFile, layer, cover) {
+  if (!CJK_OK) {
+    try {
+      await fs.access(outFile);
+      kept += 1;
+      return; // 保留仓库里已有的卡片，不用豆腐块覆盖
+    } catch {
+      missing.push(path.relative(ROOT, outFile));
+      return; // 没有可保留的版本：宁可不生成，让页面回退到默认 ogImage
+    }
+  }
   const base = await baseLayer(cover);
   await fs.mkdir(path.dirname(outFile), { recursive: true });
   await sharp(base)
     .composite([{ input: layer, top: 0, left: 0 }])
     .jpeg({ quality: 84, mozjpeg: true })
     .toFile(outFile);
+  rendered += 1;
 }
 
 const files = (await fs.readdir(POSTS_DIR)).filter((f) => /\.(md|mdx)$/.test(f)).sort();
@@ -152,7 +198,7 @@ for (const file of files) {
     eyebrow: 'MANGO · BLOG',
     titleLines: wrap(title),
     subtitle,
-    footer: 'mango-astro.pages.dev',
+    footer: SITE_LABEL,
   });
   await render(path.join(POST_OUT_DIR, `${slug}.jpg`), layer, data.heroImage);
   count += 1;
@@ -162,7 +208,7 @@ const homeLayer = textLayer({
   eyebrow: 'MANGO · BLOG',
   titleLines: wrap('把日常的美图，安放在这里', 17, 3),
   subtitle: 'Mango - 微信朋友圈风格图片博客',
-  footer: 'mango-astro.pages.dev',
+  footer: SITE_LABEL,
 });
 await render(path.join(OUT_DIR, 'home.jpg'), homeLayer, null);
 
@@ -187,10 +233,20 @@ for (const file of (await fs.readdir(MOMENTS_DIR)).filter((f) => f.endsWith('.md
     eyebrow: 'MANGO · 说说',
     titleLines: wrap(text.slice(0, 60) || '一条说说'),
     subtitle: [data.location, String(data.published || '').slice(0, 10)].filter(Boolean).join(' · ') || 'Mango',
-    footer: 'mango-astro.pages.dev',
+    footer: SITE_LABEL,
   });
   await render(path.join(MOMENT_OUT_DIR, `${id}.jpg`), layer, firstImage(src));
   momentCount += 1;
 }
 
-console.log(`  OG 卡片：首页 1 张 + 文章 ${count} 张 + 说说 ${momentCount} 张 → public/og/`);
+if (!CJK_OK) {
+  console.log(`  OG 卡片：当前环境没有中文字体，跳过渲染（保留已有 ${kept} 张）`);
+  if (missing.length) {
+    console.warn(`  ⚠ 以下 ${missing.length} 张卡片尚不存在，页面将回退到默认分享图：`);
+    for (const f of missing.slice(0, 10)) console.warn(`    - ${f}`);
+    if (missing.length > 10) console.warn(`    … 另外 ${missing.length - 10} 张`);
+    console.warn('  → 请在有中文字体的机器上执行 npm run og 后提交 public/og/');
+  }
+} else {
+  console.log(`  OG 卡片：首页 1 张 + 文章 ${count} 张 + 说说 ${momentCount} 张 → public/og/`);
+}

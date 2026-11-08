@@ -1,17 +1,18 @@
-# P2-20 · push 到 main 自动构建并部署到 Cloudflare Pages
+# 手动应急部署（push 不再触发）
 #
-# 首次使用前，在 GitHub 仓库 Settings → Secrets and variables → Actions 添加：
+# 2026-11 起站点迁到「Git 集成」项目 mango-astro-git：push 到 main 由 Cloudflare
+# 自己的构建机直接编译部署，本 workflow 若仍监听 push 会造成同一个提交部署两次。
+# 所以这里只保留 workflow_dispatch（手动 Run workflow），作为 Cloudflare 构建出问题时的
+# 应急通道——它部署到同一个项目，产物一致。
+#
+# 使用前在 GitHub 仓库 Settings → Secrets and variables → Actions 添加：
 #   CLOUDFLARE_API_TOKEN   Cloudflare API Token（含 Cloudflare Pages 编辑权限）
 #   CLOUDFLARE_ACCOUNT_ID  Cloudflare Account ID
 #   INDEXNOW_KEY           （可选）IndexNow 密钥，任意 8-128 位十六进制字符串
 #   BAIDU_TOKEN            （可选）百度站长平台的推送 token
-#
-# 注意：本地 main 目前领先 origin/main 若干提交，需要先 git push 才会触发本 workflow。
-name: Deploy to Cloudflare Pages
+name: Deploy to Cloudflare Pages (manual)
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -19,7 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  SITE_URL: https://mango-astro.pages.dev
+  SITE_URL: https://mango-astro-git.pages.dev
   INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
   BAIDU_TOKEN: ${{ secrets.BAIDU_TOKEN }}
 
@@ -52,7 +53,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=mango-astro --branch main
+          command: pages deploy dist --project-name=mango-astro-git --branch main
 
       - name: Ping search engines
         run: node scripts/push-indexnow.mjs

@@ -6,7 +6,8 @@ import { rehypeOptimizeImages } from './src/utils/rehype-images.mjs';
 export default defineConfig({
   // 站点正式地址：影响 canonical / sitemap / RSS / OG 里的绝对链接。
   // 换域名时，必须同步修改 src/config/site.ts 的 siteConfig.url。
-  site: 'https://mango-astro.pages.dev',
+  // Cloudflare 构建时可用环境变量 SITE_URL 覆盖（预览分支想指向不同域名时用）。
+  site: process.env.SITE_URL || 'https://mango-astro-git.pages.dev',
   // 视口内的站内链接自动预取，跳转近乎瞬时。
   // 注意：这里只开 prefetch，不启用 ClientRouter（View Transitions）——
   // 后者会让全站 16 个组件的 <script> 在二次导航后不再执行，
