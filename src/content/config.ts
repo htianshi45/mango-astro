@@ -22,6 +22,9 @@ const postsCollection = defineCollection({
     sticky: z.number().optional().default(0),
     views: z.number().optional().default(0),
     likes: z.number().optional().default(0),
+    /** 系列/专栏名（P2-13）：留空表示不属于任何系列，同系列按 seriesOrder 排序 */
+    series: z.string().optional().default(''),
+    seriesOrder: z.number().optional().default(0),
     draft: z.boolean().optional().default(false),
   }),
 });

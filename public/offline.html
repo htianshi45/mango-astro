@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>暂时离线 · Mango</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100dvh; display: grid; place-items: center;
+    background: #f7f6f3; color: #26231f;
+    font: 15px/1.8 -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+  .box { text-align: center; padding: 32px; max-width: 420px; }
+  .box img { width: 72px; height: 72px; }
+  h1 { font-size: 20px; margin: 18px 0 8px; }
+  p { color: #57514a; margin: 0 0 22px; }
+  button {
+    border: none; border-radius: 999px; padding: 10px 24px;
+    background: #4270f5; color: #fff; font-size: 14px; cursor: pointer;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { background: #16151a; color: #e8e5df; }
+    p { color: #b3aea4; }
+  }
+</style>
+</head>
+<body>
+  <div class="box">
+    <img src="/images/logo.svg" alt="Mango">
+    <h1>现在处于离线状态</h1>
+    <p>这个页面还没有被缓存下来。恢复网络后点下面的按钮重试。</p>
+    <button type="button" onclick="location.reload()">重新加载</button>
+  </div>
+</body>
+</html>

@@ -743,3 +743,71 @@ html.lightbox-open body {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* ==================== P2-16 无障碍 ==================== */
+.skip-link {
+  position: fixed;
+  top: -64px;
+  left: 16px;
+  z-index: 10000;
+  padding: 9px 16px;
+  border-radius: 8px;
+  background: #4270f5;
+  color: #fff;
+  font-size: 13px;
+  text-decoration: none;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+  transition: top 0.18s ease;
+}
+.skip-link:focus { top: 12px; color: #fff; }
+
+:focus-visible { outline: 2px solid #4270f5; outline-offset: 2px; }
+.dark :focus-visible { outline-color: #8ab0ff; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==================== P2-15 打印 ==================== */
+@media print {
+  html, body { background: #fff !important; color: #000 !important; }
+  #site-header, footer, .sidebar, .floating-tools, #reading-progress,
+  .load-more, .pagination-nav, .index_banner, .comments-section,
+  .subscribe-box, .post-nav-grid, .post_related, .md-neighbours,
+  .mobile-tabbar, .search-palette, .skip-link, .reading-tools,
+  .post-loop .moment-more, #nav-overlay, #nav-drawer { display: none !important; }
+
+  main, .container {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .layout-sidebar { display: block !important; }
+  .layout-sidebar > * { width: 100% !important; }
+  .post_container, .post_container_title, .post_author, .post-loop,
+  .widget, .card {
+    background: #fff !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 12px 0 !important;
+    break-inside: avoid;
+  }
+  .post-content { font-size: 11pt !important; line-height: 1.6 !important; color: #000 !important; }
+  .post-content pre { white-space: pre-wrap !important; border: 1px solid #ccc !important; }
+  .post-content img { max-width: 100% !important; filter: none !important; }
+  a { color: #000 !important; text-decoration: underline !important; }
+  a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 9pt; color: #555; }
+  h1, h2, h3 { break-after: avoid; }
+}
+
+/* 移动端底栏占位，避免遮住页脚最后一行（P2-12） */
+@media (max-width: 768px) {
+  body { padding-bottom: calc(58px + env(safe-area-inset-bottom)); }
+}

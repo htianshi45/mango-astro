@@ -3,6 +3,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import Sidebar from '@/components/Sidebar.astro';
 import Comments from '@/components/Comments.astro';
 import PostStats from '@/components/PostStats.astro';
+import ReadingTools from '@/components/ReadingTools.astro';
+import PostPagination from '@/components/PostPagination.astro';
 import { getCollection } from 'astro:content';
 import { siteConfig } from '@/config/site';
 import { getSidebarData } from '@/utils/sidebar';
@@ -50,6 +52,18 @@ const displayRelated = allPosts
   .slice(0, 5)
   .map(({ candidate }) => candidate);
 
+// 同系列文章（P2-13）：按 seriesOrder 排成阅读顺序，只有 2 篇以上才值得显示
+const seriesName = (post.data.series || '').trim();
+const seriesPosts = seriesName
+  ? allPosts
+      .filter((p) => (p.data.series || '').trim() === seriesName)
+      .sort(
+        (a, b) =>
+          (a.data.seriesOrder ?? 0) - (b.data.seriesOrder ?? 0) ||
+          new Date(a.data.pubDate).getTime() - new Date(b.data.pubDate).getTime()
+      )
+  : [];
+
 // 字数与阅读时间：剥离代码块、图片、链接与 Markdown 标记后统计
 const plain = post.body
   .replace(/```[\s\S]*?```/g, '')
@@ -93,6 +107,8 @@ const sidebar = await getSidebarData();
         </h1>
       </div>
 
+      <ReadingTools published={post.data.pubDate} />
+
       <!-- Section 2: Content Card -->
       <div class="post_container">
         {siteConfig.features.toc && tocItems.length > 0 && (
@@ -114,6 +130,8 @@ const sidebar = await getSidebarData();
         <div class="prose prose-lg dark:prose-invert max-w-none post-content">
           <Content />
         </div>
+
+        <PostPagination />
 
         <!-- Tags -->
         {post.data.tags.length > 0 && (
@@ -199,6 +217,28 @@ const sidebar = await getSidebarData();
               <span class="post-nav-title">{newerPost.data.title}</span>
             </a>
           ) : <span></span>}
+        </div>
+      )}
+
+      <!-- Section 5: 本系列目录（P2-13） -->
+      {seriesPosts.length > 1 && (
+        <div class="post_series">
+          <h3 class="widget-title mb-4">
+            系列 · {seriesName}
+            <a href="/series/">全部系列 <i class="bi bi-arrow-right"></i></a>
+          </h3>
+          <ol>
+            {seriesPosts.map((sp, index) => (
+              <li class:list={[sp.slug === post.slug && 'current']}>
+                <span class="s-index">{String(index + 1).padStart(2, '0')}</span>
+                {sp.slug === post.slug ? (
+                  <strong>{sp.data.title}</strong>
+                ) : (
+                  <a href={`/posts/${sp.slug}`}>{sp.data.title}</a>
+                )}
+              </li>
+            ))}
+          </ol>
         </div>
       )}
 
@@ -588,4 +628,31 @@ const sidebar = await getSidebarData();
     color: #7ee2a8;
     border-color: rgba(126, 226, 168, 0.5);
   }
+
+  /* 系列目录（P2-13） */
+  .post_series {
+    background: #fff;
+    padding: 22px 30px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+  }
+  .post_series h3 { display: flex; align-items: center; gap: 8px; font-size: 15px; }
+  .post_series h3 a {
+    margin-left: auto; font-size: 12px; font-weight: 400;
+    color: #4270f5; text-decoration: none;
+  }
+  .post_series ol { list-style: none; margin: 0; padding: 0; }
+  .post_series li {
+    display: flex; align-items: baseline; gap: 10px;
+    padding: 8px 0; border-bottom: 1px dashed #eee; font-size: 14px;
+  }
+  .post_series li:last-child { border-bottom: none; }
+  .post_series li.current strong { color: #4270f5; font-weight: 600; }
+  .post_series li a { color: #444; text-decoration: none; }
+  .post_series li a:hover { color: #4270f5; }
+  .s-index { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: #aaa; }
+  :global(.dark) .post_series { background: #212121; }
+  :global(.dark) .post_series li { border-bottom-color: #333; }
+  :global(.dark) .post_series li a { color: #bbb; }
+  :global(.dark) .post_series h3 a { color: #8ab0ff; }
 </style>

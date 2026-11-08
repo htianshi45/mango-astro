@@ -50,6 +50,7 @@ const navItems = visibleNavItems(siteConfig.navItems);
                           <a
                             href={child.href}
                             class:list={['nav-dropdown-link', currentPath.replace(/\/+$/, '') === child.href && 'current']}
+                            aria-current={currentPath.replace(/\/+$/, '') === child.href ? 'page' : undefined}
                             {...(child.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                           >
                             {child.icon && <i class={child.icon}></i>}
@@ -64,6 +65,7 @@ const navItems = visibleNavItems(siteConfig.navItems);
                   <a
                     href={item.href}
                     class="nav-link"
+                    aria-current={active ? 'page' : undefined}
                     {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                   >
                     {item.icon && <i class:list={[item.icon, 'navbar-icon']}></i>}

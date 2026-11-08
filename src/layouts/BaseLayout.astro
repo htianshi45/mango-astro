@@ -4,6 +4,8 @@ import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
 import ThemeScript from '@components/ThemeScript.astro';
 import FloatingTools from '@components/FloatingTools.astro';
+import SearchPalette from '@components/SearchPalette.astro';
+import MobileTabBar from '@components/MobileTabBar.astro';
 import { siteConfig } from '@/config/site';
 
 interface Props {
@@ -73,6 +75,10 @@ const jsonLd =
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#16151a" media="(prefers-color-scheme: dark)" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
     <meta name="description" content={description} />
     <meta name="keywords" content={siteConfig.keywords.join(', ')} />
     <meta name="author" content={siteConfig.author} />
@@ -118,9 +124,12 @@ const jsonLd =
     class="antialiased"
     {...(!indexable ? { 'data-pagefind-ignore': '' } : {})}
   >
+    <a class="skip-link" href="#main-content">跳到主内容</a>
     <div class="min-h-screen flex flex-col">
       <Header />
       <main
+        id="main-content"
+        tabindex="-1"
         class:list={['flex-1 container mx-auto px-4', wide ? 'max-w-mango-wide' : 'max-w-mango']}
         {...(indexable ? { 'data-pagefind-body': '' } : {})}
       >
@@ -128,7 +137,18 @@ const jsonLd =
       </main>
       <Footer />
       <FloatingTools />
+      <SearchPalette />
+      <MobileTabBar />
     </div>
+
+    <!-- PWA：只在页面 load 后注册，失败静默（不影响任何功能） -->
+    <script is:inline>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('/sw.js').catch(function () {});
+        });
+      }
+    </script>
   </body>
 </html>
 

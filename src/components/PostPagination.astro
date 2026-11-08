@@ -1,0 +1,123 @@
+---
+/**
+ * 长文分页（P2-14）
+ *
+ * 用法：在 Markdown 正文里单独写一行 `<div data-pagebreak></div>`。
+ * Astro 会把它作为原生 HTML 块保留，组件据此把 .post-content 的直接子节点切页。
+ *
+ * 为什么用前端切页而不是构建期拆成多个静态页：
+ *   - 正文仍完整留在 HTML 里（只是隐藏），SEO 不丢内容；
+ *   - 不需要为每个分页再生成路由，也不影响 RSS / 搜索索引 / 目录锚点；
+ *   - 没有标记的文章完全不渲染控件，零影响。
+ */
+---
+
+<nav class="post-pages" id="post-pages" aria-label="文章分页" hidden></nav>
+
+<script>
+  const content = document.querySelector<HTMLElement>('.post-content');
+  const nav = document.getElementById('post-pages');
+
+  if (content && nav) {
+    const markers = Array.from(content.querySelectorAll('[data-pagebreak]'));
+    if (markers.length > 0) {
+      const children = Array.from(content.children);
+      const groups = [[]];
+      children.forEach((node) => {
+        if (node.hasAttribute('data-pagebreak')) {
+          node.remove();
+          groups.push([]);
+        } else {
+          groups[groups.length - 1].push(node);
+        }
+      });
+      const pages = groups.filter((group) => group.length > 0);
+      const total = pages.length;
+
+      const currentFromUrl = () => {
+        const n = Number(new URLSearchParams(window.location.search).get('page') || 1);
+        return Math.min(Math.max(1, Number.isFinite(n) ? Math.trunc(n) : 1), total);
+      };
+
+      const render = (page, updateUrl) => {
+        children.forEach((node) => {
+          if (node.isConnected) node.style.display = pages[page - 1].includes(node) ? '' : 'none';
+        });
+
+        nav.hidden = false;
+        nav.replaceChildren();
+
+        const makeButton = (label, target, disabled, isCurrent) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.textContent = label;
+          btn.disabled = disabled;
+          if (isCurrent) btn.setAttribute('aria-current', 'page');
+          btn.addEventListener('click', () => {
+            if (!disabled && target !== page) render(target, true);
+          });
+          return btn;
+        };
+
+        nav.appendChild(makeButton('‹ 上一页', page - 1, page === 1, false));
+        for (let i = 1; i <= total; i += 1) {
+          nav.appendChild(makeButton(String(i), i, false, i === page));
+        }
+        nav.appendChild(makeButton('下一页 ›', page + 1, page === total, false));
+
+        const hint = document.createElement('span');
+        hint.className = 'pp-hint';
+        hint.textContent = `第 ${page} / ${total} 页`;
+        nav.appendChild(hint);
+
+        if (updateUrl) {
+          const url = page === 1
+            ? window.location.pathname
+            : `${window.location.pathname}?page=${page}`;
+          window.history.pushState({ page }, '', url);
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+
+      render(currentFromUrl(), false);
+      window.addEventListener('popstate', () => render(currentFromUrl(), false));
+    }
+  }
+</script>
+
+<style>
+  .post-pages {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 26px 0 4px;
+    padding-top: 18px;
+    border-top: 1px solid #eee;
+  }
+  .post-pages[hidden] { display: none; }
+
+  /* 按钮由脚本动态生成，不带 scoped id，必须写纯全局选择器 */
+  :global(.post-pages button) {
+    min-width: 34px;
+    height: 32px;
+    padding: 0 10px;
+    border: 1px solid #e4e4e4;
+    border-radius: 6px;
+    background: #fff;
+    color: #666;
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color 0.16s ease, color 0.16s ease;
+  }
+  :global(.post-pages button:hover:not(:disabled)) { border-color: #4270f5; color: #4270f5; }
+  :global(.post-pages button[aria-current="page"]) {
+    background: #4270f5; border-color: #4270f5; color: #fff; font-weight: 600;
+  }
+  :global(.post-pages button:disabled) { opacity: 0.45; cursor: default; }
+  :global(.post-pages .pp-hint) { margin-left: auto; font-size: 12px; color: #999; }
+
+  :global(.dark) .post-pages { border-top-color: #333; }
+  :global(.dark .post-pages button) { background: #2a2a2a; border-color: #3a3a3a; color: #bbb; }
+  :global(.dark .post-pages button[aria-current="page"]) { background: #4270f5; border-color: #4270f5; color: #fff; }
+</style>

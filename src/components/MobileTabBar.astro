@@ -1,0 +1,95 @@
+---
+/**
+ * 移动端底部 Tab 栏（P2-12）
+ *
+ * 只在 ≤768px 显示，替代汉堡抽屉做一级入口。
+ * 「搜索」这一格触发全局 ⌘K 弹层（手机没有键盘快捷键），
+ * 派发自定义事件，避免与 Header 原有的展开式搜索条耦合。
+ */
+import { isPageEnabled } from '@/config/site';
+
+const pathname = Astro.url.pathname;
+const normalize = (p) => p.replace(/\/+$/, '') || '/';
+
+const tabs = [
+  { name: '首页', href: '/', icon: 'bi-house', key: 'home' },
+  { name: '说说', href: '/moments', icon: 'bi-chat-square-dots', key: 'moments', page: 'moments' as const },
+  { name: '搜索', href: '#', icon: 'bi-search', key: 'palette' },
+  { name: '我的', href: '/about', icon: 'bi-person', key: 'about' },
+];
+---
+
+<nav class="mobile-tabbar" aria-label="移动端主导航">
+  {tabs.map((tab) => {
+    if (tab.page && !isPageEnabled(tab.page)) return null;
+    const active = tab.key !== 'palette' && normalize(pathname) === normalize(tab.href);
+    return tab.key === 'palette' ? (
+      <button
+        type="button"
+        class="mt-tab"
+        data-open-palette
+        aria-label="打开站内搜索"
+      >
+        <i class={tab.icon}></i><span>{tab.name}</span>
+      </button>
+    ) : (
+      <a
+        href={tab.href}
+        class:list={['mt-tab', active && 'is-active']}
+        aria-current={active ? 'page' : undefined}
+      >
+        <i class={tab.icon}></i><span>{tab.name}</span>
+      </a>
+    );
+  })}
+</nav>
+
+<script>
+  document.querySelector('[data-open-palette]')?.addEventListener('click', () => {
+    document.dispatchEvent(new CustomEvent('open-search-palette'));
+  });
+</script>
+
+<style>
+  .mobile-tabbar { display: none; }
+
+  @media (max-width: 768px) {
+    .mobile-tabbar {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 9000;
+      height: calc(58px + env(safe-area-inset-bottom));
+      padding-bottom: env(safe-area-inset-bottom);
+      background: #fff;
+      border-top: 1px solid #eceae5;
+      box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.05);
+    }
+
+    .mt-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      padding: 0;
+      border: none;
+      background: transparent;
+      color: #8b8780;
+      font: inherit;
+      font-size: 11px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .mt-tab i { font-size: 19px; line-height: 1; }
+    .mt-tab.is-active { color: #4270f5; }
+    .mt-tab:focus-visible { outline: 2px solid #4270f5; outline-offset: -3px; }
+
+    :global(.dark) .mobile-tabbar { background: #1e1d23; border-top-color: #33323a; }
+    :global(.dark) .mt-tab { color: #8d8a84; }
+    :global(.dark) .mt-tab.is-active { color: #8ab0ff; }
+  }
+</style>

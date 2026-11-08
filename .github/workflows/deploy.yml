@@ -1,0 +1,58 @@
+# P2-20 · push 到 main 自动构建并部署到 Cloudflare Pages
+#
+# 首次使用前，在 GitHub 仓库 Settings → Secrets and variables → Actions 添加：
+#   CLOUDFLARE_API_TOKEN   Cloudflare API Token（含 Cloudflare Pages 编辑权限）
+#   CLOUDFLARE_ACCOUNT_ID  Cloudflare Account ID
+#   INDEXNOW_KEY           （可选）IndexNow 密钥，任意 8-128 位十六进制字符串
+#   BAIDU_TOKEN            （可选）百度站长平台的推送 token
+#
+# 注意：本地 main 目前领先 origin/main 若干提交，需要先 git push 才会触发本 workflow。
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: true
+
+env:
+  SITE_URL: https://mango-astro.pages.dev
+  INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
+  BAIDU_TOKEN: ${{ secrets.BAIDU_TOKEN }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # IndexNow 要求根目录下有 <key>.txt，必须在构建之前写进 public/
+      - name: Write IndexNow verification file
+        run: node scripts/push-indexnow.mjs --write-key
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=mango-astro --branch main
+
+      - name: Ping search engines
+        run: node scripts/push-indexnow.mjs

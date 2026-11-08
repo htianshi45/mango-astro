@@ -26,7 +26,7 @@ export async function GET() {
     if (post.data.category) categories.add(post.data.category);
   });
 
-  const staticPaths = ['/', '/about'];
+  const staticPaths = ['/', '/about', '/series'];
   if (pageToggles.search) staticPaths.push('/search');
   if (pageToggles.tags) staticPaths.push('/tags');
   if (pageToggles.archive) staticPaths.push('/archive');
