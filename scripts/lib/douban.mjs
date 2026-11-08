@@ -235,6 +235,48 @@ async function fetchMovieAbstract(id) {
   return { data: json.subject, fromCache: false };
 }
 
+/**
+ * 电影专用：移动版 Rexxar 接口拿真正的剧情简介。
+ *
+ * 为什么需要它：桌面页常年被「安全验证」拦截、og:description 拿不到；
+ * 摘要接口 j/subject_abstract 里只有 short_comment（第一条热门短评）——
+ * 之前直接拿短评当简介是错的。Rexxar 的 intro 字段才是影片简介，
+ * 豆瓣自己的移动端前端就用它，带 Referer 即可访问，无需登录。
+ */
+async function fetchMovieIntro(id) {
+  const cached = readCache(`movie-intro-${id}.json`);
+  if (cached) {
+    try {
+      const parsed = JSON.parse(cached);
+      if (parsed && typeof parsed.intro === 'string' && parsed.intro) {
+        return { intro: parsed.intro, fromCache: true };
+      }
+    } catch {
+      /* 缓存坏了就重新拉 */
+    }
+  }
+  const res = await fetch(`https://m.douban.com/rexxar/api/v2/movie/${id}?loc_id=0`, {
+    headers: {
+      // Rexxar 是移动端接口，用 iPhone UA + 对应条目页 Referer 才稳定
+      'User-Agent':
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+      Accept: 'application/json, text/plain, */*',
+      'Accept-Language': 'zh-CN,zh;q=0.9',
+      Referer: `https://m.douban.com/movie/subject/${id}/`,
+    },
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!res.ok) throw new Error(`简介接口 HTTP ${res.status}`);
+  const json = await res.json();
+  // intro 是带 <p> 标签的 HTML，剥掉标签再交给 cleanDescription
+  const intro = String(json?.intro || '')
+    .replace(/<[^>]+>/g, ' ')
+    .trim();
+  if (!intro) throw new Error('简介接口无 intro 字段');
+  writeCache(`movie-intro-${id}.json`, JSON.stringify({ intro }));
+  return { intro, fromCache: false };
+}
+
 async function loadPage(kind, id) {
   const cached = readCache(`${kind}-${id}.html`);
   if (cached) return { html: cached, fromCache: true };
@@ -421,7 +463,7 @@ export function parseMoviePage(html) {
   };
 }
 
-function fromMovieAbstract(subject, page) {
+function fromMovieAbstract(subject, page, intro = '') {
   const rawTitle = String(subject.title || '').replace(/\s*[\u200e\u200f]?\s*\((\d{4})\)\s*$/, '').trim();
   const cleanTitle = String(subject.title || '')
     .replace(/\s*[\u200e\u200f]?\s*\((\d{4})\)\s*$/, '')
@@ -433,7 +475,11 @@ function fromMovieAbstract(subject, page) {
   return {
     title,
     cover: page?.cover || '',
-    description: page?.description || cleanDescription(subject.short_comment?.content || ''),
+    description:
+      page?.description ||
+      cleanDescription(intro) ||
+      // 最后的兜底：简介实在拿不到时才用第一条热门短评凑数
+      cleanDescription(subject.short_comment?.content || ''),
     creator: firstOf((subject.directors || []).join(' / ')) || page?.creator || '',
     year: String(subject.release_year || page?.year || ''),
     rating: Number(subject.rate) || page?.rating || 0,
@@ -481,7 +527,16 @@ export async function fetchDoubanItem(text, { forceKind = '' } = {}) {
     } catch {
       /* 封面/简介拿不到就先空着，不阻塞 */
     }
-    const merged = fromMovieAbstract(data, page);
+    // og:description 没拿到时，用 Rexxar 接口补真正的剧情简介
+    let intro = '';
+    if (!page?.description) {
+      try {
+        intro = (await fetchMovieIntro(found.id)).intro;
+      } catch {
+        /* 简介拿不到就退回短评兜底，不阻塞导入 */
+      }
+    }
+    const merged = fromMovieAbstract(data, page, intro);
     if (!merged.title) throw new Error('摘要接口没返回标题');
     return await finalize(merged, kind, found.id, fromCache);
   } catch (abstractError) {
