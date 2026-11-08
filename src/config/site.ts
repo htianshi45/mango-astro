@@ -187,7 +187,9 @@ export const siteConfig = {
     mode: 'list' as 'list' | 'grid',
     /** 封面放下侧（'right'）还是放在左侧（'left'） */
     coverSide: 'right' as 'right' | 'left',
-    /** 封面占卡片宽度的百分比 */
+    /** 列表卡片是否显示封面图（2026-11-08 起关闭：纯文字卡片更干净） */
+    showCover: false,
+    /** 封面占卡片宽度的百分比（showCover 为 false 时不生效） */
     coverWidth: '30%',
     /** 摘要行数，0 = 不截断 */
     descriptionLines: 2,

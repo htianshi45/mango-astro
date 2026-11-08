@@ -69,6 +69,8 @@ function formatDate(date: string | Date): string {
 }
 
 const hasCover = !!cover;
+/** 封面开关：postListLayout.showCover = false 时整卡不出现图片，回退纯文字卡 */
+const showCover = hasCover && cfg.showCover !== false;
 const shownTags = cfg.meta.tagCount > 0 ? tags.slice(0, cfg.meta.tagCount) : tags;
 const hiddenTagCount = Math.max(0, tags.length - shownTags.length);
 const coverStyle = `--cover-w:${cfg.coverWidth};--desc-lines:${cfg.descriptionLines}`;
@@ -77,7 +79,7 @@ const coverStyle = `--cover-w:${cfg.coverWidth};--desc-lines:${cfg.descriptionLi
 <article
   class:list={[
     'post-row',
-    hasCover && 'has-cover',
+    showCover && 'has-cover',
     mode === 'grid' && 'is-grid',
     cfg.coverSide === 'left' && 'cover-left',
     sticky && 'is-sticky',
@@ -154,8 +156,8 @@ const coverStyle = `--cover-w:${cfg.coverWidth};--desc-lines:${cfg.descriptionLi
     </div>
   </div>
 
-  <!-- 封面 -->
-  {hasCover && (
+  <!-- 封面（postListLayout.showCover = false 时不渲染） -->
+  {showCover && (
     <a href={href} class="post-row-cover" aria-label={title} tabindex="-1">
       <img {...imageAttrs(cover, { sizes: '(max-width: 640px) 90vw, 260px' })} alt={title} />
       <span class="cover-mask"></span>
