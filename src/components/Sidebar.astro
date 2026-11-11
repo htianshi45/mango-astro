@@ -133,12 +133,12 @@ const hotPosts = [...posts]
     }
   }
 
-  /* 窄屏（侧栏被挤到主栏下方）不吸顶，按正常流排 */
+  /* 窄屏（<1024px）整块隐藏。必须 !important：
+     scoped 的 .sidebar[data-astro-cid]{display:flex} 与全局隐藏规则特异性相同（0-2-0），
+     Astro 7 分包后组件样式排在全局规则之后，不用 !important 会被打穿。 */
   @media (max-width: 1023px) {
-    .sidebar-sticky {
-      position: static;
-      max-height: none;
-      overflow: visible;
+    .sidebar {
+      display: none !important;
     }
   }
 </style>

@@ -734,9 +734,11 @@ html.lightbox-open body {
 
 /* 手机 / 平板（<1024px）不显示边栏：
    小屏下边栏只会整坨堆在正文后面，又长又吵。纯 CSS 隐藏，
-   DOM 仍在（无障碍爬虫不受影响），要恢复删掉这条媒体查询即可。 */
+   DOM 仍在（无障碍爬虫不受影响），要恢复删掉这条媒体查询即可。
+   !important 防御：组件 scoped 的 .sidebar[data-astro-cid]{display:flex}
+   特异性与本规则相同，分包顺序变化时会打穿隐藏（2026-11-12 实际发生过）。 */
 @media (max-width: 1023px) {
-  .layout-sidebar .sidebar { display: none; }
+  .layout-sidebar .sidebar { display: none !important; }
 }
 
 /* 宽版心下的列表容器：窄屏保持单列，宽屏排两列（grid 模式用） */
