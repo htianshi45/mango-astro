@@ -1,0 +1,166 @@
+---
+/**
+ * /tools/upload —— 独立上传工具页（不进全站导航、不被索引）
+ *
+ * 用途：选图 → 浏览器内压缩为 WebP（≤1200px、q82）→ POST /api/upload 入 R2 桶
+ *       → 返回可粘贴进文章的完整 URL。
+ *
+ * 为什么在浏览器里压：Pages Functions 是 Workers 运行时，跑不了 sharp；
+ * canvas.toBlob('image/webp') 是浏览器原生编码，效果接近，还省流量。
+ *
+ * 鉴权：访问密钥存 localStorage（'mango:upload-key'），输入一次后记住。
+ */
+---
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>图片上传 · Mango</title>
+    <style>
+      :root { color-scheme: light dark; }
+      body {
+        font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        max-width: 640px; margin: 0 auto; padding: 40px 20px 60px;
+        background: #fafafa; color: #24292f; line-height: 1.6;
+      }
+      @media (prefers-color-scheme: dark) {
+        body { background: #16151a; color: #e6e6e6; }
+        .card { background: #1f1e24 !important; border-color: #33323a !important; }
+        .item { background: #26252c !important; }
+        input, textarea { background: #26252c !important; color: inherit !important; border-color: #3d3c44 !important; }
+      }
+      h1 { font-size: 22px; } p.tip { color: #8b8f98; font-size: 13px; }
+      .card {
+        background: #fff; border: 1px solid #e1e4e8; border-radius: 12px;
+        padding: 20px; margin-top: 16px;
+      }
+      label { font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px; }
+      input[type="password"], input[type="text"] {
+        width: 100%; padding: 9px 12px; border: 1px solid #d0d7de; border-radius: 8px;
+        font-size: 14px; box-sizing: border-box;
+      }
+      #picker { margin-top: 14px; width: 100%; padding: 26px; border: 2px dashed #b9bec7;
+        border-radius: 10px; text-align: center; color: #6a737d; cursor: pointer; box-sizing: border-box; }
+      #picker.drag { border-color: #3b82f6; color: #3b82f6; }
+      button {
+        background: #2563eb; color: #fff; border: 0; border-radius: 8px;
+        padding: 8px 14px; font-size: 13px; cursor: pointer;
+      }
+      button:hover { background: #1d4ed8; }
+      .item {
+        display: flex; align-items: center; gap: 12px; background: #f3f4f6;
+        border-radius: 10px; padding: 10px 12px; margin-top: 10px;
+      }
+      .item img { width: 56px; height: 42px; object-fit: cover; border-radius: 6px; }
+      .item .info { flex: 1; min-width: 0; }
+      .item .url { font-size: 12px; word-break: break-all; color: #57606a; }
+      .item .meta { font-size: 11px; color: #8b949e; }
+      .item button { flex-shrink: 0; }
+      .err { color: #cf222e; font-size: 13px; margin-top: 8px; }
+      .ok { color: #1a7f37; }
+      #status { font-size: 13px; margin-top: 10px; }
+    </style>
+  </head>
+  <body>
+    <h1>图片上传</h1>
+    <p class="tip">上传到站点 R2 桶，压缩在浏览器本地完成（WebP ≤1200px），不占仓库体积。复制返回的 URL 粘进文章即可。</p>
+
+    <div class="card">
+      <label for="token">访问密钥</label>
+      <input type="password" id="token" placeholder="UPLOAD_KEY" autocomplete="off" />
+    </div>
+
+    <div class="card">
+      <div id="picker">点击选择图片，或把图片拖到这里<br /><span style="font-size:11px">可多选 · JPG / PNG / WebP，压缩后单张约 100–500KB</span></div>
+      <input type="file" id="file" accept="image/*" multiple hidden />
+      <div id="status"></div>
+      <div id="results"></div>
+      <div class="err" id="err"></div>
+    </div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const tokenInput = $('token');
+      tokenInput.value = localStorage.getItem('mango:upload-key') || '';
+      tokenInput.addEventListener('change', () => localStorage.setItem('mango:upload-key', tokenInput.value.trim()));
+
+      const picker = $('picker');
+      picker.addEventListener('click', () => $('file').click());
+      picker.addEventListener('dragover', (e) => { e.preventDefault(); picker.classList.add('drag'); });
+      picker.addEventListener('dragleave', () => picker.classList.remove('drag'));
+      picker.addEventListener('drop', (e) => { e.preventDefault(); picker.classList.remove('drag'); handle([...e.dataTransfer.files]); });
+      $('file').addEventListener('change', (e) => handle([...e.target.files]));
+
+      function fail(msg) { $('err').textContent = msg; }
+      function setStatus(msg) { $('status').textContent = msg; }
+
+      // 浏览器内压缩：等比缩到 ≤1200px 宽，WebP q82；编码失败回退原图
+      async function compress(file) {
+        let bitmap;
+        try { bitmap = await createImageBitmap(file); } catch { return { blob: file, ext: (file.name.split('.').pop() || 'jpg').toLowerCase() }; }
+        const scale = Math.min(1, 1200 / bitmap.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(bitmap.width * scale);
+        canvas.height = Math.round(bitmap.height * scale);
+        canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        const blob = await new Promise((r) => canvas.toBlob(r, 'image/webp', 0.82));
+        return blob ? { blob, ext: 'webp' } : { blob: file, ext: (file.name.split('.').pop() || 'jpg').toLowerCase() };
+      }
+
+      async function sha1Hex(buf) {
+        const d = await crypto.subtle.digest('SHA-1', buf);
+        return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 10);
+      }
+
+      async function handle(files) {
+        fail('');
+        const token = tokenInput.value.trim();
+        if (!token) { fail('请先填写访问密钥'); return; }
+        localStorage.setItem('mango:upload-key', token);
+
+        for (const file of files) {
+          if (!file.type.startsWith('image/')) continue;
+          setStatus(`正在处理 ${file.name} …`);
+          try {
+            const { blob, ext } = await compress(file);
+            const year = new Date().getFullYear();
+            const hash = await sha1Hex(await blob.arrayBuffer());
+            const key = `p/${year}/${hash}.${ext}`;
+            const form = new FormData();
+            form.append('key', key);
+            form.append('file', new File([blob], key, { type: blob.type }));
+            const res = await fetch('/api/upload', { method: 'POST', headers: { 'X-Upload-Token': token }, body: form });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) { fail(data.error || `上传失败 (${res.status})`); setStatus(''); continue; }
+            addItem(data.url, blob.size, file.size);
+            setStatus('');
+          } catch (e) { fail('处理失败：' + e.message); setStatus(''); }
+        }
+        $('file').value = '';
+      }
+
+      function addItem(url, newSize, origSize) {
+        const div = document.createElement('div');
+        div.className = 'item';
+        const kb = (n) => Math.round(n / 102.4) / 10 + 'KB';
+        div.innerHTML = `
+          <img src="${url}" alt="" />
+          <div class="info">
+            <div class="url">${url}</div>
+            <div class="meta">${kb(origSize)} → ${kb(newSize)}${ext(url) === 'webp' ? ' (webp)' : ''}</div>
+          </div>
+          <button type="button">复制</button>`;
+        div.querySelector('button').addEventListener('click', async (e) => {
+          await navigator.clipboard.writeText(url);
+          e.target.textContent = '已复制';
+          setTimeout(() => (e.target.textContent = '复制'), 1500);
+        });
+        $('results').prepend(div);
+      }
+
+      const ext = (u) => (u.match(/\.([a-z0-9]+)$/i) || [])[1] || '';
+    </script>
+  </body>
+</html>

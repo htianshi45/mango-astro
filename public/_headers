@@ -2,6 +2,16 @@
 # 说明：带内容哈希的构建产物可以永久缓存；public 下的资源按目录给不同 TTL。
 # HTML 保持 Pages 默认的 max-age=0（内容更新后立刻生效），不要给 *.html 加长缓存。
 
+# 全站安全响应头（2026-11-12）
+# 注意：不设 Content-Security-Policy —— 本站大量使用 Astro 内联脚本/样式，
+# 严格 CSP 会在浏览器侧拦截它们；等升级 Astro 6 后用官方 CSP API（自动哈希）再开。
+/*
+  Strict-Transport-Security: max-age=63072000; includeSubDomains
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+
 /_astro/*
   Cache-Control: public, max-age=31536000, immutable
 

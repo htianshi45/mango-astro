@@ -279,6 +279,16 @@ export const siteConfig = {
     limit: 5,
   },
 
+  /**
+   * Cloudflare Web Analytics（官方免费、无 Cookie、不影响性能）。
+   * 开启方式：dash.cloudflare.com → Analytics & Logs → Web Analytics →
+   * Add a site → 「Install manually」→ 把 JS 片段里 token 的值填到下面。
+   * 留空时本站不会向 cloudflareinsights 发起任何请求。
+   */
+  analytics: {
+    cloudflareKey: '',
+  },
+
   /** 邮件订阅（P1-7）：填 Buttondown / follow.it 等服务的表单 action 即可启用 */
   subscribe: {
     enabled: false,

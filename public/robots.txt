@@ -4,5 +4,7 @@
 User-agent: *
 Allow: /
 Disallow: /admin/
+Disallow: /tools/
+Disallow: /api/
 
 Sitemap: https://mango-astro-git.pages.dev/sitemap.xml

@@ -19,3 +19,12 @@ pages_build_output_dir = "dist"
 [[kv_namespaces]]
 binding = "mango_stats"
 id = "3d55bce045be421e89978a21a8a57b1a"
+
+# 图片上传（R2 桶，2026-11-12）
+# Functions：functions/api/upload.js（写入）与 functions/img/[[key]].js（读取回源）。
+# ⚠️ 启用步骤：① 控制台 R2 页面点「Enable R2」（一次性，免费额度内不收费）
+#    ② wrangler r2 bucket create mango-img
+#    ③ 解开下面的注释，push 后生效；未启用时 /api/upload 返回 503。
+# [[r2_buckets]]
+# binding = "MANGO_IMG"
+# bucket_name = "mango-img"

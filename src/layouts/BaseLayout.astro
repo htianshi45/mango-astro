@@ -141,6 +141,16 @@ const jsonLd =
       <MobileTabBar />
     </div>
 
+    <!-- Cloudflare Web Analytics：无 Cookie 的官方统计，token 在 siteConfig.analytics 配置 -->
+    {siteConfig.analytics?.cloudflareKey && (
+      <script
+        is:inline
+        defer
+        src="https://static.cloudflareinsights.com/beacon.min.js"
+        data-cf-beacon={JSON.stringify({ token: siteConfig.analytics.cloudflareKey })}
+      ></script>
+    )}
+
     <!-- PWA：只在页面 load 后注册，失败静默（不影响任何功能） -->
     <script is:inline>
       if ('serviceWorker' in navigator) {
