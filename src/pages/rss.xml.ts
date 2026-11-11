@@ -29,7 +29,7 @@ export async function GET() {
     .map((entry) => {
       if (entry.type === 'post') {
         const post = entry.post;
-        const link = new URL(`/posts/${post.slug}`, siteConfig.url).href;
+        const link = new URL(`/posts/${post.id}`, siteConfig.url).href;
         const description = esc(post.data.description || '');
         const categories = (post.data.tags || [])
           .map((tag) => `<category>${esc(tag)}</category>`)

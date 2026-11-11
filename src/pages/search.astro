@@ -137,7 +137,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       return {
         mode: 'index',
         items: searchPosts(query).map((post) => ({
-          url: `/posts/${encodeURIComponent(post.slug)}`,
+          url: `/posts/${encodeURIComponent(post.id)}`,
           title: post.title,
           description: post.description,
           tags: post.tags || [],

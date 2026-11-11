@@ -126,7 +126,7 @@ export function buildSidebarData(posts: PostEntry[]) {
   const tags = Array.from(tagCounts.entries()).map(([name, count]) => ({ name, count }));
   const postData = posts.map((post) => ({
     title: post.data.title,
-    slug: post.slug,
+    slug: post.id,
     timestamp: post.data.pubDate,
     views: post.data.views,
     heroImage: post.data.heroImage ?? extractImages(post.body)[0],

@@ -1,4 +1,9 @@
 import { z, defineCollection } from 'astro:content';
+import { glob } from 'astro/loaders';
+
+// Astro 7 起必须用 Content Layer（legacy collections 已移除）：
+// glob loader 的 id = 文件相对路径去扩展名，与旧版 slug 一致，
+// 所以 /posts/<slug>/ 等 URL 全部不变。
 
 // CMS 未填日期时会写成空字符串，空串不能直接 coerce 成 Date。
 const optionalDate = z.preprocess(
@@ -7,7 +12,7 @@ const optionalDate = z.preprocess(
 );
 
 const postsCollection = defineCollection({
-  type: 'content',
+  loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/posts' }),
   schema: z.object({
     title: z.string(),
     description: z.string().optional(),
@@ -35,7 +40,7 @@ const postsCollection = defineCollection({
  * 与文章共用首页时间流，但独立归档页 /moments/。
  */
 const momentsCollection = defineCollection({
-  type: 'content',
+  loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/moments' }),
   schema: z.object({
     published: z.coerce.date(),
     updatedDate: optionalDate,
@@ -54,7 +59,7 @@ const momentsCollection = defineCollection({
  * 正文写短评（Markdown），frontmatter 全结构化。
  */
 const favoritesCollection = defineCollection({
-  type: 'content',
+  loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/favorites' }),
   schema: z.object({
     title: z.string(),
     category: z.enum(['bookmarks', 'books', 'movies', 'music']),

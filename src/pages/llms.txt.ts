@@ -23,7 +23,7 @@ export async function GET() {
     '## 文章',
     '',
     ...posts.map((post) =>
-      `- [${post.data.title}](${url(`/posts/${post.slug}`)})${post.data.description ? `: ${post.data.description}` : ''}`
+      `- [${post.data.title}](${url(`/posts/${post.id}`)})${post.data.description ? `: ${post.data.description}` : ''}`
     ),
     '',
     '## 说说',

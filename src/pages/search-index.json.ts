@@ -18,7 +18,7 @@ export async function GET() {
     .sort((a, b) => new Date(b.data.pubDate).getTime() - new Date(a.data.pubDate).getTime())
     .map((post) => ({
       title: post.data.title,
-      slug: post.slug,
+      slug: post.id,
       description: post.data.description || '',
       tags: post.data.tags || [],
       category: post.data.category || '',

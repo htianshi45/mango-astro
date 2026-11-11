@@ -58,7 +58,7 @@ export async function GET() {
 
   posts.forEach((post) => {
     const d = postDay(post);
-    lastmodByPath.set(`/posts/${post.slug}`, d);
+    lastmodByPath.set(`/posts/${post.id}`, d);
     (post.data.tags || []).forEach((tag) => {
       const key = `/tags/${encodeURIComponent(tag)}`;
       if (!lastmodByPath.has(key) || lastmodByPath.get(key)! < d) lastmodByPath.set(key, d);
@@ -87,7 +87,7 @@ export async function GET() {
 
   const paths = [
     ...staticPaths,
-    ...posts.map((post) => `/posts/${post.slug}`),
+    ...posts.map((post) => `/posts/${post.id}`),
     ...moments.map((moment) => `/moments/${momentSlug(moment.id)}`),
     ...Array.from(tags).map((tag) => `/tags/${encodeURIComponent(tag)}`),
     ...Array.from(categories).map((category) => `/categories/${encodeURIComponent(category)}`),

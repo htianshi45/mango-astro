@@ -28,7 +28,7 @@ const listClass = isGrid ? 'post-grid-2' : 'space-y-5';
       return (
         <PostCard
           title={entry.post.data.title}
-          slug={entry.post.slug}
+          slug={entry.post.id}
           content={entry.post.data.description || ''}
           cover={entry.post.data.heroImage || entry.images[0] || ''}
           images={entry.images}

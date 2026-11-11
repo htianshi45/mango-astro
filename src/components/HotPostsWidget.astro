@@ -31,9 +31,8 @@ function formatDay(date?: string | Date): string {
   <ul class="widget_hot_post">
     {displayPosts.map((post, index) => (
       <li class:list={['widget_hot_li', index === 0 && 'first']}>
-        <a href={`/posts/${post.slug}`} class="block group">
+        <a href={`/posts/${post.id}`} class="block group">
           {index === 0 && post.heroImage ? (
-            <!-- First post with large image -->
             <div class="relative rounded overflow-hidden mb-3">
               <img {...imageAttrs(post.heroImage, { sizes: '(max-width: 1024px) 90vw, 281px', style: 'aspect-ratio: 4 / 3;' })} alt={post.title} class="w-full object-cover" />
               <div class="hot_post_info absolute inset-0 flex flex-col justify-end p-3">
@@ -47,7 +46,6 @@ function formatDay(date?: string | Date): string {
               </div>
             </div>
           ) : (
-            <!-- Other posts with thumbnail -->
             <div class="flex items-start">
               {post.heroImage && (
                 <img {...imageAttrs(post.heroImage, { sizes: '80px' })} alt={post.title} class="hot-post-thumb mr-[15px]" />

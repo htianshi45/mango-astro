@@ -28,7 +28,7 @@ export async function GET() {
     .map((entry) => {
       if (entry.type === 'post') {
         const post = entry.post;
-        const link = new URL(`/posts/${post.slug}`, siteConfig.url).href;
+        const link = new URL(`/posts/${post.id}`, siteConfig.url).href;
         const summary = esc(post.data.description || post.data.title);
         const published = new Date(post.data.pubDate).toISOString();
         return [

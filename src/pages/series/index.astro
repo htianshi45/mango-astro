@@ -42,7 +42,7 @@ seriesOrder: 1</code></pre>
           <ol>
             {group.items.map((post) => (
               <li>
-                <a href={`/posts/${post.slug}`}>
+                <a href={`/posts/${post.id}`}>
                   <span class="s-title">{post.data.title}</span>
                   <span class="s-date">{new Date(post.data.pubDate).toISOString().slice(0, 10)}</span>
                 </a>

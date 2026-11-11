@@ -38,7 +38,7 @@ const tags = Array.from(tagCounts.entries()).map(([name, count]) => ({ name, cou
 
 const postData = allPosts.map(post => ({
   title: post.data.title,
-  slug: post.slug,
+  slug: post.id,
   timestamp: post.data.pubDate,
   views: post.data.views,
   heroImage: post.data.heroImage ?? extractImages(post.body)[0],
@@ -69,7 +69,7 @@ const isGrid = siteConfig.postListLayout.mode === 'grid';
           return (
             <PostCard
               title={post.data.title}
-              slug={post.slug}
+              slug={post.id}
               content={post.data.description || ''}
               cover={post.data.heroImage || extractImages(post.body)[0] || ''}
               images={extractImages(post.body)}

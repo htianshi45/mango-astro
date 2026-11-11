@@ -5,7 +5,7 @@ import Comments from '@/components/Comments.astro';
 import PostStats from '@/components/PostStats.astro';
 import ReadingTools from '@/components/ReadingTools.astro';
 import PostPagination from '@/components/PostPagination.astro';
-import { getCollection } from 'astro:content';
+import { getCollection, render } from 'astro:content';
 import { siteConfig } from '@/config/site';
 import { getSidebarData } from '@/utils/sidebar';
 import { imageAttrs } from '@/utils/image-attrs';
@@ -13,13 +13,13 @@ import { imageAttrs } from '@/utils/image-attrs';
 export async function getStaticPaths() {
   const posts = await getCollection('posts');
   return posts.map((post) => ({
-    params: { slug: post.slug },
+    params: { slug: post.id },
     props: { post },
   }));
 }
 
 const { post } = Astro.props;
-const { Content, headings } = await post.render();
+const { Content, headings } = await render(post);
 
 const allPosts = await getCollection('posts', ({ data }) => data.draft !== true);
 const sortedPosts = allPosts.sort((a, b) => {
@@ -27,7 +27,7 @@ const sortedPosts = allPosts.sort((a, b) => {
   return new Date(b.data.pubDate).getTime() - new Date(a.data.pubDate).getTime();
 });
 
-const currentIndex = sortedPosts.findIndex((p) => p.slug === post.slug);
+const currentIndex = sortedPosts.findIndex((p) => p.id === post.id);
 const newerPost = currentIndex > 0 ? sortedPosts[currentIndex - 1] : null;
 const olderPost = currentIndex >= 0 && currentIndex < sortedPosts.length - 1 ? sortedPosts[currentIndex + 1] : null;
 
@@ -36,7 +36,7 @@ const olderPost = currentIndex >= 0 && currentIndex < sortedPosts.length - 1 ? s
 const ownTags = new Set(post.data.tags || []);
 const ownTime = new Date(post.data.pubDate).getTime();
 const displayRelated = allPosts
-  .filter((p) => p.slug !== post.slug)
+  .filter((p) => p.id !== post.id)
   .map((candidate) => {
     const sharedTags = (candidate.data.tags || []).filter((tag) => ownTags.has(tag)).length;
     const sameCategory = post.data.category && candidate.data.category === post.data.category ? 1 : 0;
@@ -78,9 +78,9 @@ const readingMinutes = Math.max(1, Math.ceil(wordCount / 300));
 
 const tocItems = headings.filter((h) => h.depth >= 2 && h.depth <= 3);
 const publishedTime = new Date(post.data.pubDate).toISOString();
-const shareUrl = new URL(`/posts/${post.slug}`, siteConfig.url).href;
+const shareUrl = new URL(`/posts/${post.id}`, siteConfig.url).href;
 // 文章分享卡用 1200×630 的构建期生成图（npm run og），比封面原图更适配社交平台
-const ogImage = `/og/posts/${post.slug}.jpg`;
+const ogImage = `/og/posts/${post.id}.jpg`;
 
 // 文章页侧栏：目录 + 热门文章 + 标签（作者信息正文下方已有，不再重复）
 const sidebar = await getSidebarData();
@@ -158,7 +158,7 @@ const sidebar = await getSidebarData();
               <i class="bi bi-clock mr-1"></i>约 {readingMinutes} 分钟
             </span>
           )}
-          <PostStats slug={post.slug} views={post.data.views || 0} likes={post.data.likes || 0} />
+          <PostStats slug={post.id} views={post.data.views || 0} likes={post.data.likes || 0} />
         </div>
       </div>
 
@@ -206,13 +206,13 @@ const sidebar = await getSidebarData();
       {siteConfig.features.postNavigation && (newerPost || olderPost) && (
         <div class="post-nav-grid">
           {olderPost ? (
-            <a href={`/posts/${olderPost.slug}`} class="post-nav-item">
+            <a href={`/posts/${olderPost.id}`} class="post-nav-item">
               <span class="post-nav-label"><i class="bi bi-arrow-left mr-1"></i>较早一篇</span>
               <span class="post-nav-title">{olderPost.data.title}</span>
             </a>
           ) : <span></span>}
           {newerPost ? (
-            <a href={`/posts/${newerPost.slug}`} class="post-nav-item post-nav-right">
+            <a href={`/posts/${newerPost.id}`} class="post-nav-item post-nav-right">
               <span class="post-nav-label">较新一篇<i class="bi bi-arrow-right ml-1"></i></span>
               <span class="post-nav-title">{newerPost.data.title}</span>
             </a>
@@ -229,12 +229,12 @@ const sidebar = await getSidebarData();
           </h3>
           <ol>
             {seriesPosts.map((sp, index) => (
-              <li class:list={[sp.slug === post.slug && 'current']}>
+              <li class:list={[sp.id === post.id && 'current']}>
                 <span class="s-index">{String(index + 1).padStart(2, '0')}</span>
-                {sp.slug === post.slug ? (
+                {sp.id === post.id ? (
                   <strong>{sp.data.title}</strong>
                 ) : (
-                  <a href={`/posts/${sp.slug}`}>{sp.data.title}</a>
+                  <a href={`/posts/${sp.id}`}>{sp.data.title}</a>
                 )}
               </li>
             ))}
@@ -249,7 +249,7 @@ const sidebar = await getSidebarData();
           <ul class="space-y-2">
             {displayRelated.map((rp) => (
               <li class="text-sm">
-                <a href={`/posts/${rp.slug}`} class="text-[#333] dark:text-[#ccc] hover:text-mango transition-colors duration-200 flex items-center">
+                <a href={`/posts/${rp.id}`} class="text-[#333] dark:text-[#ccc] hover:text-mango transition-colors duration-200 flex items-center">
                   <span class="w-1.5 h-1.5 rounded-full bg-mango mr-2 flex-shrink-0"></span>
                   {rp.data.title}
                 </a>
@@ -260,7 +260,7 @@ const sidebar = await getSidebarData();
       )}
 
       <!-- Section 6: 评论区（未配置 giscus 时不渲染） -->
-      <Comments term={`/posts/${post.slug}`} />
+      <Comments term={`/posts/${post.id}`} />
 
       <!-- Navigation -->
       <div class="mt-5 flex justify-between">
