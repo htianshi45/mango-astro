@@ -59,8 +59,8 @@ jobs:
 
       - name: Deploy to EdgeOne Makers
         env:
-          EDGEONE_PAGES_API_TOKEN: ${{ secrets.EDGEONE_API_TOKEN }}
-        run: edgeone makers deploy -n mango-astro-global --json
+          EDGEONE_API_TOKEN: ${{ secrets.EDGEONE_API_TOKEN }}
+        run: edgeone makers deploy -n mango-astro-global -t "$EDGEONE_API_TOKEN" --json
 
       - name: Ping search engines
         run: node scripts/push-indexnow.mjs
