@@ -47,13 +47,6 @@
       "external": false,
       "children": [
         {
-          "name": "收藏夹",
-          "href": "/favorites/bookmarks",
-          "icon": "bi-bookmark-star",
-          "page": "favorites",
-          "external": false
-        },
-        {
           "name": "书架",
           "href": "/favorites/books",
           "icon": "bi-book",
@@ -61,14 +54,14 @@
           "external": false
         },
         {
-          "name": "片库",
+          "name": "影视",
           "href": "/favorites/movies",
           "icon": "bi-film",
           "page": "favorites",
           "external": false
         },
         {
-          "name": "音乐库",
+          "name": "音乐",
           "href": "/favorites/music",
           "icon": "bi-music-note-beamed",
           "page": "favorites",
