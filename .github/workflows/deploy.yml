@@ -8,9 +8,16 @@
 #
 # 手动触发：workflow_dispatch（保留手动应急通道）
 # 也可直接在本机执行：PAGES_SOURCE=skills edgeone makers deploy --json
-name: Deploy to EdgeOne Makers (manual)
+name: Deploy to EdgeOne Makers
 
 on:
+  # CMS 保存内容会 commit 到 main，push 后自动重新构建部署
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'EDGEONE-MIGRATION.md'
   workflow_dispatch:
 
 concurrency:
@@ -53,7 +60,7 @@ jobs:
       - name: Deploy to EdgeOne Makers
         env:
           EDGEONE_PAGES_API_TOKEN: ${{ secrets.EDGEONE_API_TOKEN }}
-        run: edgeone makers deploy --json
+        run: edgeone makers deploy -n mango-astro-global --json
 
       - name: Ping search engines
         run: node scripts/push-indexnow.mjs
