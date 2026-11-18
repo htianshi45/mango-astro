@@ -669,7 +669,7 @@ git checkout &lt;commit-hash&gt; -- src/components/Header.astro
 <tr>
 <td>后台白屏</td>
 <td>脚本加载失败或初始化报错</td>
-<td>打开浏览器控制台看红色报错；确认 <code>/admin/sveltia-cms.mjs</code> 返回 200</td>
+<td>打开浏览器控制台看红色报错；确认 <code>/admin/sveltia-cms.js</code> 返回 200 且 MIME 为 <code>application/javascript</code>。2026-11-18 迁移 EdgeOne 后，<code>.mjs</code> 被返回成 <code>application/octet-stream</code>，ES module 被浏览器拒绝执行导致白屏，已改用 <code>.js</code></td>
 </tr>
 <tr>
 <td>点登录没反应</td>
@@ -679,12 +679,12 @@ git checkout &lt;commit-hash&gt; -- src/components/Header.astro
 <tr>
 <td>弹窗停在「正在跳转」</td>
 <td>网关握手失败</td>
-<td>查 <code>/health</code>；确认 <code>base_url</code> 是 <code>https://auth.840428.xyz</code></td>
+<td>查 <code>/auth/health</code>；确认 <code>base_url</code> 是 <code>https://www.850222.xyz/auth</code></td>
 </tr>
 <tr>
 <td><code>redirect_uri mismatch</code></td>
 <td>OAuth App 回调地址不对</td>
-<td>必须是 <code>https://auth.840428.xyz/callback</code></td>
+<td>必须是 <code>https://www.850222.xyz/auth/callback</code></td>
 </tr>
 <tr>
 <td>登录后看不到文章</td>

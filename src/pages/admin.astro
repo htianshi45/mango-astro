@@ -18,14 +18,19 @@
       官方 dist 里的 sveltia-cms.js 是 IIFE，只把 API 挂到一个空对象、不暴露全局，
       直接 src 引入无法调用；sveltia-cms.mjs 才是 ESM 版，导出了 init()。
 
+      本地文件名用 .js 而不是 .mjs：EdgeOne 静态服务把 .mjs 返回成
+      application/octet-stream，浏览器对 ES module 做严格 MIME 检查会直接拒绝执行，
+      表现就是 /admin/ 白屏。.js 后缀会返回 application/javascript，模块可正常加载。
+      文件内部仍是标准 ESM（尾部有 export），用 type="module" 引入即可，不受后缀影响。
+
       type="module" 天然 defer，会等 DOM 解析完再执行 —— 顺便避开了
       Decap CMS 时代那个 "document.body 为 null 导致整页白屏" 的坑。
 
       升级方法：npm i @sveltia/cms@latest，再把
-      node_modules/@sveltia/cms/dist/sveltia-cms.mjs 复制到 public/admin/ 覆盖。
+      node_modules/@sveltia/cms/dist/sveltia-cms.mjs 复制到 public/admin/sveltia-cms.js 覆盖。
     -->
     <script is:inline type="module">
-      import { init } from '/admin/sveltia-cms.mjs';
+      import { init } from '/admin/sveltia-cms.js';
       init();
     </script>
   </head>

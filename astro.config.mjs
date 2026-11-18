@@ -10,8 +10,9 @@ const markdownProcessor = unified({ rehypePlugins: [rehypeOptimizeImages] });
 export default defineConfig({
   // 站点正式地址：影响 canonical / sitemap / RSS / OG 里的绝对链接。
   // 换域名时，必须同步修改 src/config/site.ts 的 siteConfig.url。
-  // Cloudflare 构建时可用环境变量 SITE_URL 覆盖（预览分支想指向不同域名时用）。
-  site: process.env.SITE_URL || 'https://mango-astro-git.pages.dev',
+  // EdgeOne 构建时可用环境变量 SITE_URL 覆盖。
+  // 2026-11-18 迁移 EdgeOne：正式域名 www.850222.xyz（免备案，overseas 加速区）
+  site: process.env.SITE_URL || 'https://www.850222.xyz',
   // Astro 7 默认改为 JSX 空白规则（行内元素间的换行空格会被剥掉，
   // 可能改变渲染结果）。显式保留 v6 及以前的 HTML 感知压缩行为。
   compressHTML: true,

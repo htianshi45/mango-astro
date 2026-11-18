@@ -22,6 +22,7 @@
   "dependencies": {
     "@astrojs/markdown-remark": "^7.3.8",
     "@astrojs/mdx": "^8.1.5",
+    "@edgeone/pages-blob": "^0.0.14",
     "@sveltia/cms": "^0.261.0",
     "@tailwindcss/typography": "^0.5.10",
     "astro": "^7.4.10",

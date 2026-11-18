@@ -1,11 +1,13 @@
 # Sveltia CMS · Mango Astro
 # 文档：https://sveltia-cms.netlify.app/
 #
-# 当前为已上线的生产配置（无需再替换占位符）：
+# 生产配置：
 #   backend.repo        = htianshi45/mango-astro
-#   backend.base_url    = 自建 Cloudflare Worker OAuth 网关 https://auth.840428.xyz
+#   backend.base_url    = EdgeOne 同项目 OAuth 网关 https://<站点域名>/auth
 #   backend.site_domain = 站点标识，用于 OAuth site_id；网关白名单需包含它
-# 详细步骤见工程根目录《后台接入-操作清单.md》与《站点管理与设置教程》
+# 2026-11-18 迁移 EdgeOne：网关从独立 CF Worker 改为同项目 cloud-functions/auth/，
+#    GitHub OAuth App 的 callback URL 需改成 https://www.850222.xyz/auth/callback。
+# 详细步骤见工程根目录《EDGEONE-MIGRATION.md》。
 #
 # ⚠️ 每个 collection 的 fields 必须列全对应 schema 的字段：
 #    CMS 保存已有条目时会重写整个 frontmatter，未列出的字段会被抹掉。
@@ -15,9 +17,10 @@ backend:
   name: github
   repo: htianshi45/mango-astro
   branch: main
-  base_url: https://auth.840428.xyz
+  # 迁移到 EdgeOne 后，OAuth 网关与站点同项目，挂在 /auth 前缀下。
+  base_url: https://www.850222.xyz/auth
   auth_endpoint: auth
-  site_domain: mango.840428.xyz
+  site_domain: www.850222.xyz
   # scope 由 CMS 弹窗传给网关（私有仓库 repo / 公开仓库 public_repo）
   auth_scope: repo
 

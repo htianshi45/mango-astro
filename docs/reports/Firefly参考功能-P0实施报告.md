@@ -125,7 +125,7 @@ P0 三项全部落地并已上线，`npm run build` 产出 **52 个页面**，Cl
 | `/sitemap.xml` | 200 | 50 URL，0 处 `/admin` |
 | `/admin/` | 200 | Sveltia CMS 入口 |
 | `/admin/config.yml` | 200 | 抬头已是 Sveltia，含 URL 别名提示 |
-| `/admin/sveltia-cms.mjs` | 200 | 2,681,179 B |
+| `/admin/sveltia-cms.js` | 200 | 2,681,179 B（2026-11-18 由 .mjs 改名，修复 MIME 白屏） |
 
 文章页另核对：`reading-progress`、`share-post`、`BlogPosting`、字数标注均存在。首页 SEO 标签、feeds 自动发现、JSON-LD 齐全。
 

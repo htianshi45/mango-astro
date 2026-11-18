@@ -53,3 +53,9 @@ oauth-gateway/.wrangler/
 .cache/
 .douban-cookie
 screenshots/
+
+# Tencent Cloud EdgeOne
+.env
+.edgeone/*
+.tef_dist/*
+  

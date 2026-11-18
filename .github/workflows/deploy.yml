@@ -1,28 +1,27 @@
-# 手动应急部署（push 不再触发）
-#
-# 2026-11 起站点迁到「Git 集成」项目 mango-astro-git：push 到 main 由 Cloudflare
-# 自己的构建机直接编译部署，本 workflow 若仍监听 push 会造成同一个提交部署两次。
-# 所以这里只保留 workflow_dispatch（手动 Run workflow），作为 Cloudflare 构建出问题时的
-# 应急通道——它部署到同一个项目，产物一致。
+# 🚀 部署到 EdgeOne Makers（2026-11-18 从 Cloudflare Pages 迁移）
 #
 # 使用前在 GitHub 仓库 Settings → Secrets and variables → Actions 添加：
-#   CLOUDFLARE_API_TOKEN   Cloudflare API Token（含 Cloudflare Pages 编辑权限）
-#   CLOUDFLARE_ACCOUNT_ID  Cloudflare Account ID
-#   INDEXNOW_KEY           （可选）IndexNow 密钥，任意 8-128 位十六进制字符串
+#   EDGEONE_API_TOKEN      EdgeOne API Token（console 里创建）
+#   SITE_URL               站点正式域名（如 https://xxx.edgeone.cool 或自有域名）
+#   INDEXNOW_KEY           （可选）IndexNow 密钥，8-128 位十六进制字符串
 #   BAIDU_TOKEN            （可选）百度站长平台的推送 token
-name: Deploy to Cloudflare Pages (manual)
+#
+# 手动触发：workflow_dispatch（保留手动应急通道）
+# 也可直接在本机执行：PAGES_SOURCE=skills edgeone makers deploy --json
+name: Deploy to EdgeOne Makers (manual)
 
 on:
   workflow_dispatch:
 
 concurrency:
-  group: pages-deploy
+  group: edgeone-deploy
   cancel-in-progress: true
 
 env:
-  SITE_URL: https://mango-astro-git.pages.dev
+  SITE_URL: ${{ secrets.SITE_URL }}
   INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
   BAIDU_TOKEN: ${{ secrets.BAIDU_TOKEN }}
+  PAGES_SOURCE: skills
 
 jobs:
   build-and-deploy:
@@ -35,7 +34,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
           cache: npm
 
       - name: Install dependencies
@@ -48,12 +47,13 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=mango-astro-git --branch main
+      - name: Install EdgeOne CLI
+        run: npm install -g edgeone@latest
+
+      - name: Deploy to EdgeOne Makers
+        env:
+          EDGEONE_PAGES_API_TOKEN: ${{ secrets.EDGEONE_API_TOKEN }}
+        run: edgeone makers deploy --json
 
       - name: Ping search engines
         run: node scripts/push-indexnow.mjs
